@@ -11,6 +11,8 @@ class GoodsReceiving extends Model
 
     protected $fillable = [
         'purchase_order_id',
+        'request_key',
+        'payload_hash',
         'supplier_id',
         'warehouse_id',
         'document_number',

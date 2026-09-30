@@ -52,7 +52,7 @@ const targetLabel = (rule) => {
 const customerScopeLabel = (scope) => {
     if (scope === "walk_in") return "Umum";
     if (scope === "registered") return "Pelanggan";
-    if (scope === "member") return "Member";
+    if (scope === "member") return "Anggota";
     return "Semua";
 };
 
@@ -104,8 +104,8 @@ export default function Index({ rules, filters, summary = {}, recentAudits = [] 
                     {[
                         { label: "Aktif", value: summary.active || 0 },
                         { label: "Terjadwal", value: summary.scheduled || 0 },
-                        { label: "Expired", value: summary.expired || 0 },
-                        { label: "Inactive", value: summary.inactive || 0 },
+                        { label: "Kedaluwarsa", value: summary.expired || 0 },
+                        { label: "Nonaktif", value: summary.inactive || 0 },
                     ].map((item) => (
                         <div
                             key={item.label}

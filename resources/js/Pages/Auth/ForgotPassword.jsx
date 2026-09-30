@@ -24,7 +24,7 @@ export default function ForgotPassword({ status, botGuard }) {
 
     return (
         <>
-            <Head title="Lupa Password" />
+            <Head title="Lupa Kata Sandi" />
 
             <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950">
                 <div className="flex-1 flex items-center justify-center p-8">
@@ -42,10 +42,10 @@ export default function ForgotPassword({ status, botGuard }) {
                                 </span>
                             </Link>
                             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-                                Reset Password
+                                Atur Ulang Kata Sandi
                             </h1>
                             <p className="mt-2 text-slate-600 dark:text-slate-400">
-                                Masukkan email Anda untuk menerima link reset password.
+                                Masukkan alamat email untuk menerima tautan pengaturan ulang kata sandi.
                             </p>
                         </div>
 
@@ -68,7 +68,7 @@ export default function ForgotPassword({ status, botGuard }) {
                             )}
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Email
+                                    Alamat Email
                                 </label>
                                 <div className="relative">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -111,7 +111,7 @@ export default function ForgotPassword({ status, botGuard }) {
                                             Mengirim...
                                         </>
                                     ) : (
-                                        "Kirim Link Reset"
+                                        "Kirim Tautan"
                                     )}
                                 </button>
                             </div>
@@ -126,7 +126,7 @@ export default function ForgotPassword({ status, botGuard }) {
                         </div>
                         <h2 className="text-3xl font-bold mb-4">Pemulihan Akun Aman</h2>
                         <p className="text-lg opacity-90">
-                            Link reset password membantu memulihkan akses akun tanpa membuka jalur bypass ke dashboard.
+                            Tautan pengaturan ulang kata sandi membantu memulihkan akses akun tanpa membuka jalur bypass ke dashboard.
                         </p>
                     </div>
                 </div>

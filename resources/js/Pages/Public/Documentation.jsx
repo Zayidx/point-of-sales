@@ -11,7 +11,7 @@ const categories = [
         title: "Mulai Cepat",
         docs: [
             { file: "getting-started.md", title: "Getting Started", desc: "Panduan setup lengkap dari nol sampai bisa login & mengakses dashboard." },
-            { file: "configuration.md", title: "Konfigurasi", desc: "Environment, payment gateway, pajak, printer thermal, dan WhatsApp." },
+            { file: "configuration.md", title: "Konfigurasi", desc: "Environment, penyedia pembayaran, pajak, printer thermal, dan WhatsApp." },
             { file: "architecture-overview.md", title: "Arsitektur", desc: "Struktur kode, service layer, middleware, dan Node service." },
             { file: "feature-index.md", title: "Indeks Fitur", desc: "Daftar fitur, dokumentasi, dan status implementasinya." },
             { file: "CHANGELOG.md", href: `${REPO_BASE}/CHANGELOG.md`, title: "Changelog", desc: "Riwayat rilis aplikasi sampai versi terbaru." },
@@ -33,7 +33,7 @@ const categories = [
     {
         title: "Inventory & Warehouse",
         docs: [
-            { file: "features/inventory-stock.md", title: "Inventory & Stok", desc: "Produk, kategori, stock opname, dan mutasi stok." },
+            { file: "features/inventory-stock.md", title: "Inventory & Stok", desc: "Produk, kategori, opname stok, dan mutasi stok." },
             { file: "features/multi-warehouse.md", title: "Multi-Warehouse", desc: "Stok per gudang dan transfer antar gudang." },
             { file: "features/unit-conversion.md", title: "Multi-Satuan", desc: "Konversi satuan produk (pcs, box, kg, karton)." },
         ],

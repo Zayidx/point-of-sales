@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\CashierShift;
 use App\Models\Category;
 use App\Models\Customer;
+use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\User;
@@ -259,6 +260,42 @@ class PosApiTest extends TestCase
             'customer_id' => $customer->id,
             'status' => 'unpaid',
         ]);
+    }
+
+    public function test_checkout_supports_manual_qris_without_a_gateway(): void
+    {
+        $this->openShift();
+        PaymentMethod::create([
+            'code' => 'QRIS-1',
+            'name' => 'QRIS 1',
+            'type' => 'digital',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+        $this->postJson('/api/v1/pos/cart', [
+            'product_id' => $this->product->id,
+            'qty' => 1,
+        ])->assertOk();
+
+        $this->postJson('/api/v1/pos/checkout', ['payment_method' => 'qris_1'])
+            ->assertCreated()
+            ->assertJsonPath('data.payment_method', 'qris_1')
+            ->assertJsonPath('data.payment_status', 'paid');
+    }
+
+    public function test_checkout_rejects_payment_gateway_methods(): void
+    {
+        $this->openShift();
+        $this->postJson('/api/v1/pos/cart', [
+            'product_id' => $this->product->id,
+            'qty' => 1,
+        ])->assertOk();
+
+        $this->postJson('/api/v1/pos/checkout', ['payment_method' => 'midtrans'])
+            ->assertUnprocessable();
+
+        $this->assertDatabaseCount('transactions', 0);
+        $this->assertDatabaseCount('carts', 1);
     }
 
     public function test_checkout_requires_active_shift(): void

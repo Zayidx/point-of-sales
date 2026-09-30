@@ -52,11 +52,11 @@ class PublicPortalController extends Controller
 
     public function payReceivable(Request $request, Receivable $receivable)
     {
-        $transaction = $receivable->transaction()->with('warehouse.outlet')->firstOrFail();
+        $transaction = $receivable->transaction()->with(['warehouse.outlet', 'outlet'])->firstOrFail();
         abort_if($transaction->access_token !== $request->token, 403);
 
         $paymentGateway = app(PaymentGatewayManager::class);
-        $paymentSetting = PaymentSetting::forOutlet($transaction->warehouse?->outlet);
+        $paymentSetting = PaymentSetting::forOutlet($transaction->outlet ?? $transaction->warehouse?->outlet);
         $gateway = $paymentSetting?->default_gateway ?? 'midtrans';
 
         if (! $paymentSetting || ! $paymentSetting->isGatewayReady($gateway)) {

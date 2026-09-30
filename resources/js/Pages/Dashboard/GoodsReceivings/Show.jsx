@@ -41,14 +41,14 @@ export default function Show({ receiving }) {
                     </h1>
                 </div>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    PO Referensi: {" "}
+                    Referensi PO: {" "}
                     <Link
                         href={route("purchase-orders.show", receiving.purchase_order_id)}
                         className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
                     >
                         {receiving.purchase_order?.document_number || "-"}
                     </Link>
-                    {" "}&bull; Supplier: {receiving.supplier?.name || "-"}
+                    {" "}&bull; Pemasok: {receiving.supplier?.name || "-"}
                     {" "}&bull; Diterima oleh {receiving.receiver?.name || "-"}
                     {" "}&bull; {formatDateTime(receiving.received_at)}
                 </p>
@@ -63,7 +63,8 @@ export default function Show({ receiving }) {
                         <Table.Thead>
                             <tr>
                                 <Table.Th>Produk</Table.Th>
-                                <Table.Th>Qty Diterima</Table.Th>
+                                <Table.Th>Dikirim / diterima / lolos QC</Table.Th>
+                                <Table.Th>Status QC</Table.Th>
                                 <Table.Th>Harga Satuan</Table.Th>
                                 <Table.Th>Subtotal</Table.Th>
                                 <Table.Th>Catatan</Table.Th>
@@ -77,19 +78,24 @@ export default function Show({ receiving }) {
                                         <tr key={item.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                             <Table.Td>
                                                 <p className="font-medium text-slate-800 dark:text-slate-200">
-                                                    {item.product?.title || "Produk #" + item.product_id}
+                                                    {item.product?.title || item.ingredient?.name || "Item"}
                                                 </p>
-                                                <p className="text-xs text-slate-500">{item.product?.sku || "-"}</p>
+                                                <p className="text-xs text-slate-500">{item.product?.sku || item.ingredient?.code || "-"}</p>
                                             </Table.Td>
-                                            <Table.Td className="font-semibold">{item.qty_received}</Table.Td>
+                                            <Table.Td className="font-semibold">{item.qty_sent} / {item.qty_received} / {item.qty_accepted}</Table.Td>
+                                            <Table.Td>
+                                                <span className="capitalize">{(item.qc_status || "good").replaceAll("_", " ")}</span>
+                                                {item.condition_notes && <p className="mt-1 text-xs text-slate-500">{item.condition_notes}</p>}
+                                                {item.proof_path && <a className="mt-1 inline-block text-xs text-primary-600 hover:underline" href={route("goods-receivings.items.proof", [receiving.id, item.id])} target="_blank" rel="noreferrer">Lihat bukti foto</a>}
+                                            </Table.Td>
                                             <Table.Td>{formatCurrency(unitPrice)}</Table.Td>
-                                            <Table.Td className="font-semibold">{formatCurrency(item.qty_received * unitPrice)}</Table.Td>
+                                            <Table.Td className="font-semibold">{formatCurrency(item.qty_accepted * unitPrice)}</Table.Td>
                                             <Table.Td className="text-xs text-slate-500">{item.notes || "-"}</Table.Td>
                                         </tr>
                                     );
                                 })
                             ) : (
-                                <Table.Empty colSpan={5} message={
+                                <Table.Empty colSpan={6} message={
                                     <div className="text-slate-500 dark:text-slate-400">Tidak ada item pada penerimaan ini.</div>
                                 }>
                                     <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
@@ -116,7 +122,7 @@ export default function Show({ receiving }) {
                                 <span className="font-medium text-slate-800 dark:text-slate-200">{receiving.document_number}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-500">PO Referensi</span>
+                                <span className="text-slate-500">Referensi PO</span>
                                 <Link
                                     href={route("purchase-orders.show", receiving.purchase_order_id)}
                                     className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"

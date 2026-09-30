@@ -26,6 +26,8 @@
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
+        <env name="SUPER_ADMIN_EMAIL" value="arya@gmail.com" force="true"/>
+        <env name="SUPER_ADMIN_PASSWORD" value="password" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

@@ -5,7 +5,6 @@ import {
     IconPrinter,
     IconExternalLink,
     IconReceipt,
-    IconFileInvoice,
     IconTruck,
     IconBuildingBank,
     IconCheck,
@@ -311,7 +310,7 @@ export default function Print({ transaction }) {
 
     return (
         <>
-            <Head title="Invoice Penjualan" />
+            <Head title="Faktur Penjualan" />
 
             <div className="min-h-screen bg-slate-100 dark:bg-slate-950 py-8 px-4 print:bg-white print:p-0">
                 <div className="max-w-4xl mx-auto space-y-6">
@@ -336,11 +335,11 @@ export default function Print({ transaction }) {
                                             : "text-slate-500 dark:text-slate-400 hover:text-slate-700"
                                     }`}
                                 >
-                                    <IconFileInvoice
+                                    <IconReceipt
                                         size={16}
                                         className="inline mr-1"
                                     />
-                                    Invoice
+                                    Faktur
                                 </button>
                                 <button
                                     onClick={() => setPrintMode("thermal80")}
@@ -460,7 +459,7 @@ export default function Print({ transaction }) {
                                     className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-sm font-semibold text-white shadow-lg shadow-primary-500/30 transition-colors w-full sm:w-auto"
                                 >
                                     <IconPrinter size={18} />
-                                    PDF Invoice
+                                    PDF Faktur
                                 </a>
                             )}
 
@@ -531,7 +530,7 @@ export default function Print({ transaction }) {
     </div>
 )}
 
-                    {/* Invoice View */}
+                    {/* Faktur View */}
                     {printMode === "invoice" && (
                         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xl print:shadow-none print:border-slate-300">
                             {/* Header */}
@@ -884,7 +883,7 @@ export default function Print({ transaction }) {
                             {/* Barcode + Footer */}
                             <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800">
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                    Invoice: {transaction.invoice}
+                                    Faktur: {transaction.invoice}
                                 </p>
                                 <SimpleBarcode value={transaction.invoice} />
                                 <div className="text-center mt-4">
@@ -930,11 +929,11 @@ export default function Print({ transaction }) {
 
                         {/* Content */}
                         <div className="p-6 space-y-4">
-                            {/* Invoice Info */}
+                            {/* Faktur Info */}
                             <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4">
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-sm text-slate-500 dark:text-slate-400">
-                                        Invoice
+                                        Faktur
                                     </span>
                                     <span className="text-sm font-bold text-slate-900 dark:text-white">
                                         {transaction.invoice}

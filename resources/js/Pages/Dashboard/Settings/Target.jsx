@@ -106,7 +106,7 @@ export default function Target({ settings }) {
                 <div className="bg-primary-50 dark:bg-primary-950/30 rounded-xl p-4 border border-primary-200 dark:border-primary-900">
                     <p className="text-sm text-primary-700 dark:text-primary-300">
                         <strong>Tip:</strong> Target penjualan akan ditampilkan
-                        di Dashboard sebagai progress bar untuk memantau
+                        di Dasbor sebagai indikator progres untuk memantau
                         pencapaian bulanan Anda.
                     </p>
                 </div>

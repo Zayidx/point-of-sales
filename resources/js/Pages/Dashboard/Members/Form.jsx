@@ -156,7 +156,7 @@ export default function Form({ mode = "create", member = null }) {
 
     return (
         <>
-            <Head title={isEdit ? "Edit Member" : "Daftar Member Baru"} />
+            <Head title={isEdit ? "Ubah Anggota" : "Daftar Anggota Baru"} />
 
             <div className="w-full">
                 <div className="mb-6">
@@ -168,7 +168,7 @@ export default function Form({ mode = "create", member = null }) {
                         Kembali ke Member
                     </Link>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                        {isEdit ? "Edit Member" : "Daftarkan Member Baru"}
+                        {isEdit ? "Ubah Anggota" : "Daftarkan Anggota Baru"}
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                         {isEdit
@@ -212,7 +212,7 @@ export default function Form({ mode = "create", member = null }) {
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <Input
                                 type="text"
-                                label="Nama Member"
+                                label="Nama Anggota"
                                 placeholder="Masukkan nama lengkap"
                                 errors={errors.name}
                                 onChange={(event) =>
@@ -404,8 +404,8 @@ export default function Form({ mode = "create", member = null }) {
 
                         <div className="mt-4">
                             <Textarea
-                                label="Alamat Detail"
-                                placeholder="Alamat lengkap member"
+                                label="Detail Alamat"
+                                placeholder="Alamat lengkap anggota"
                                 errors={errors.address}
                                 onChange={(event) =>
                                     setData("address", event.target.value)

@@ -248,7 +248,7 @@ export default function Show({
                     className="mb-3 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary-600"
                 >
                     <IconArrowLeft size={16} />
-                    Kembali ke daftar stock opname
+                    Kembali ke daftar opname stok
                 </Link>
 
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -264,7 +264,7 @@ export default function Show({
                                         : "bg-success-100 text-success-700 dark:bg-success-950/30 dark:text-success-400"
                                 }`}
                             >
-                                {isDraft ? "Draft" : "Finalized"}
+                                {isDraft ? "Draf" : "Difinalisasi"}
                             </span>
                         </div>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -284,7 +284,7 @@ export default function Show({
                             type="button"
                             icon={<IconCheck size={18} />}
                             className="bg-success-500 hover:bg-success-600 text-white shadow-lg shadow-success-500/20 disabled:opacity-50"
-                            label="Finalize Stock Opname"
+                            label="Selesaikan Opname Stok"
                             onClick={finalize}
                             disabled={
                                 localItems.length === 0 || summary.hasMissingReasons
@@ -322,7 +322,7 @@ export default function Show({
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                                Item Stock Opname
+                                Item Opname Stok
                             </h2>
                             {canManageDraft && (
                                 <Button
@@ -477,7 +477,7 @@ export default function Show({
                             }
                             rows={4}
                             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                            placeholder="Catatan sesi stock opname"
+                            placeholder="Catatan sesi opname stok"
                         />
                         {canManageDraft && (
                             <div className="mt-4 flex justify-end">
@@ -501,7 +501,7 @@ export default function Show({
                                     Cara penggunaan
                                 </p>
                                 <ul className="mt-2 space-y-2">
-                                    <li>1. Tambahkan produk ke sesi stock opname.</li>
+                                    <li>1. Tambahkan produk ke sesi opname stok.</li>
                                     <li>2. Input stok fisik hasil hitung lapangan.</li>
                                     <li>3. Isi alasan jika terdapat selisih stok.</li>
                                     <li>4. Finalize setelah semua item valid.</li>
@@ -518,7 +518,7 @@ export default function Show({
                 title={
                     <div className="flex items-center gap-2">
                         <IconClipboardCheck size={18} />
-                        Cari Produk untuk Stock Opname
+                        Cari Produk untuk Opname Stok
                     </div>
                 }
                 maxWidth="2xl"

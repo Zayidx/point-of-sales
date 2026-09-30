@@ -6,6 +6,7 @@ import Pagination from "@/Components/Dashboard/Pagination";
 import Table from "@/Components/Dashboard/Table";
 import { IconBroadcast, IconCirclePlus, IconPencil, IconTrash } from "@tabler/icons-react";
 import { useAuthorization } from "@/Utils/authorization";
+import { crmStatusLabel, crmTypeLabel } from "@/Utils/crmLabels";
 
 const statusBadge = (status) => {
     const classes = {
@@ -15,7 +16,7 @@ const statusBadge = (status) => {
         cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300",
     };
 
-    return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${classes[status] || classes.draft}`}>{status}</span>;
+    return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${classes[status] || classes.draft}`}>{crmStatusLabel(status)}</span>;
 };
 
 export default function Index({ campaigns, filters }) {
@@ -26,13 +27,13 @@ export default function Index({ campaigns, filters }) {
 
     return (
         <>
-            <Head title="CRM Campaigns" />
+            <Head title="Kampanye CRM" />
             <div className="w-full">
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">CRM Campaigns</h1>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Kampanye CRM</h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Kelola promo broadcast, reminder, dan share invoice berbasis audience CRM.
+                            Kelola promosi, pengingat, dan berbagi faktur untuk pelanggan CRM.
                         </p>
                     </div>
                     {can("crm-campaigns-create") && (
@@ -41,7 +42,7 @@ export default function Index({ campaigns, filters }) {
                             href={route("crm-campaigns.create")}
                             icon={<IconCirclePlus size={18} />}
                             className="bg-primary-500 text-white hover:bg-primary-600 shadow-lg shadow-primary-500/30"
-                            label="Buat Campaign"
+                            label="Buat Kampanye"
                         />
                     )}
                 </div>
@@ -54,10 +55,10 @@ export default function Index({ campaigns, filters }) {
                             className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                         >
                             <option value="">Semua Tipe</option>
-                            <option value="promo_broadcast">Promo Broadcast</option>
-                            <option value="invoice_share">Invoice Share</option>
-                            <option value="due_date_reminder">Due Date Reminder</option>
-                            <option value="repeat_order_reminder">Repeat Order Reminder</option>
+                            <option value="promo_broadcast">Promosi</option>
+                            <option value="invoice_share">Berbagi faktur</option>
+                            <option value="due_date_reminder">Pengingat jatuh tempo</option>
+                            <option value="repeat_order_reminder">Pengingat pemesanan ulang</option>
                         </select>
                         <select
                             value={filters.status || ""}
@@ -65,19 +66,19 @@ export default function Index({ campaigns, filters }) {
                             className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                         >
                             <option value="">Semua Status</option>
-                            <option value="draft">Draft</option>
-                            <option value="ready">Ready</option>
-                            <option value="processed">Processed</option>
-                            <option value="cancelled">Cancelled</option>
+                            <option value="draft">Draf</option>
+                            <option value="ready">Siap</option>
+                            <option value="processed">Diproses</option>
+                            <option value="cancelled">Dibatalkan</option>
                         </select>
                     </div>
                 </div>
 
-                <Table.Card title="Daftar CRM Campaign">
+                <Table.Card title="Daftar Kampanye CRM">
                     <Table>
                         <Table.Thead>
                             <tr>
-                                <Table.Th>Campaign</Table.Th>
+                                <Table.Th>Kampanye</Table.Th>
                                 <Table.Th>Tipe</Table.Th>
                                 <Table.Th>Status</Table.Th>
                                 <Table.Th>Log</Table.Th>
@@ -96,7 +97,7 @@ export default function Index({ campaigns, filters }) {
                                                 Dibuat oleh {campaign.creator?.name || "-"}
                                             </p>
                                         </Table.Td>
-                                        <Table.Td>{campaign.type}</Table.Td>
+                                        <Table.Td>{crmTypeLabel(campaign.type)}</Table.Td>
                                         <Table.Td>{statusBadge(campaign.status)}</Table.Td>
                                         <Table.Td>{campaign.logs_count}</Table.Td>
                                         <Table.Td className="text-center">

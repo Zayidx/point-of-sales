@@ -3,9 +3,12 @@
 namespace Tests\Feature\Inventory;
 
 use App\Models\Category;
+use App\Models\InventoryBalance;
+use App\Models\InventoryLedger;
 use App\Models\Product;
 use App\Models\StockOpname;
 use App\Models\StockOpnameItem;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -176,6 +179,59 @@ class StockOpnameTest extends TestCase
             'stock_after' => 8,
             'warehouse_id' => $warehouse->id,
         ]);
+    }
+
+    public function test_finalize_records_warehouse_adjustment_in_inventory_ledger(): void
+    {
+        $user = $this->createUserWithPermissions([
+            'stock-opnames-access',
+            'stock-opnames-create',
+            'stock-opnames-finalize',
+        ]);
+        $product = $this->createProduct(10);
+        $warehouse = Warehouse::create([
+            'code' => 'LED',
+            'name' => 'Gudang Ledger',
+            'type' => 'main',
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+        $unit = Unit::firstOrCreate(['code' => 'PCS'], ['name' => 'Pieces', 'symbol' => 'pcs']);
+        $product->units()->attach($unit->id, [
+            'is_base' => true,
+            'conversion_factor' => 1,
+            'buy_price' => 45000,
+            'sell_price' => 60000,
+        ]);
+        $product->warehouses()->attach($warehouse->id, ['stock' => 10]);
+        $stockOpname = StockOpname::create([
+            'code' => 'SO-TEST-LEDGER',
+            'warehouse_id' => $warehouse->id,
+            'status' => 'draft',
+            'created_by' => $user->id,
+        ]);
+        StockOpnameItem::create([
+            'stock_opname_id' => $stockOpname->id,
+            'product_id' => $product->id,
+            'system_stock' => 10,
+            'physical_stock' => 8,
+            'difference' => -2,
+            'adjustment_reason' => 'Selisih hitung fisik',
+        ]);
+
+        $this->from(route('stock-opnames.show', $stockOpname))
+            ->actingAs($user)
+            ->post(route('stock-opnames.finalize', $stockOpname))
+            ->assertRedirect(route('stock-opnames.show', $stockOpname));
+
+        $this->assertDatabaseHas('inventory_ledgers', [
+            'idempotency_key' => "stock-opname:{$stockOpname->id}:product:{$product->id}",
+            'movement_type' => 'stock_adjustment',
+            'quantity' => '-2.0000',
+            'reference_number' => $stockOpname->code,
+        ]);
+        $this->assertSame('8.0000', InventoryBalance::where('item_id', $product->id)->value('quantity'));
+        $this->assertSame(2, InventoryLedger::count());
     }
 
     public function test_finalize_rejects_difference_without_reason(): void

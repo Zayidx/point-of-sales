@@ -151,7 +151,7 @@ const directions = [
     {
         icon: IconBulb,
         title: "Integrasi ekosistem",
-        desc: "Ekspansi payment gateway & kurir pengiriman, konektor akuntansi, dan integrasi e-commerce.",
+        desc: "Ekspansi penyedia pembayaran & kurir pengiriman, konektor akuntansi, dan integrasi e-commerce.",
     },
     {
         icon: IconRocket,

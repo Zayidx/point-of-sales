@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Apps;
 
 use App\Http\Controllers\Controller;
+use App\Models\Ingredient;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Services\OutletAccessService;
 use App\Services\PurchaseOrderService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class PurchaseOrderController extends Controller
@@ -54,11 +56,13 @@ class PurchaseOrderController extends Controller
     {
         $suppliers = Supplier::orderBy('name')->get(['id', 'name']);
         $products = Product::orderBy('title')->get(['id', 'title', 'sku', 'buy_price', 'stock']);
+        $ingredients = Ingredient::where('is_active', true)->with('baseUnit:id,name,symbol')->orderBy('name')->get(['id', 'code', 'name', 'default_unit_cost', 'base_unit_id']);
         $warehouses = $this->outletAccessService->warehousesFor(request()->user());
 
         return Inertia::render('Dashboard/PurchaseOrders/Create', [
             'suppliers' => $suppliers,
             'products' => $products,
+            'ingredients' => $ingredients,
             'warehouses' => $warehouses,
         ]);
     }
@@ -71,10 +75,18 @@ class PurchaseOrderController extends Controller
             'document_number' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
-            'items.*.qty_ordered' => ['required', 'integer', 'min:1'],
+            'items.*.item_type' => ['required', 'in:product,ingredient'],
+            'items.*.product_id' => ['nullable', 'required_if:items.*.item_type,product', 'exists:products,id'],
+            'items.*.ingredient_id' => ['nullable', 'required_if:items.*.item_type,ingredient', 'exists:ingredients,id'],
+            'items.*.qty_ordered' => ['required', 'numeric', 'gt:0', 'max:999999999999'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ]);
+
+        if (collect($data['items'])->contains(fn (array $item) => $item['item_type'] === 'ingredient') && empty($data['warehouse_id'])) {
+            throw ValidationException::withMessages([
+                'warehouse_id' => 'Tujuan gudang wajib dipilih untuk pembelian bahan baku.',
+            ]);
+        }
 
         $order = $this->purchaseOrderService->createOrder($data, $data['items'], $request->user()->id);
 
@@ -90,8 +102,9 @@ class PurchaseOrderController extends Controller
             'supplier:id,name,phone,email,address',
             'warehouse:id,code,name',
             'items.product:id,title,sku,image',
+            'items.ingredient:id,code,name,base_unit_id',
             'goodsReceivings' => function ($q) {
-                $q->with('items.product:id,title,sku')->orderByDesc('received_at');
+                $q->with(['items.product:id,title,sku', 'items.ingredient:id,code,name'])->orderByDesc('received_at');
             },
             'creator:id,name',
             'payable:id,purchase_order_id,total,paid,status,document_number',

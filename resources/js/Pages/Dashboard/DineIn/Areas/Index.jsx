@@ -70,13 +70,13 @@ export default function Index({ areas }) {
 
     return (
         <>
-            <Head title="Area Dine-In" />
+            <Head title="Area Makan di Tempat" />
 
             <div className="mb-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                            Area Dine-In
+                            Area Makan di Tempat
                         </h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
                             {areas.length} area terdaftar
@@ -191,7 +191,7 @@ export default function Index({ areas }) {
             <Modal
                 show={modalOpen}
                 onClose={() => setModalOpen(false)}
-                title={editingArea ? "Edit Area" : "Tambah Area"}
+                title={editingArea ? "Ubah Area" : "Tambah Area"}
             >
                 <form onSubmit={submit} className="space-y-4">
                     <Input

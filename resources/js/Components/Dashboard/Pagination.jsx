@@ -56,7 +56,7 @@ export default function Pagination({ links }) {
 
     return (
         <nav
-            aria-label="Pagination"
+            aria-label="Navigasi halaman"
             className="mt-4 lg:mt-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
         >
             <div className="order-2 sm:order-1 flex items-center gap-3 flex-wrap">

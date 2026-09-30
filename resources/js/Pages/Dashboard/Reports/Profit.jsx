@@ -45,6 +45,7 @@ const defaultFilters = {
     invoice: "",
     cashier_id: "",
     customer_id: "",
+    warehouse_id: "",
 };
 
 const formatCurrency = (value = 0) =>
@@ -60,6 +61,7 @@ const ProfitReport = ({
     filters,
     cashiers,
     customers,
+    warehouses = [],
 }) => {
     const [showFilters, setShowFilters] = useState(false);
     const [filterData, setFilterData] = useState({
@@ -113,7 +115,8 @@ const ProfitReport = ({
         filterData.start_date ||
         filterData.end_date ||
         filterData.cashier_id ||
-        filterData.customer_id;
+        filterData.customer_id ||
+        filterData.warehouse_id;
 
     const stats = {
         profit_total: summary?.profit_total ?? 0,
@@ -126,14 +129,14 @@ const ProfitReport = ({
 
     const summaryCards = [
         {
-            title: "Total Profit",
+            title: "Total Laba",
             value: formatCurrency(stats.profit_total),
             description: "Akumulasi bersih",
             icon: <IconCoin />,
             gradient: "from-success-500 to-success-700",
         },
         {
-            title: "Rata-rata Profit",
+            title: "Rata-rata Laba",
             value: formatCurrency(stats.average_profit),
             description: `${stats.orders_count} transaksi`,
             icon: <IconTrendingUp />,
@@ -142,7 +145,7 @@ const ProfitReport = ({
         {
             title: "Margin Kotor",
             value: `${stats.margin}%`,
-            description: "Profit vs penjualan",
+            description: "Laba vs penjualan",
             icon: <IconPercentage />,
             gradient: "from-warning-500 to-warning-600",
         },
@@ -174,20 +177,21 @@ const ProfitReport = ({
                             Analisis profit dan margin
                         </p>
                     </div>
-                    <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
-                            showFilters || hasActiveFilters
-                                ? "bg-primary-50 border-primary-200 text-primary-700 dark:bg-primary-950/50 dark:border-primary-800 dark:text-primary-400"
-                                : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
-                        }`}
-                    >
-                        <IconFilter size={18} />
-                        <span>Filter</span>
-                        {hasActiveFilters && (
-                            <span className="w-2 h-2 rounded-full bg-primary-500"></span>
-                        )}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                        <a href={route("reports.profits.index", { ...filterData, export: 1 })} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">Ekspor Excel</a>
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                                showFilters || hasActiveFilters
+                                    ? "bg-primary-50 border-primary-200 text-primary-700 dark:bg-primary-950/50 dark:border-primary-800 dark:text-primary-400"
+                                    : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
+                            }`}
+                        >
+                            <IconFilter size={18} />
+                            <span>Saring</span>
+                            {hasActiveFilters && <span className="h-2 w-2 rounded-full bg-primary-500" />}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Summary Cards */}
@@ -239,7 +243,7 @@ const ProfitReport = ({
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Invoice
+                                        Faktur
                                     </label>
                                     <input
                                         type="text"
@@ -282,6 +286,13 @@ const ProfitReport = ({
                                     placeholder="Semua pelanggan"
                                     searchable
                                 />
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    Cabang/Gudang
+                                    <select value={filterData.warehouse_id || ""} onChange={(event) => handleChange("warehouse_id", event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                                        <option value="">Semua lokasi yang dapat diakses</option>
+                                        {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}
+                                    </select>
+                                </label>
                             </div>
                             <div className="flex justify-end gap-2 mt-4">
                                 {hasActiveFilters && (
@@ -319,7 +330,7 @@ const ProfitReport = ({
                                             No
                                         </th>
                                         <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
-                                            Invoice
+                                            Faktur
                                         </th>
                                         <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
                                             Tanggal
@@ -337,7 +348,7 @@ const ProfitReport = ({
                                             Penjualan
                                         </th>
                                         <th className="px-4 py-4 text-right text-xs font-semibold text-slate-500 uppercase">
-                                            Profit
+                                            Laba
                                         </th>
                                     </tr>
                                 </thead>
@@ -409,7 +420,7 @@ const ProfitReport = ({
                                                 {formatCurrency(trx.grand_total ?? 0)}
                                             </p>
                                             <p className="text-xs text-success-600 dark:text-success-400 font-semibold">
-                                                Profit {formatCurrency(trx.total_profit ?? 0)}
+                                                Laba {formatCurrency(trx.total_profit ?? 0)}
                                             </p>
                                         </div>
                                     </div>

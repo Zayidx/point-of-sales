@@ -27,9 +27,8 @@ import {
     IconUserSquare,
     IconUsers,
     IconUsersPlus,
-    IconFileInvoice,
     IconBuildingWarehouse,
-IconRulerMeasure,
+    IconRulerMeasure,
     IconCurrencyDollar,
     IconWallet,
     IconFileSearch,
@@ -81,6 +80,20 @@ export default function Menu() {
                     permissions: hasAnyPermission(["products-access"]),
                 },
                 {
+                    title: t("sidebar.items.ingredients"),
+                    href: route("ingredients.index"),
+                    active: url.startsWith("/dashboard/ingredients"),
+                    icon: <IconToolsKitchen2 size={20} strokeWidth={1.5} />,
+                    permissions: hasAnyPermission(["ingredients-access"]),
+                },
+                {
+                    title: t("sidebar.items.recipes"),
+                    href: route("recipes.index"),
+                    active: url.startsWith("/dashboard/recipes"),
+                    icon: <IconToolsKitchen2 size={20} strokeWidth={1.5} />,
+                    permissions: hasAnyPermission(["recipes-access"]),
+                },
+                {
                     title: t("sidebar.items.customers"),
                     href: route("customers.index"),
                     active: url === "/dashboard/customers" ? true : false,
@@ -124,7 +137,7 @@ export default function Menu() {
                     title: t("sidebar.items.receivables"),
                     href: route("receivables.index"),
                     active: url.startsWith("/dashboard/receivables"),
-                    icon: <IconFileInvoice size={20} strokeWidth={1.5} />,
+                    icon: <IconFileDescription size={20} strokeWidth={1.5} />,
                     permissions: hasAnyPermission(["receivables-access"]),
                 },
                 {
@@ -172,6 +185,13 @@ export default function Menu() {
                     icon: <IconArrowsLeftRight size={20} strokeWidth={1.5} />,
                     permissions: hasAnyPermission(["stock-transfers-access"]),
                 },
+                {
+                    title: t("sidebar.items.outletStockReturns"),
+                    href: route("outlet-stock-returns.index"),
+                    active: url.startsWith("/dashboard/outlet-stock-returns"),
+                    icon: <IconTruckReturn size={20} strokeWidth={1.5} />,
+                    permissions: hasAnyPermission(["outlet-stock-returns-access"]),
+                },
             ],
         },
         {
@@ -183,6 +203,20 @@ export default function Menu() {
                     active: url.startsWith("/dashboard/purchase-orders"),
                     icon: <IconClipboardCheck size={20} strokeWidth={1.5} />,
                     permissions: hasAnyPermission(["purchase-orders-access"]),
+                },
+                {
+                    title: t("sidebar.items.productionRequests"),
+                    href: route("production-requests.index"),
+                    active: url.startsWith("/dashboard/production-requests"),
+                    icon: <IconToolsKitchen2 size={20} strokeWidth={1.5} />,
+                    permissions: hasAnyPermission(["production-requests-access"]),
+                },
+                {
+                    title: t("sidebar.items.productionOrders"),
+                    href: route("production-orders.index"),
+                    active: url.startsWith("/dashboard/production-orders"),
+                    icon: <IconToolsKitchen2 size={20} strokeWidth={1.5} />,
+                    permissions: hasAnyPermission(["production-orders-access"]),
                 },
                 {
                     title: t("sidebar.items.goodsReceiving"),
@@ -304,6 +338,13 @@ export default function Menu() {
                     icon: <IconChartBar size={20} strokeWidth={1.5} />,
                     permissions: hasAnyPermission(["reports-access"]),
                 },
+                {
+                    title: t("sidebar.items.operationsReport"),
+                    href: route("reports.operations.index"),
+                    active: url.startsWith("/dashboard/reports/operations"),
+                    icon: <IconChartInfographic size={20} strokeWidth={1.5} />,
+                    permissions: hasAnyPermission(["reports-access"]),
+                },
             ],
         },
         {
@@ -315,6 +356,20 @@ export default function Menu() {
                     active: url.startsWith("/dashboard/cashier-shifts"),
                     icon: <IconWallet size={20} strokeWidth={1.5} />,
                     permissions: hasAnyPermission(["cashier-shifts-access"]),
+                },
+                {
+                    title: t("sidebar.items.outletOperations"),
+                    href: route("outlet-operations.index"),
+                    active: url.startsWith("/dashboard/outlet-operations"),
+                    icon: <IconClipboardCheck size={20} strokeWidth={1.5} />,
+                    permissions: hasAnyPermission(["outlet-operations-access"]),
+                },
+                {
+                    title: t("sidebar.items.cashManagement"),
+                    href: route("cash-management.index"),
+                    active: url.startsWith("/dashboard/cash-management"),
+                    icon: <IconWallet size={20} strokeWidth={1.5} />,
+                    permissions: hasAnyPermission(["cash-handovers-access", "cash-pickups-access"]),
                 },
                 {
                     title: t("sidebar.items.auditLogs"),
@@ -345,7 +400,7 @@ export default function Menu() {
                 {
                     title: t("sidebar.items.users"),
                     icon: <IconUsers size={20} strokeWidth={1.5} />,
-                    permissions: hasAnyPermission(["users-access"]),
+                    permissions: hasAnyPermission(["users-access", "users-create"]),
                     subdetails: [
                         {
                             title: t("sidebar.items.usersList"),
@@ -380,7 +435,7 @@ export default function Menu() {
                     href: route("settings.store"),
                     active: url === "/dashboard/settings/store",
                     icon: <IconBuildingStore size={20} strokeWidth={1.5} />,
-                    permissions: hasAnyPermission(["dashboard-access"]),
+                    permissions: hasAnyPermission(["store-settings-access"]),
                 },
                 {
                     title: t("sidebar.items.bankAccounts"),
@@ -394,14 +449,14 @@ export default function Menu() {
                     href: route("settings.loyalty"),
                     active: url === "/dashboard/settings/loyalty",
                     icon: <IconGift size={20} strokeWidth={1.5} />,
-                    permissions: hasAnyPermission(["dashboard-access"]),
+                    permissions: hasAnyPermission(["loyalty-settings-access"]),
                 },
                 {
                     title: t("sidebar.items.salesTarget"),
                     href: route("settings.target"),
                     active: url === "/dashboard/settings/target",
                     icon: <IconChartInfographic size={20} strokeWidth={1.5} />,
-                    permissions: hasAnyPermission(["dashboard-access"]),
+                    permissions: hasAnyPermission(["sales-targets-access"]),
                 },
                 {
                     title: t("sidebar.items.priceLists"),

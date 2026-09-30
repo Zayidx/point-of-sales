@@ -11,7 +11,7 @@ class ThermalPrintService
 {
     public function generateReceiptText(Transaction $transaction, string $paperSize = '80mm'): string
     {
-        $outlet = $transaction->warehouse?->outlet;
+        $outlet = $transaction->outlet ?? $transaction->warehouse?->outlet;
         $storeName = Setting::getForOutlet('store_name', $outlet, 'Toko Anda');
         $storeAddress = Setting::getForOutlet('store_address', $outlet, '');
         $storePhone = Setting::getForOutlet('store_phone', $outlet, '');
@@ -110,7 +110,7 @@ class ThermalPrintService
 
     public function generateShiftReportText(CashierShift $shift, string $paperSize = '80mm', string $reportType = 'X'): string
     {
-        $outlet = $shift->warehouse?->outlet;
+        $outlet = $shift->outlet ?? $shift->warehouse?->outlet;
         $storeName = Setting::getForOutlet('store_name', $outlet, 'Toko Anda');
         $storeAddress = Setting::getForOutlet('store_address', $outlet, '');
         $maxWidth = $paperSize === '58mm' ? 32 : 48;
@@ -126,6 +126,9 @@ class ThermalPrintService
         $lines[] = $this->center("LAPORAN {$reportType} — SHIFT #{$shift->id}", $maxWidth);
         $lines[] = $this->line($maxWidth);
         $lines[] = $this->left('Kasir: '.($shift->user?->name ?? '-'), $maxWidth);
+        if ($shift->outlet) {
+            $lines[] = $this->left('Outlet: '.$shift->outlet->name, $maxWidth);
+        }
         $lines[] = $this->left('Gudang: '.($shift->warehouse?->name ?? '-'), $maxWidth);
         $lines[] = $this->left('Buka: '.($shift->opened_at?->format('d/m/Y H:i') ?? '-'), $maxWidth);
 

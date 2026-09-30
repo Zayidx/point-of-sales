@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\CashierShift;
 use App\Models\DineOrder;
+use App\Models\OperationalNotification;
 use App\Models\Outlet;
 use App\Models\Payable;
 use App\Models\Product;
@@ -36,6 +37,7 @@ class HandleInertiaRequests extends Middleware
         $expiringBatchNotifications = [];
         $receivableNotifications = [];
         $payableNotifications = [];
+        $operationalNotifications = [];
         $activeCashierShift = null;
         $securityWarnings = [];
         $stepUpFreshUntil = null;
@@ -186,7 +188,7 @@ class HandleInertiaRequests extends Middleware
                 });
 
             $activeShift = CashierShift::query()
-                ->with('user:id,name', 'warehouse:id,code,name,outlet_id', 'warehouse.outlet')
+                ->with('user:id,name', 'warehouse:id,code,name,outlet_id', 'warehouse.outlet', 'outlet:id,code,name')
                 ->open()
                 ->where('user_id', $userId)
                 ->latest('opened_at')
@@ -194,6 +196,30 @@ class HandleInertiaRequests extends Middleware
 
             $activeOutlet = $outletAccess->activeOutlet($request);
             $availableOutlets = $outletAccess->accessibleOutlets($request->user());
+
+            if (Schema::hasTable('operational_notifications')) {
+                $operationalNotifications = OperationalNotification::query()
+                    ->where('user_id', $userId)
+                    ->whereNull('read_at')
+                    ->where(function ($query) use ($warehouseIds) {
+                        $query->whereNull('warehouse_id');
+                        if ($warehouseIds->isNotEmpty()) {
+                            $query->orWhereIn('warehouse_id', $warehouseIds);
+                        }
+                    })
+                    ->latest()
+                    ->limit(20)
+                    ->get(['id', 'event', 'title', 'body', 'url', 'created_at'])
+                    ->map(fn (OperationalNotification $notification) => [
+                        'id' => $notification->id,
+                        'event' => $notification->event,
+                        'title' => $notification->title,
+                        'subtitle' => $notification->body,
+                        'url' => $notification->url,
+                        'time' => $notification->created_at?->diffForHumans(),
+                    ])
+                    ->all();
+            }
 
             if ($activeShift) {
                 $activeCashierShift = app(CashierShiftService::class)->summarizeForDisplay($activeShift);
@@ -218,7 +244,7 @@ class HandleInertiaRequests extends Middleware
             'website' => '',
             'city' => '',
         ];
-        $outlet = $activeShift?->warehouse?->outlet;
+        $outlet = $activeShift?->outlet ?? $activeShift?->warehouse?->outlet;
         if (! $outlet && $request->user()) {
             $outlet = app(OutletAccessService::class)->activeOutlet($request);
         }
@@ -261,18 +287,23 @@ class HandleInertiaRequests extends Middleware
                 'outlets' => $availableOutlets->map(fn (Outlet $outlet) => $outlet->only(['id', 'code', 'name']))->values(),
                 'outletLocked' => (bool) $activeShift,
             ],
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+                'importErrors' => fn () => $request->session()->get('importErrors', []),
+            ],
             'locale' => [
                 'current' => app()->getLocale(),
-                'available' => ['id', 'en'],
+                'available' => ['id'],
                 'names' => [
                     'id' => 'Indonesia',
-                    'en' => 'English',
                 ],
             ],
             'lowStockNotifications' => $lowStockNotifications,
             'expiringBatchNotifications' => $expiringBatchNotifications,
             'receivableNotifications' => $receivableNotifications,
             'payableNotifications' => $payableNotifications,
+            'operationalNotifications' => $operationalNotifications,
             'payableAgingSummary' => $payableAgingSummary,
             'receivableAgingSummary' => $receivableAgingSummary,
             'activeCashierShift' => $activeCashierShift,

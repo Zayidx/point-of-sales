@@ -179,7 +179,7 @@ export default function Edit({ categories, product, products = [], units = [] })
 
     return (
         <>
-            <Head title="Edit Produk" />
+            <Head title="Ubah Produk" />
 
             <div className="mb-6">
                 <Link
@@ -191,7 +191,7 @@ export default function Edit({ categories, product, products = [], units = [] })
                 </Link>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <IconPackage size={28} className="text-primary-500" />
-                    Edit Produk
+                    Ubah Produk
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">{product.title}</p>
             </div>
@@ -520,7 +520,7 @@ export default function Edit({ categories, product, products = [], units = [] })
                                 </p>
                                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                     Perubahan stok dilakukan melalui transaksi
-                                    atau stock opname.
+                                    atau opname stok.
                                 </p>
                             </div>
 
@@ -614,7 +614,7 @@ export default function Edit({ categories, product, products = [], units = [] })
                                 />
                             </div>
 
-                            {/* Profit Estimation */}
+                            {/* Laba Estimation */}
                             {!data.is_composite &&
                                 data.buy_price > 0 &&
                                 data.sell_price > 0 && (
@@ -622,7 +622,7 @@ export default function Edit({ categories, product, products = [], units = [] })
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-sm text-success-700 dark:text-success-400 font-medium">
-                                                Estimasi Profit per Item
+                                                Estimasi Laba per Item
                                             </p>
                                             <p className="text-2xl font-bold text-success-600 dark:text-success-500 mt-1">
                                                 + Rp{" "}

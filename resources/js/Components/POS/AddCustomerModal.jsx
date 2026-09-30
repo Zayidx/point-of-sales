@@ -236,7 +236,7 @@ export default function AddCustomerModal({
                                     }
                                     className="h-4 w-4 rounded border-slate-300 text-primary-500"
                                 />
-                                Member
+                                Anggota
                             </label>
                         </div>
 

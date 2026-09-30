@@ -414,7 +414,7 @@ export default function Index({ tables, areas, filters }) {
             <Modal
                 show={modalOpen}
                 onClose={() => setModalOpen(false)}
-                title={editingTable ? `Edit Meja: ${editingTable.name}` : "Tambah Meja"}
+                title={editingTable ? `Ubah Meja: ${editingTable.name}` : "Tambah Meja"}
             >
                 <form onSubmit={submit} className="space-y-4">
                     <Input

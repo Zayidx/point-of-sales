@@ -23,18 +23,18 @@ class CrmAutomationService
     {
         return [
             'customer_types' => [
-                ['value' => 'all', 'label' => 'Semua Customer'],
-                ['value' => 'member', 'label' => 'Loyalty Member'],
-                ['value' => 'non_member', 'label' => 'Non Member'],
+                ['value' => 'all', 'label' => 'Semua Pelanggan'],
+                ['value' => 'member', 'label' => 'Anggota Loyalitas'],
+                ['value' => 'non_member', 'label' => 'Bukan Anggota'],
             ],
             'receivable_statuses' => [
                 ['value' => 'all', 'label' => 'Semua Status Piutang'],
                 ['value' => 'has_receivable', 'label' => 'Punya Piutang'],
-                ['value' => 'overdue', 'label' => 'Piutang Overdue'],
-                ['value' => 'due_soon', 'label' => 'Jatuh Tempo H-3'],
+                ['value' => 'overdue', 'label' => 'Piutang Jatuh Tempo'],
+                ['value' => 'due_soon', 'label' => 'Jatuh Tempo dalam 3 Hari'],
             ],
             'voucher_filters' => [
-                ['value' => 'all', 'label' => 'Semua Customer'],
+                ['value' => 'all', 'label' => 'Semua Pelanggan'],
                 ['value' => 'has_active_voucher', 'label' => 'Punya Voucher Aktif'],
                 ['value' => 'no_active_voucher', 'label' => 'Tidak Punya Voucher Aktif'],
             ],

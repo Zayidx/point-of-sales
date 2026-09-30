@@ -17,6 +17,8 @@ class Outlet extends Model
         'is_active',
         'is_sales_enabled',
         'address',
+        'map_url',
+        'opening_hours',
         'phone',
         'email',
         'logo',
@@ -27,12 +29,18 @@ class Outlet extends Model
         return [
             'is_active' => 'boolean',
             'is_sales_enabled' => 'boolean',
+            'opening_hours' => 'array',
         ];
     }
 
     public function warehouses(): HasMany
     {
         return $this->hasMany(Warehouse::class);
+    }
+
+    public function sharedWarehouses(): BelongsToMany
+    {
+        return $this->belongsToMany(Warehouse::class, 'outlet_warehouse_access')->withTimestamps();
     }
 
     public function users(): BelongsToMany

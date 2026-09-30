@@ -4,6 +4,7 @@ import { Head, Link, router } from "@inertiajs/react";
 import Pagination from "@/Components/Dashboard/Pagination";
 import Table from "@/Components/Dashboard/Table";
 import { IconBellRinging, IconBrandWhatsapp } from "@tabler/icons-react";
+import { crmStatusLabel, crmTypeLabel } from "@/Utils/crmLabels";
 
 export default function Index({ campaigns, filters }) {
     const handleFilterChange = (key, value) => {
@@ -12,12 +13,12 @@ export default function Index({ campaigns, filters }) {
 
     return (
         <>
-            <Head title="CRM Reminders" />
+            <Head title="Pengingat CRM" />
             <div className="w-full">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">CRM Reminders</h1>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Pengingat CRM</h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Queue reminder internal untuk piutang, repeat order, invoice share, dan promo broadcast.
+                            Antrean pengingat piutang, pemesanan ulang, berbagi faktur, dan promosi.
                     </p>
                 </div>
 
@@ -29,10 +30,10 @@ export default function Index({ campaigns, filters }) {
                             className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                         >
                             <option value="">Semua Tipe</option>
-                            <option value="promo_broadcast">Promo Broadcast</option>
-                            <option value="invoice_share">Invoice Share</option>
-                            <option value="due_date_reminder">Due Date Reminder</option>
-                            <option value="repeat_order_reminder">Repeat Order Reminder</option>
+                            <option value="promo_broadcast">Promosi</option>
+                            <option value="invoice_share">Berbagi faktur</option>
+                            <option value="due_date_reminder">Pengingat jatuh tempo</option>
+                            <option value="repeat_order_reminder">Pengingat pemesanan ulang</option>
                         </select>
                         <select
                             value={filters.status || ""}
@@ -40,19 +41,19 @@ export default function Index({ campaigns, filters }) {
                             className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                         >
                             <option value="">Semua Status</option>
-                            <option value="draft">Draft</option>
-                            <option value="ready">Ready</option>
-                            <option value="processed">Processed</option>
-                            <option value="cancelled">Cancelled</option>
+                            <option value="draft">Draf</option>
+                            <option value="ready">Siap</option>
+                            <option value="processed">Diproses</option>
+                            <option value="cancelled">Dibatalkan</option>
                         </select>
                     </div>
                 </div>
 
-                <Table.Card title="Reminder & Campaign Queue">
+                <Table.Card title="Antrean Pengingat dan Kampanye">
                     <Table>
                         <Table.Thead>
                             <tr>
-                                <Table.Th>Campaign</Table.Th>
+                                <Table.Th>Kampanye</Table.Th>
                                 <Table.Th>Status</Table.Th>
                                 <Table.Th>Target</Table.Th>
                                 <Table.Th>Aksi Cepat</Table.Th>
@@ -66,9 +67,9 @@ export default function Index({ campaigns, filters }) {
                                             <Link href={route("crm-campaigns.show", campaign.id)} className="font-semibold text-slate-800 hover:text-primary-600 dark:text-slate-100">
                                                 {campaign.name}
                                             </Link>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">{campaign.type}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">{crmTypeLabel(campaign.type)}</p>
                                         </Table.Td>
-                                        <Table.Td>{campaign.status}</Table.Td>
+                                        <Table.Td>{crmStatusLabel(campaign.status)}</Table.Td>
                                         <Table.Td>{campaign.logs?.length || 0} target</Table.Td>
                                         <Table.Td>
                                             <div className="flex flex-wrap gap-2">

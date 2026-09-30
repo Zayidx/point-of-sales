@@ -4,6 +4,7 @@ use App\Http\Controllers\Apps\AgingController;
 use App\Http\Controllers\Apps\AuditLogController;
 use App\Http\Controllers\Apps\BankAccountController;
 use App\Http\Controllers\Apps\CashierShiftController;
+use App\Http\Controllers\Apps\CashManagementController;
 use App\Http\Controllers\Apps\CategoryController;
 use App\Http\Controllers\Apps\CrmCampaignController;
 use App\Http\Controllers\Apps\CrmReminderController;
@@ -15,15 +16,21 @@ use App\Http\Controllers\Apps\DineTableController;
 use App\Http\Controllers\Apps\DiscountApprovalController;
 use App\Http\Controllers\Apps\GoodsReceivingController;
 use App\Http\Controllers\Apps\ImportExportController;
+use App\Http\Controllers\Apps\IngredientController;
 use App\Http\Controllers\Apps\MemberController;
 use App\Http\Controllers\Apps\OutletController;
+use App\Http\Controllers\Apps\OutletOperationsController;
+use App\Http\Controllers\Apps\OutletStockReturnController;
 use App\Http\Controllers\Apps\PayableController;
 use App\Http\Controllers\Apps\PaymentSettingController;
 use App\Http\Controllers\Apps\PriceListController;
 use App\Http\Controllers\Apps\PricingRuleController;
 use App\Http\Controllers\Apps\ProductController;
+use App\Http\Controllers\Apps\ProductionOrderController;
+use App\Http\Controllers\Apps\ProductionRequestController;
 use App\Http\Controllers\Apps\PurchaseOrderController;
 use App\Http\Controllers\Apps\ReceivableController;
+use App\Http\Controllers\Apps\RecipeController;
 use App\Http\Controllers\Apps\SalesReturnController;
 use App\Http\Controllers\Apps\SettingController;
 use App\Http\Controllers\Apps\StockMutationController;
@@ -38,7 +45,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DineMenuController;
 use App\Http\Controllers\DineOrderController;
 use App\Http\Controllers\DocumentController;
-use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OutletContextController;
 use App\Http\Controllers\PermissionController;
@@ -46,35 +53,16 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicPortalController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\Reports\AdvancedSalesInsightsController;
+use App\Http\Controllers\Reports\OperationsReportController;
 use App\Http\Controllers\Reports\ProfitReportController;
 use App\Http\Controllers\Reports\SalesReportController;
 use App\Http\Controllers\RoleController;
-use App\Http\Controllers\SetupController;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\UserController;
-use App\Models\Setting;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    if (! Setting::getBool('app_setup_completed', false)) {
-        return redirect()->route('setup.index');
-    }
-
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => config('security.auth.public_registration'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
-
-// First-install setup wizard (locked out once app_setup_completed = true)
-Route::middleware('setup.notinstalled')->group(function () {
-    Route::get('/setup', [SetupController::class, 'index'])->name('setup.index');
-    Route::post('/setup', [SetupController::class, 'store'])->middleware('throttle:10,1')->name('setup.store');
-});
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Public marketing pages (open source)
 Route::get('/fitur', fn () => Inertia::render('Public/Features'))->name('features.index');
@@ -98,9 +86,6 @@ Route::get('/portal/transactions/{invoice}', [PublicPortalController::class, 'sh
 Route::post('/portal/receivables/{receivable}/pay', [PublicPortalController::class, 'payReceivable'])
     ->middleware('throttle:5,1')
     ->name('portal.receivable.pay');
-
-// Language switch
-Route::post('/language/switch', [LanguageController::class, 'switch'])->name('language.switch');
 
 Route::group(['prefix' => 'dashboard', 'middleware' => ['auth']], function () {
     Route::post('/outlet', [OutletContextController::class, 'switch'])->name('outlet.switch');
@@ -126,6 +111,8 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth']], function () {
         ->middlewareFor('destroy', ['permission:users-delete', 'step_up']);
     Route::post('/notifications/low-stock/read', [NotificationController::class, 'markLowStockRead'])->name('notifications.stock.read');
     Route::post('/notifications/low-stock/read-all', [NotificationController::class, 'markAllLowStockRead'])->name('notifications.stock.readAll');
+    Route::post('/notifications/operations/{notification}/read', [NotificationController::class, 'markOperationalRead'])->name('notifications.operations.read');
+    Route::post('/notifications/operations/read-all', [NotificationController::class, 'markAllOperationalRead'])->name('notifications.operations.readAll');
     Route::get('/regions/regencies', [RegionController::class, 'regencies'])->name('regions.regencies');
     Route::get('/regions/districts', [RegionController::class, 'districts'])->name('regions.districts');
     Route::get('/regions/villages', [RegionController::class, 'villages'])->name('regions.villages');
@@ -140,13 +127,26 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth']], function () {
         ->middlewareFor(['create', 'store'], 'permission:products-create')
         ->middlewareFor(['edit', 'update'], 'permission:products-edit')
         ->middlewareFor('destroy', 'permission:products-delete');
+    Route::get('ingredients', [IngredientController::class, 'index'])->middleware('permission:ingredients-access')->name('ingredients.index');
+    Route::post('ingredients', [IngredientController::class, 'store'])->middleware('permission:ingredients-create')->name('ingredients.store');
+    Route::patch('ingredients/{ingredient}', [IngredientController::class, 'update'])->middleware('permission:ingredients-update')->name('ingredients.update');
+    Route::post('ingredients/{ingredient}/adjust', [IngredientController::class, 'adjustStock'])->middleware('permission:ingredients-adjust')->name('ingredients.adjust');
+    Route::get('recipes', [RecipeController::class, 'index'])->middleware('permission:recipes-access')->name('recipes.index');
+    Route::post('recipes', [RecipeController::class, 'store'])->middleware('permission:recipes-create')->name('recipes.store');
 
     // import/export
     Route::get('/export/products', [ImportExportController::class, 'exportProducts'])->middleware('permission:products-export')->name('export.products');
     Route::get('/export/customers', [ImportExportController::class, 'exportCustomers'])->middleware('permission:customers-export')->name('export.customers');
+    Route::get('/export/ingredients', [ImportExportController::class, 'exportIngredients'])->middleware('permission:ingredients-export')->name('export.ingredients');
+    Route::get('/export/suppliers', [ImportExportController::class, 'exportSuppliers'])->middleware('permission:suppliers-export')->name('export.suppliers');
+    Route::get('/export/recipes', [ImportExportController::class, 'exportRecipes'])->middleware('permission:recipes-export')->name('export.recipes');
     Route::get('/export/transactions', [ImportExportController::class, 'exportTransactions'])->middleware('permission:transactions-access')->name('export.transactions');
     Route::post('/import/products', [ImportExportController::class, 'importProducts'])->middleware('permission:products-import')->name('import.products');
     Route::post('/import/customers', [ImportExportController::class, 'importCustomers'])->middleware('permission:customers-import')->name('import.customers');
+    Route::post('/import/ingredients', [ImportExportController::class, 'importIngredients'])->middleware('permission:ingredients-import')->name('import.ingredients');
+    Route::post('/import/suppliers', [ImportExportController::class, 'importSuppliers'])->middleware('permission:suppliers-import')->name('import.suppliers');
+    Route::post('/import/recipes', [ImportExportController::class, 'importRecipes'])->middleware('permission:recipes-import')->name('import.recipes');
+    Route::post('/import/opening-stock', [ImportExportController::class, 'importOpeningStock'])->middleware('permission:inventory-opening-stock-import')->name('import.opening-stock');
     Route::get('/import/template/{type}', [ImportExportController::class, 'downloadTemplate'])->name('import.template');
     Route::resource('pricing-rules', PricingRuleController::class)
         ->except(['show'])
@@ -158,6 +158,25 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth']], function () {
         ->middleware('permission:pricing-rules-access')
         ->name('pricing-rules.preview');
     Route::get('stock-opnames', [StockOpnameController::class, 'index'])->middleware('permission:stock-opnames-access')->name('stock-opnames.index');
+    Route::get('production-requests', [ProductionRequestController::class, 'index'])->middleware('permission:production-requests-access')->name('production-requests.index');
+    Route::post('production-requests', [ProductionRequestController::class, 'store'])->middleware('permission:production-requests-create')->name('production-requests.store');
+    Route::post('production-requests/{productionRequest}/review', [ProductionRequestController::class, 'review'])->name('production-requests.review');
+    Route::get('production-orders', [ProductionOrderController::class, 'index'])->middleware('permission:production-orders-access')->name('production-orders.index');
+    Route::post('production-requests/{productionRequest}/schedule', [ProductionOrderController::class, 'schedule'])->middleware('permission:production-orders-create')->name('production-orders.schedule');
+    Route::post('production-orders/{productionOrder}/start', [ProductionOrderController::class, 'start'])->middleware('permission:production-orders-complete')->name('production-orders.start');
+    Route::post('production-orders/{productionOrder}/complete', [ProductionOrderController::class, 'complete'])->middleware('permission:production-orders-complete')->name('production-orders.complete');
+    Route::get('outlet-operations', [OutletOperationsController::class, 'index'])->middleware('permission:outlet-operations-access')->name('outlet-operations.index');
+    Route::post('outlet-operations/expenses', [OutletOperationsController::class, 'storeExpense'])->middleware('permission:outlet-operations-create')->name('outlet-operations.expenses.store');
+    Route::post('outlet-operations/waste', [OutletOperationsController::class, 'storeWaste'])->middleware('permission:outlet-operations-create')->name('outlet-operations.waste.store');
+    Route::get('outlet-stock-returns', [OutletStockReturnController::class, 'index'])->middleware('permission:outlet-stock-returns-access')->name('outlet-stock-returns.index');
+    Route::post('outlet-stock-returns', [OutletStockReturnController::class, 'store'])->middleware('permission:outlet-stock-returns-create')->name('outlet-stock-returns.store');
+    Route::post('outlet-stock-returns/{outletStockReturn}/receive', [OutletStockReturnController::class, 'receive'])->middleware('permission:outlet-stock-returns-receive')->name('outlet-stock-returns.receive');
+    Route::get('cash-management', [CashManagementController::class, 'index'])->middleware('permission:cash-handovers-access|cash-pickups-access')->name('cash-management.index');
+    Route::post('cash-management/handovers', [CashManagementController::class, 'submitHandover'])->middleware('permission:cash-handovers-create')->name('cash-management.handovers.store');
+    Route::post('cash-management/handovers/{cashHandover}/confirm', [CashManagementController::class, 'confirmHandover'])->middleware('permission:cash-handovers-confirm')->name('cash-management.handovers.confirm');
+    Route::post('cash-management/pickups', [CashManagementController::class, 'requestPickup'])->middleware('permission:cash-pickups-create')->name('cash-management.pickups.store');
+    Route::post('cash-management/pickups/{cashPickup}/confirm', [CashManagementController::class, 'confirmPickup'])->middleware('permission:cash-pickups-confirm')->name('cash-management.pickups.confirm');
+    Route::get('cash-management/pickups/{cashPickup}/proof', [CashManagementController::class, 'pickupProof'])->middleware('permission:cash-pickups-access')->name('cash-management.pickups.proof');
     Route::get('stock-opnames/create', [StockOpnameController::class, 'create'])->middleware('permission:stock-opnames-create')->name('stock-opnames.create');
     Route::post('stock-opnames', [StockOpnameController::class, 'store'])->middleware('permission:stock-opnames-create')->name('stock-opnames.store');
     Route::get('stock-opnames/{stockOpname}', [StockOpnameController::class, 'show'])->middleware('permission:stock-opnames-access')->name('stock-opnames.show');
@@ -281,6 +300,7 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth']], function () {
     Route::get('/goods-receivings/create', [GoodsReceivingController::class, 'create'])->middleware('permission:goods-receivings-create')->name('goods-receivings.create');
     Route::post('/goods-receivings', [GoodsReceivingController::class, 'store'])->middleware('permission:goods-receivings-create')->name('goods-receivings.store');
     Route::get('/goods-receivings/{goodsReceiving}', [GoodsReceivingController::class, 'show'])->middleware('permission:goods-receivings-access')->name('goods-receivings.show');
+    Route::get('/goods-receivings/{goodsReceiving}/items/{item}/proof', [GoodsReceivingController::class, 'proof'])->middleware('permission:goods-receivings-access')->name('goods-receivings.items.proof');
 
     // route stock transfers
     Route::get('/stock-transfers', [StockTransferController::class, 'index'])->middleware('permission:stock-transfers-access')->name('stock-transfers.index');
@@ -309,9 +329,9 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth']], function () {
     Route::post('/receivables/{receivable}/share-campaign', [CrmCampaignController::class, 'shareReceivable'])->middleware('permission:crm-campaigns-create')->name('receivables.share-campaign');
     // suppliers & payables
     Route::get('/suppliers', [SupplierController::class, 'index'])->middleware('permission:suppliers-access')->name('suppliers.index');
-    Route::post('/suppliers', [SupplierController::class, 'store'])->middleware('permission:suppliers-access')->name('suppliers.store');
-    Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->middleware('permission:suppliers-access')->name('suppliers.update');
-    Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy'])->middleware('permission:suppliers-access')->name('suppliers.destroy');
+    Route::post('/suppliers', [SupplierController::class, 'store'])->middleware('permission:suppliers-create')->name('suppliers.store');
+    Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->middleware('permission:suppliers-update')->name('suppliers.update');
+    Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy'])->middleware('permission:suppliers-delete')->name('suppliers.destroy');
     Route::get('/payables', [PayableController::class, 'index'])->middleware('permission:payables-access')->name('payables.index');
     Route::post('/payables', [PayableController::class, 'store'])->middleware('permission:payables-access')->name('payables.store');
     Route::get('/payables/supplier-statement', [PayableController::class, 'supplierStatement'])->middleware('permission:payables-access')->name('payables.supplier-statement');
@@ -330,14 +350,14 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth']], function () {
     Route::put('/settings/payments', [PaymentSettingController::class, 'update'])->middleware(['permission:payment-settings-update', 'step_up'])->name('settings.payments.update');
 
     // settings target penjualan
-    Route::get('/settings/target', [SettingController::class, 'target'])->middleware('permission:dashboard-access')->name('settings.target');
-    Route::post('/settings/target', [SettingController::class, 'updateTarget'])->middleware('permission:dashboard-access')->name('settings.target.update');
-    Route::get('/settings/store', [SettingController::class, 'storeProfile'])->middleware('permission:dashboard-access')->name('settings.store');
-    Route::post('/settings/store', [SettingController::class, 'updateStoreProfile'])->middleware('permission:dashboard-access')->name('settings.store.update');
-    Route::get('/settings/printer', [SettingController::class, 'printer'])->middleware('permission:dashboard-access')->name('settings.printer');
-    Route::post('/settings/printer', [SettingController::class, 'updatePrinter'])->middleware('permission:dashboard-access')->name('settings.printer.update');
-    Route::get('/settings/loyalty', [SettingController::class, 'loyalty'])->middleware('permission:dashboard-access')->name('settings.loyalty');
-    Route::post('/settings/loyalty', [SettingController::class, 'updateLoyalty'])->middleware('permission:dashboard-access')->name('settings.loyalty.update');
+    Route::get('/settings/target', [SettingController::class, 'target'])->middleware('permission:sales-targets-access')->name('settings.target');
+    Route::post('/settings/target', [SettingController::class, 'updateTarget'])->middleware('permission:sales-targets-update')->name('settings.target.update');
+    Route::get('/settings/store', [SettingController::class, 'storeProfile'])->middleware('permission:store-settings-access')->name('settings.store');
+    Route::post('/settings/store', [SettingController::class, 'updateStoreProfile'])->middleware('permission:store-settings-update')->name('settings.store.update');
+    Route::get('/settings/printer', [SettingController::class, 'printer'])->middleware('permission:printer-settings-access')->name('settings.printer');
+    Route::post('/settings/printer', [SettingController::class, 'updatePrinter'])->middleware('permission:printer-settings-update')->name('settings.printer.update');
+    Route::get('/settings/loyalty', [SettingController::class, 'loyalty'])->middleware('permission:loyalty-settings-access')->name('settings.loyalty');
+    Route::post('/settings/loyalty', [SettingController::class, 'updateLoyalty'])->middleware('permission:loyalty-settings-update')->name('settings.loyalty.update');
 
     // settings whatsapp
     Route::get('/settings/whatsapp', [SettingController::class, 'whatsapp'])->middleware('permission:whatsapp-settings-access')->name('settings.whatsapp');
@@ -410,6 +430,7 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth']], function () {
     Route::get('/reports/sales', [SalesReportController::class, 'index'])->middleware('permission:reports-access')->name('reports.sales.index');
     Route::get('/reports/profits', [ProfitReportController::class, 'index'])->middleware('permission:profits-access')->name('reports.profits.index');
     Route::get('/reports/insights', [AdvancedSalesInsightsController::class, 'index'])->middleware('permission:reports-access')->name('reports.insights.index');
+    Route::get('/reports/operations', [OperationsReportController::class, 'index'])->middleware('permission:reports-access')->name('reports.operations.index');
 
     // aging & reminders
     Route::get('/aging', [AgingController::class, 'index'])->middleware('permission:receivables-access')->name('aging.index');

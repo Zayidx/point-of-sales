@@ -6,7 +6,7 @@ use App\Models\Cart;
 use App\Models\CashierShift;
 use App\Models\Category;
 use App\Models\Customer;
-use App\Models\PaymentSetting;
+use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\User;
@@ -29,7 +29,7 @@ class QrisCheckoutTest extends TestCase
         }
     }
 
-    public function test_web_checkout_with_qris_stores_qr_string(): void
+    public function test_web_checkout_records_qris_manually_without_calling_a_gateway(): void
     {
         $cashier = $this->createCashier();
         $this->openShiftFor($cashier);
@@ -40,21 +40,9 @@ class QrisCheckoutTest extends TestCase
         ]);
         $product = $this->createProduct();
 
-        PaymentSetting::create([
-            'default_gateway' => 'midtrans',
-            'midtrans_enabled' => true,
-            'midtrans_server_key' => 'server-key',
-            'midtrans_client_key' => 'client-key',
-        ]);
+        PaymentMethod::create(['code' => 'QRIS-1', 'name' => 'QRIS 1', 'type' => 'digital', 'is_active' => true]);
 
-        Http::fake([
-            'https://app.sandbox.midtrans.com/*' => Http::response([
-                'order_id' => 'TRX-QRIS',
-                'redirect_url' => 'https://pay.midtrans.test/qris',
-                'token' => 'snap-token',
-                'qr_string' => '00020101021226610014ID.CO.QRIS.WWW',
-            ], 200),
-        ]);
+        Http::fake();
 
         $cart = Cart::create([
             'cashier_id' => $cashier->id,
@@ -71,19 +59,45 @@ class QrisCheckoutTest extends TestCase
                 'grand_total' => $cart->price,
                 'cash' => 0,
                 'change' => 0,
-                'payment_gateway' => 'qris',
+                'payment_gateway' => 'qris_1',
             ]);
 
         $transaction = Transaction::latest('id')->first();
 
         $response->assertRedirect(route('transactions.print', $transaction->invoice));
-        $this->assertSame('qris', $transaction->payment_method);
-        $this->assertSame('pending', $transaction->payment_status);
-        $this->assertSame('00020101021226610014ID.CO.QRIS.WWW', $transaction->qr_string);
-        $this->assertSame('TRX-QRIS', $transaction->payment_reference);
+        $this->assertSame('qris_1', $transaction->payment_method);
+        $this->assertSame('paid', $transaction->payment_status);
+        $this->assertNull($transaction->qr_string);
+        $this->assertNull($transaction->payment_reference);
+        Http::assertNothingSent();
+    }
 
-        Http::assertSent(fn ($request) => str_contains($request->url(), 'midtrans.com')
-            && ($request['enabled_payments'] ?? []) === ['qris', 'gopay', 'shopeepay']);
+    public function test_web_checkout_rejects_gateway_methods(): void
+    {
+        $cashier = $this->createCashier();
+        $this->openShiftFor($cashier);
+        $product = $this->createProduct();
+        Cart::create([
+            'cashier_id' => $cashier->id,
+            'product_id' => $product->id,
+            'qty' => 1,
+            'price' => $product->sell_price,
+        ]);
+
+        Http::fake();
+        $this->actingAs($cashier)
+            ->post(route('transactions.store'), [
+                'discount' => 0,
+                'grand_total' => $product->sell_price,
+                'cash' => 0,
+                'change' => 0,
+                'payment_gateway' => 'midtrans',
+            ])
+            ->assertRedirect(route('transactions.index'))
+            ->assertSessionHas('error');
+
+        $this->assertSame(0, Transaction::count());
+        Http::assertNothingSent();
     }
 
     public function test_status_endpoint_returns_payment_status(): void

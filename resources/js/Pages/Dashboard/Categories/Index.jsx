@@ -149,7 +149,7 @@ export default function Index({ categories }) {
                                 ? "bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400"
                                 : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                         }`}
-                        title="List View"
+                        title="Tampilan Daftar"
                     >
                         <IconList size={20} />
                     </button>
@@ -171,7 +171,7 @@ export default function Index({ categories }) {
                         ))}
                     </div>
                 ) : (
-                    /* List View */
+                    /* Tampilan Daftar */
                     <Table.Card title={"Data Kategori"}>
                         <Table>
                             <Table.Thead>

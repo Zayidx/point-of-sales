@@ -4,6 +4,7 @@ import Table from "@/Components/Dashboard/Table";
 import { Head, router } from "@inertiajs/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Chart from "chart.js/auto";
+import { crmStatusLabel } from "@/Utils/crmLabels";
 import {
     IconChartBar,
     IconClock,
@@ -103,9 +104,9 @@ const promoKindLabel = {
 
 const crmCampaignTypeLabel = {
     promo_broadcast: "Promo Broadcast",
-    invoice_share: "Invoice Share",
+    invoice_share: "Faktur Share",
     due_date_reminder: "Due Reminder",
-    repeat_order_reminder: "Repeat Order",
+    repeat_order_reminder: "Pembelian Ulang Order",
 };
 
 function SummaryCard({ title, value, description, icon: Icon, gradient }) {
@@ -179,7 +180,7 @@ export default function Insights({
     marginByProduct,
     marginByCategory,
     cashierPerformance,
-    repeatCustomerMetrics,
+    repeatCustomerMetriks,
     stockCoverage,
     promoMonitor,
     loyaltyPerformance,
@@ -330,8 +331,8 @@ export default function Insights({
 
     const marginRows =
         marginView === "product" ? marginByProduct : marginByCategory;
-    const repeatSummary = repeatCustomerMetrics?.summary || {};
-    const topRepeatCustomers = repeatCustomerMetrics?.top_customers || [];
+    const repeatSummary = repeatCustomerMetriks?.summary || {};
+    const topRepeatCustomers = repeatCustomerMetriks?.top_customers || [];
     const stockCoverageSummary = stockCoverage?.summary || {};
     const stockCoverageProducts = stockCoverage?.products || [];
     const promoSummary = promoMonitor?.summary || {};
@@ -345,7 +346,7 @@ export default function Insights({
 
     return (
         <>
-            <Head title="Advanced Sales Insights" />
+            <Head title="Wawasan Penjualan Lanjutan" />
 
             <div className="space-y-6">
                 <div
@@ -358,7 +359,7 @@ export default function Insights({
                                 size={28}
                                 className="text-primary-500"
                             />
-                            Advanced Sales Insights
+                            Wawasan Penjualan Lanjutan
                         </h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
                             Insight operasional penjualan, margin, produk, dan
@@ -374,7 +375,7 @@ export default function Insights({
                         }`}
                     >
                         <IconFilter size={18} />
-                        Filter
+                        Saring
                     </button>
                 </div>
 
@@ -387,7 +388,7 @@ export default function Insights({
                         gradient="from-primary-500 to-primary-700"
                     />
                     <SummaryCard
-                        title="Profit"
+                        title="Laba"
                         value={formatCurrency(summary?.profit_total ?? 0)}
                         description={`Rata-rata ${formatCurrency(summary?.average_order ?? 0)}`}
                         icon={IconCoin}
@@ -401,9 +402,9 @@ export default function Insights({
                         gradient="from-amber-500 to-amber-700"
                     />
                     <SummaryCard
-                        title="Kasir Aktif di Filter"
+                        title="Kasir Aktif pada Penyaringan"
                         value={cashierPerformance.length.toLocaleString("id-ID")}
-                        description="Leaderboard performa kasir"
+                        description="Peringkat performa kasir"
                         icon={IconUsers}
                         gradient="from-fuchsia-500 to-fuchsia-700"
                     />
@@ -500,13 +501,13 @@ export default function Insights({
 
                 <div data-tour="reports-table" className="grid gap-6 xl:grid-cols-2">
                     <ChartCard
-                        title="Sales by Hour"
-                        subtitle="Pola omzet per jam dari transaksi yang lolos filter."
+                        title="Penjualan per Jam"
+                        subtitle="Pola omzet per jam dari transaksi yang sesuai penyaringan."
                         chartRef={salesHourChartRef}
                         hasData={hourChartData.length > 0}
                     />
                     <ChartCard
-                        title="Sales by Day"
+                        title="Penjualan per Hari"
                         subtitle="Tren omzet harian pada periode aktif."
                         chartRef={salesDayChartRef}
                         hasData={dayChartData.length > 0}
@@ -515,21 +516,21 @@ export default function Insights({
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <SummaryCard
-                        title="Customer Aktif"
+                        title="Pelanggan Aktif"
                         value={(repeatSummary.active_customers ?? 0).toLocaleString("id-ID")}
                         description={`${repeatSummary.new_customers ?? 0} pelanggan baru`}
                         icon={IconUsers}
                         gradient="from-sky-500 to-sky-700"
                     />
                     <SummaryCard
-                        title="Repeat Rate"
+                        title="Tingkat Pembelian Ulang"
                         value={`${formatPercentage(repeatSummary.repeat_rate ?? 0)}%`}
-                        description={`${repeatSummary.repeat_customers ?? 0} pelanggan repeat`}
+                        description={`${repeatSummary.repeat_customers ?? 0} pelanggan yang kembali`}
                         icon={IconTrendingUp}
                         gradient="from-violet-500 to-violet-700"
                     />
                     <SummaryCard
-                        title="Member Revenue Share"
+                        title="Kontribusi Pendapatan Anggota"
                         value={`${formatPercentage(repeatSummary.member_revenue_share ?? 0)}%`}
                         description={formatCurrency(
                             repeatSummary.member_revenue_total ?? 0
@@ -549,7 +550,7 @@ export default function Insights({
                     />
                 </div>
 
-                <Table.Card title="Top Selling Products">
+                <Table.Card title="Produk Terlaris">
                     <Table>
                         <Table.Thead>
                             <tr>
@@ -557,7 +558,7 @@ export default function Insights({
                                 <Table.Th>Kategori</Table.Th>
                                 <Table.Th className="text-right">Qty</Table.Th>
                                 <Table.Th className="text-right">Omzet</Table.Th>
-                                <Table.Th className="text-right">Profit</Table.Th>
+                                <Table.Th className="text-right">Laba</Table.Th>
                             </tr>
                         </Table.Thead>
                         <Table.Tbody>
@@ -581,21 +582,21 @@ export default function Insights({
                                     </tr>
                                 ))
                             ) : (
-                                <Table.Empty colSpan={5} message="Belum ada data top selling pada periode ini." />
+                                <Table.Empty colSpan={5} message="Belum ada data produk terlaris pada periode ini." />
                             )}
                         </Table.Tbody>
                     </Table>
                 </Table.Card>
 
-                <Table.Card title="Low Performing Products">
+                <Table.Card title="Produk dengan Performa Rendah">
                     <Table>
                         <Table.Thead>
                             <tr>
                                 <Table.Th>Produk</Table.Th>
                                 <Table.Th>Stok</Table.Th>
-                                <Table.Th className="text-right">Qty Sold</Table.Th>
+                                <Table.Th className="text-right">Jumlah Terjual</Table.Th>
                                 <Table.Th className="text-right">Omzet</Table.Th>
-                                <Table.Th>Last Sold</Table.Th>
+                                <Table.Th>Terakhir Terjual</Table.Th>
                             </tr>
                         </Table.Thead>
                         <Table.Tbody>
@@ -658,7 +659,7 @@ export default function Insights({
                                 <Table.Th>{marginView === "product" ? "Produk" : "Kategori"}</Table.Th>
                                 <Table.Th className="text-right">Qty</Table.Th>
                                 <Table.Th className="text-right">Omzet</Table.Th>
-                                <Table.Th className="text-right">Profit</Table.Th>
+                                <Table.Th className="text-right">Laba</Table.Th>
                                 <Table.Th className="text-right">Margin %</Table.Th>
                             </tr>
                         </Table.Thead>
@@ -684,16 +685,16 @@ export default function Insights({
                     </Table>
                 </div>
 
-                <Table.Card title="Cashier Performance">
+                <Table.Card title="Performa Kasir">
                     <Table>
                         <Table.Thead>
                             <tr>
                                 <Table.Th>Kasir</Table.Th>
                                 <Table.Th className="text-right">Transaksi</Table.Th>
-                                <Table.Th className="text-right">Items Sold</Table.Th>
+                                <Table.Th className="text-right">Item Terjual</Table.Th>
                                 <Table.Th className="text-right">Omzet</Table.Th>
-                                <Table.Th className="text-right">Profit</Table.Th>
-                                <Table.Th className="text-right">Avg Basket</Table.Th>
+                                <Table.Th className="text-right">Laba</Table.Th>
+                                <Table.Th className="text-right">Rata-rata Belanja</Table.Th>
                             </tr>
                         </Table.Thead>
                         <Table.Tbody>
@@ -715,11 +716,11 @@ export default function Insights({
                     </Table>
                 </Table.Card>
 
-                <Table.Card title="Repeat Customer Metrics">
+                <Table.Card title="Metrik Pelanggan Berulang">
                     <div className="mb-4 grid gap-3 md:grid-cols-3">
                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Repeat Revenue
+                                Pendapatan Pembelian Ulang
                             </p>
                             <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">
                                 {formatCurrency(
@@ -729,7 +730,7 @@ export default function Insights({
                         </div>
                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Revenue Member
+                                Pendapatan Anggota
                             </p>
                             <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">
                                 {formatCurrency(
@@ -739,7 +740,7 @@ export default function Insights({
                         </div>
                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Revenue Non-Member
+                                Pendapatan Nonanggota
                             </p>
                             <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">
                                 {formatCurrency(
@@ -755,8 +756,8 @@ export default function Insights({
                                 <Table.Th>Status</Table.Th>
                                 <Table.Th className="text-right">Transaksi</Table.Th>
                                 <Table.Th className="text-right">Omzet</Table.Th>
-                                <Table.Th className="text-right">Avg Basket</Table.Th>
-                                <Table.Th>Last Purchase</Table.Th>
+                                <Table.Th className="text-right">Rata-rata Belanja</Table.Th>
+                                <Table.Th>Pembelian Terakhir</Table.Th>
                             </tr>
                         </Table.Thead>
                         <Table.Tbody>
@@ -786,7 +787,7 @@ export default function Insights({
                                                 }`}
                                             >
                                                 {item.is_loyalty_member
-                                                    ? "Member"
+                                                    ? "Anggota"
                                                     : "Non-member"}
                                             </span>
                                         </Table.Td>
@@ -807,14 +808,14 @@ export default function Insights({
                             ) : (
                                 <Table.Empty
                                     colSpan={6}
-                                    message="Belum ada pelanggan repeat pada periode ini."
+                                    message="Belum ada pelanggan yang kembali pada periode ini."
                                 />
                             )}
                         </Table.Tbody>
                     </Table>
                 </Table.Card>
 
-                <Table.Card title="Stock Coverage Analysis">
+                <Table.Card title="Analisis Cakupan Stok">
                     <div className="mb-4 grid gap-3 md:grid-cols-4">
                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -855,10 +856,10 @@ export default function Insights({
                                 <Table.Th>Produk</Table.Th>
                                 <Table.Th>Status</Table.Th>
                                 <Table.Th className="text-right">Stok</Table.Th>
-                                <Table.Th className="text-right">Qty Sold</Table.Th>
-                                <Table.Th className="text-right">Avg / Hari</Table.Th>
-                                <Table.Th className="text-right">Coverage</Table.Th>
-                                <Table.Th>Last Sold</Table.Th>
+                                <Table.Th className="text-right">Jumlah Terjual</Table.Th>
+                                <Table.Th className="text-right">Rata-rata per Hari</Table.Th>
+                                <Table.Th className="text-right">Cakupan Stok</Table.Th>
+                                <Table.Th>Terakhir Terjual</Table.Th>
                             </tr>
                         </Table.Thead>
                         <Table.Tbody>
@@ -926,7 +927,7 @@ export default function Insights({
                 </Table.Card>
 
                 <div className="grid gap-6 xl:grid-cols-2">
-                    <Table.Card title="Promo Active Monitor">
+                    <Table.Card title="Pemantauan Promo Aktif">
                         <div className="mb-4 grid gap-3 md:grid-cols-2">
                             <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
                                 <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -1058,11 +1059,11 @@ export default function Insights({
                         </div>
                     </Table.Card>
 
-                    <Table.Card title="Loyalty Performance Summary">
+                    <Table.Card title="Ringkasan Performa Loyalitas">
                         <div className="mb-4 grid gap-3 md:grid-cols-2">
                             <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
                                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                                    Total Member
+                                    Jumlah Anggota
                                 </p>
                                 <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">
                                     {(loyaltySummary.total_members ?? 0).toLocaleString("id-ID")}
@@ -1144,7 +1145,7 @@ export default function Insights({
                         <Table>
                             <Table.Thead>
                                 <tr>
-                                    <Table.Th>Member</Table.Th>
+                                    <Table.Th>Anggota</Table.Th>
                                     <Table.Th>Tier</Table.Th>
                                     <Table.Th className="text-right">Poin</Table.Th>
                                     <Table.Th className="text-right">Total Belanja</Table.Th>
@@ -1183,11 +1184,11 @@ export default function Insights({
                     </Table.Card>
                 </div>
 
-                <Table.Card title="CRM Operational Snapshot">
+                <Table.Card title="Ringkasan Operasional CRM">
                     <div className="mb-4 grid gap-3 md:grid-cols-4">
                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Segment Aktif
+                                Segmen Aktif
                             </p>
                             <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">
                                 {(crmSummary.segments_active ?? 0).toLocaleString("id-ID")}
@@ -1195,7 +1196,7 @@ export default function Insights({
                         </div>
                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Campaign Draft/Ready
+                                Kampanye Draf/Siap
                             </p>
                             <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">
                                 {(
@@ -1206,7 +1207,7 @@ export default function Insights({
                         </div>
                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Queue Ready
+                                Antrean Siap
                             </p>
                             <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">
                                 {(
@@ -1216,7 +1217,7 @@ export default function Insights({
                         </div>
                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Queue Sent
+                                Antrean Terkirim
                             </p>
                             <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">
                                 {(crmSummary.queue_sent ?? 0).toLocaleString(
@@ -1227,25 +1228,25 @@ export default function Insights({
                     </div>
                     <div className="mb-4 flex flex-wrap gap-2">
                         <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                            Manual Segment:{" "}
+                            Segmen Manual:{" "}
                             {Number(
                                 crmSummary.segments_manual ?? 0
                             ).toLocaleString("id-ID")}
                         </span>
                         <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                            Auto Segment:{" "}
+                            Segmen Otomatis:{" "}
                             {Number(
                                 crmSummary.segments_auto ?? 0
                             ).toLocaleString("id-ID")}
                         </span>
                         <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                            Memberships:{" "}
+                            Keanggotaan:{" "}
                             {Number(
                                 crmSummary.memberships_total ?? 0
                             ).toLocaleString("id-ID")}
                         </span>
                         <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                            Campaign Processed:{" "}
+                            Kampanye Diproses:{" "}
                             {Number(
                                 crmSummary.campaigns_processed ?? 0
                             ).toLocaleString("id-ID")}
@@ -1254,7 +1255,7 @@ export default function Insights({
                     <Table>
                         <Table.Thead>
                             <tr>
-                                <Table.Th>Campaign</Table.Th>
+                                <Table.Th>Kampanye</Table.Th>
                                 <Table.Th>Tipe</Table.Th>
                                 <Table.Th>Status</Table.Th>
                                 <Table.Th className="text-right">Target</Table.Th>
@@ -1271,7 +1272,7 @@ export default function Insights({
                                                 campaign.type
                                             ] || campaign.type}
                                         </Table.Td>
-                                        <Table.Td>{campaign.status}</Table.Td>
+                                        <Table.Td>{crmStatusLabel(campaign.status)}</Table.Td>
                                         <Table.Td className="text-right">
                                             {campaign.logs_count}
                                         </Table.Td>

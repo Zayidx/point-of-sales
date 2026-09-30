@@ -436,13 +436,13 @@ export default function Create({ categories, products, units = [] }) {
                                 />
                             </div>
 
-                            {/* Profit Estimation */}
+                            {/* Laba Estimation */}
                             {data.buy_price > 0 && data.sell_price > 0 && (
                                 <div className="mt-4 p-4 rounded-xl bg-success-50 dark:bg-success-950/30 border border-success-200 dark:border-success-900">
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-sm text-success-700 dark:text-success-400 font-medium">
-                                                Estimasi Profit per Item
+                                                Estimasi Laba per Item
                                             </p>
                                             <p className="text-2xl font-bold text-success-600 dark:text-success-500 mt-1">
                                                 + Rp{" "}

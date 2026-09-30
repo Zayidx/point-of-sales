@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DemoSeeder extends Seeder
 {
@@ -19,6 +21,9 @@ class DemoSeeder extends Seeder
             FeatureCoverageSeeder::class,
             FeatureDemoSeeder::class,
         ]);
+
+        User::whereIn('email', ['arya@gmail.com', 'manager@gmail.com', 'cashier@gmail.com'])
+            ->update(['password' => Hash::make('password')]);
 
         Setting::set('app_setup_completed', true);
 

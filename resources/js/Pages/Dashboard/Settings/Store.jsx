@@ -141,7 +141,7 @@ export default function Store({ settings }) {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Input
-                                    label="Email"
+                                    label="Alamat Email"
                                     type="email"
                                     value={data.store_email}
                                     errors={errors.store_email}

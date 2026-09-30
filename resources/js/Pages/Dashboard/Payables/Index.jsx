@@ -80,16 +80,16 @@ export default function PayablesIndex({ payables, filters = {}, suppliers = [] }
 
     return (
         <>
-            <Head title="Hutang Supplier" />
+            <Head title="Utang Pemasok" />
             <div className="space-y-6">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <IconClockHour6 size={26} className="text-primary-500" />
-                            Hutang Supplier
+                            Utang Pemasok
                         </h1>
                         <p className="text-sm text-slate-500">
-                            Catat dan lacak pembayaran hutang ke supplier.
+                            Catat dan lacak pembayaran utang kepada supplier.
                         </p>
                     </div>
                 </div>
@@ -101,7 +101,7 @@ export default function PayablesIndex({ payables, filters = {}, suppliers = [] }
                 >
                     <div>
                         <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Supplier
+                            Pemasok
                         </label>
                         <select
                             value={data.supplier_id}
@@ -199,7 +199,7 @@ export default function PayablesIndex({ payables, filters = {}, suppliers = [] }
                             onChange={(e) => setSupplierId(e.target.value)}
                             className="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
                         >
-                            <option value="">Semua Supplier</option>
+                            <option value="">Semua Pemasok</option>
                             {suppliers.map((s) => (
                                 <option key={s.id} value={s.id}>
                                     {s.name}
@@ -238,7 +238,7 @@ export default function PayablesIndex({ payables, filters = {}, suppliers = [] }
                         <div className="min-w-[720px]">
                             <div className="grid grid-cols-12 px-3 sm:px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                                 <div className="col-span-2">Dokumen</div>
-                                <div className="col-span-2">Supplier</div>
+                                <div className="col-span-2">Pemasok</div>
                                 <div className="col-span-2 text-right">Total</div>
                                 <div className="col-span-2 text-right">Sisa</div>
                                 <div className="col-span-2 text-right">Jatuh Tempo</div>
@@ -321,7 +321,7 @@ export default function PayablesIndex({ payables, filters = {}, suppliers = [] }
                                     <div className="grid grid-cols-2 gap-2 text-sm text-slate-600 dark:text-slate-300">
                                         <div>
                                             <p className="text-xs text-slate-500 dark:text-slate-400">
-                                                Supplier
+                                                Pemasok
                                             </p>
                                             <p className="font-medium">
                                                 {item.supplier?.name || "-"}

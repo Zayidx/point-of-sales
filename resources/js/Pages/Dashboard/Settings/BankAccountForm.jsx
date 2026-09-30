@@ -47,13 +47,13 @@ export default function BankAccountForm({ bankAccount = null }) {
 
     return (
         <>
-            <Head title={isEdit ? "Edit Rekening Bank" : "Tambah Rekening Bank"} />
+            <Head title={isEdit ? "Ubah Rekening Bank" : "Tambah Rekening Bank"} />
             <div className="max-w-3xl space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <IconBuildingBank size={28} className="text-primary-500" />
-                            {isEdit ? "Edit Rekening Bank" : "Tambah Rekening Bank"}
+                            {isEdit ? "Ubah Rekening Bank" : "Tambah Rekening Bank"}
                         </h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                             Masukkan detail rekening bank untuk pembayaran transfer.
@@ -140,7 +140,7 @@ export default function BankAccountForm({ bankAccount = null }) {
                             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
                         >
                             <IconCheck size={18} />
-                            {isEdit ? "Update" : "Simpan"}
+                            {isEdit ? "Perbarui" : "Simpan"}
                         </button>
                         <Link
                             href={route("settings.bank-accounts.index")}

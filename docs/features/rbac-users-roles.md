@@ -35,10 +35,12 @@ Setiap modul memakai permission sendiri, contohnya:
 `RoleSeeder` menyiapkan role berikut:
 
 - **`super-admin`** — bypass seluruh permission, akses semua outlet.
-- **`manager`** — akses operasional penuh lintas outlet yang ditugaskan (produk, stok, purchasing,
-  transaksi, laporan, CRM, diskon), **tanpa** administrasi `users`/`roles`/`permissions`/`outlets`
-  dan tanpa update kredensial payment gateway. Dibuat oleh `RoleSeeder::createManagerRole()`.
-- **`cashier`** — transaksi POS, buka/tutup shift, tambah pelanggan, bayar piutang/hutang, dan
+- **`manager`**: akses pantau dashboard, laporan, transaksi, stok, produksi, dan operasional untuk
+  cabang yang ditugaskan. Tidak dapat mengubah data atau membuka administrasi `users`/`roles`/
+  `permissions`/`outlets`. Dibuat oleh `RoleSeeder::createManagerRole()`.
+- **`finance`**: pembelian, persetujuan produksi, laporan keuangan, pembayaran utang, dan kas.
+- **`warehouse`**: stok bahan/menu, penerimaan, produksi, transfer, dan pengembalian cabang.
+- **`cashier`**: transaksi POS, buka/tutup shift, tambah pelanggan, bayar piutang/utang, dan
   memproses pesanan dine-in.
 - Role per modul lain (mis. `products-access`, `transactions-access`) dibuat otomatis dari pola
   permission.
@@ -47,7 +49,7 @@ Setiap modul memakai permission sendiri, contohnya:
 
 1. permission diseed di `PermissionSeeder`
 2. role disusun di `RoleSeeder`
-3. user admin dibuat melalui first-install setup wizard di `/setup`
+3. akun awal dibuat melalui `UserSeeder` saat `php artisan db:seed`
 4. route memakai middleware `permission:*`
 5. frontend membaca map permission dari `HandleInertiaRequests`
 
@@ -55,7 +57,8 @@ Setiap modul memakai permission sendiri, contohnya:
 
 - user `super-admin` mendapat role `super-admin`
 - backend memperlakukan role `super-admin` sebagai bypass permission yang konsisten untuk `can`, `canAny`, dan middleware Spatie
-- `UserSeeder` hanya digunakan untuk data demo/test, bukan oleh `DatabaseSeeder`
+- `DatabaseSeeder` menjalankan `DimsumWeiguSeeder` dan `UserSeeder` untuk data awal usaha serta akun
+  operasional (`manager@gmail.com`, `finance@gmail.com`, `warehouse@gmail.com`) dan empat akun kasir yang masing-masing dibatasi ke satu outlet (`cashier@gmail.com`, `cashier2@gmail.com`, `cashier3@gmail.com`, `cashier4@gmail.com`)
 - cache permission Spatie harus di-reset saat seeding agar permission baru terbaca konsisten
 - role lama `permission-access` dinormalisasi ke `permissions-access` saat seeding agar naming RBAC tidak ambigu
 

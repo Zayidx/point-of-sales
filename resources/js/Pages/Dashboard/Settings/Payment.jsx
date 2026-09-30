@@ -82,12 +82,12 @@ export default function Payment({
 
     return (
         <>
-            <Head title="Pengaturan Payment" />
+            <Head title="Pengaturan Pembayaran" />
 
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <IconCreditCard size={28} className="text-primary-500" />
-                    Pengaturan Payment Gateway
+                    Pengaturan Pembayaran Gateway
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     Konfigurasi metode pembayaran dan gateway
@@ -279,7 +279,7 @@ export default function Payment({
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                             <IconCreditCard size={18} />
-                            Xendit Invoice
+                            Xendit Faktur
                         </h3>
                         <label
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all ${

@@ -36,11 +36,11 @@ export default function Show({ segment, customers = [] }) {
                         <div className="mb-2 flex items-center gap-2">
                             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{segment.name}</h1>
                             <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                {segment.type}
+                                {segment.type === "auto" ? "Otomatis" : "Manual"}
                             </span>
                         </div>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            {segment.description || "Segment CRM customer"}
+                            {segment.description || "Segmen pelanggan CRM"}
                         </p>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-3">
@@ -53,7 +53,7 @@ export default function Show({ segment, customers = [] }) {
                             <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{segment.stats.manual_members}</p>
                         </div>
                         <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
-                            <p className="text-xs uppercase tracking-wide text-slate-500">Auto</p>
+                            <p className="text-xs uppercase tracking-wide text-slate-500">Otomatis</p>
                             <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{segment.stats.auto_members}</p>
                         </div>
                     </div>
@@ -62,13 +62,13 @@ export default function Show({ segment, customers = [] }) {
 
             <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                    <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Anggota Segment</h2>
+                    <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Anggota Segmen</h2>
                     <Table>
                         <Table.Thead>
                             <tr>
-                                <Table.Th>Customer</Table.Th>
-                                <Table.Th>Source</Table.Th>
-                                <Table.Th>Matched</Table.Th>
+                                <Table.Th>Pelanggan</Table.Th>
+                                <Table.Th>Sumber</Table.Th>
+                                <Table.Th>Terakhir Diperbarui</Table.Th>
                                 <Table.Th className="w-28 text-center">Aksi</Table.Th>
                             </tr>
                         </Table.Thead>
@@ -84,7 +84,7 @@ export default function Show({ segment, customers = [] }) {
                                                 {membership.customer?.no_telp || "-"}
                                             </p>
                                         </Table.Td>
-                                        <Table.Td>{membership.source}</Table.Td>
+                                        <Table.Td>{membership.source === "auto" ? "Otomatis" : "Manual"}</Table.Td>
                                         <Table.Td>{formatDateTime(membership.matched_at)}</Table.Td>
                                         <Table.Td className="text-center">
                                             {isManual && membership.customer ? (
@@ -114,17 +114,17 @@ export default function Show({ segment, customers = [] }) {
                 <div className="space-y-6">
                     {isManual && (
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                            <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Tambah Anggota Manual</h2>
+                    <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Tambah Anggota secara Manual</h2>
                             <form onSubmit={submit} className="space-y-4">
                                 <select
                                     value={data.customer_id}
                                     onChange={(event) => setData("customer_id", event.target.value)}
                                     className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                 >
-                                    <option value="">Pilih customer</option>
+                                    <option value="">Pilih pelanggan</option>
                                     {customers.map((customer) => (
                                         <option key={customer.id} value={customer.id}>
-                                            {customer.name} | {customer.no_telp || "-"} | {customer.is_loyalty_member ? customer.loyalty_tier : "non-member"}
+                                            {customer.name} | {customer.no_telp || "-"} | {customer.is_loyalty_member ? customer.loyalty_tier : "bukan anggota"}
                                         </option>
                                     ))}
                                 </select>
@@ -133,7 +133,7 @@ export default function Show({ segment, customers = [] }) {
                                     disabled={processing}
                                     className="w-full rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50"
                                 >
-                                    Tambahkan ke Segment
+                                    Tambahkan ke Segmen
                                 </button>
                             </form>
                         </div>
@@ -142,15 +142,15 @@ export default function Show({ segment, customers = [] }) {
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                         <div className="mb-4 flex items-center gap-2">
                             <IconUsersGroup size={18} className="text-primary-500" />
-                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Ringkasan Rule</h2>
+                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Ringkasan Aturan</h2>
                         </div>
                         <dl className="space-y-3 text-sm">
                             <div className="flex items-center justify-between gap-4">
-                                <dt className="text-slate-500">Slug</dt>
+                                <dt className="text-slate-500">Kode nama</dt>
                                 <dd className="font-medium text-slate-800 dark:text-slate-200">{segment.slug}</dd>
                             </div>
                             <div className="flex items-center justify-between gap-4">
-                                <dt className="text-slate-500">Rule Type</dt>
+                                <dt className="text-slate-500">Jenis Aturan</dt>
                                 <dd className="font-medium text-slate-800 dark:text-slate-200">{segment.auto_rule_type || "-"}</dd>
                             </div>
                             <div className="flex items-center justify-between gap-4">

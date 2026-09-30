@@ -151,7 +151,7 @@ export default function ReceivablesIndex({ receivables, filters = {} }) {
                                         </p>
                                     </div>
                                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Collection Rate</p>
+                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Tingkat Penagihan</p>
                                         <p className="mt-2 text-2xl font-bold text-primary-600">
                                             {agingData.collection_rate?.collection_rate || 0}%
                                         </p>
@@ -237,7 +237,7 @@ export default function ReceivablesIndex({ receivables, filters = {} }) {
                                 <input
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Cari invoice / nomor nota"
+                                    placeholder="Cari nomor nota"
                                     className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                 />
                             </div>
@@ -267,7 +267,7 @@ export default function ReceivablesIndex({ receivables, filters = {} }) {
                             <div className="w-full overflow-x-auto">
                                 <div className="min-w-[720px]">
                                     <div className="grid grid-cols-12 px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                                        <div className="col-span-2">Invoice</div>
+                                        <div className="col-span-2">Faktur</div>
                                         <div className="col-span-2">Pelanggan</div>
                                         <div className="col-span-2 text-right">Total</div>
                                         <div className="col-span-2 text-right">Sisa</div>

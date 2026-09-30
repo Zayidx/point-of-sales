@@ -14,7 +14,7 @@ const statusBadge = (status) => {
 export default function TransactionDetail({ transaction, token }) {
     return (
         <>
-            <Head title={`Invoice ${transaction.invoice}`} />
+            <Head title={`Faktur ${transaction.invoice}`} />
             <div className="min-h-screen bg-slate-50 py-8 px-4">
                 <div className="max-w-lg mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="bg-gradient-to-r from-primary-500 to-primary-700 px-6 py-5 text-white text-center">

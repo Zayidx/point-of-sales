@@ -3,7 +3,6 @@ import { Head, Link } from "@inertiajs/react";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef } from "react";
 import Chart from "chart.js/auto";
-import SetupChecklist from "@/Components/Dashboard/SetupChecklist";
 import {
     IconBox,
     IconCategory,
@@ -210,7 +209,10 @@ export default function Dashboard({
     topLocations = [],
     lowStockProducts = [],
     activeShifts = [],
-    setupChecklist = {},
+    canAccessTransactions = false,
+    canViewFinancialDashboard = false,
+    managerOperations = null,
+    accountingSummary = null,
 }) {
     const { t } = useTranslation();
     const chartRef = useRef(null);
@@ -310,7 +312,7 @@ export default function Dashboard({
 
     return (
         <>
-            <Head title="Dashboard" />
+            <Head title="Beranda" />
 
             <div className="space-y-6">
                 {/* Header */}
@@ -320,26 +322,25 @@ export default function Dashboard({
                 >
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                            Dashboard
+                            Beranda
                         </h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
                             Ringkasan aktivitas bisnis Anda
                         </p>
                     </div>
-                    <Link
-                        href={route("transactions.index")}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition-colors shadow-lg shadow-primary-500/30"
-                    >
-                        <IconShoppingCart size={18} />
-                        <span>Transaksi Baru</span>
-                    </Link>
+                    {canAccessTransactions && (
+                        <Link
+                            href={route("transactions.index")}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition-colors shadow-lg shadow-primary-500/30"
+                        >
+                            <IconShoppingCart size={18} />
+                            <span>Transaksi Baru</span>
+                        </Link>
+                    )}
                 </div>
 
-                {/* Setup Checklist */}
-                <SetupChecklist checklist={setupChecklist} />
-
                 {/* Main Stat Cards - Reorganized */}
-                <div
+                {canViewFinancialDashboard ? <div
                     data-tour="dashboard-stats"
                     className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
                 >
@@ -351,9 +352,9 @@ export default function Dashboard({
                         gradient="from-primary-500 to-primary-700"
                     />
                     <StatCard
-                        title="Profit Hari Ini"
+                        title="Laba Hari Ini"
                         value={formatCurrency(todayProfit)}
-                        subtitle="Profit bersih hari ini"
+                        subtitle="Laba bersih hari ini"
                         icon={IconTrendingUp}
                         gradient="from-success-500 to-success-700"
                         trend="up"
@@ -371,7 +372,72 @@ export default function Dashboard({
                         icon={IconClock}
                         gradient="from-warning-500 to-warning-600"
                     />
-                </div>
+                </div> : <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <StatCard title="Transaksi Hari Ini" value={todayTransactions} subtitle="Transaksi" icon={IconClock} gradient="from-warning-500 to-warning-600" />
+                </div>}
+
+                {canViewFinancialDashboard && managerOperations && <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                    <div>
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Ringkasan Operasional Bulan Ini</h2>
+                        <p className="mt-1 text-sm text-slate-500">Data mencakup seluruh cabang dan gudang yang dapat Anda akses.</p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <InfoCard title="Total pendapatan" value={formatCurrency(managerOperations.total_revenue)} icon={IconCoin} />
+                        <InfoCard title="Biaya operasional" value={formatCurrency(managerOperations.expenses)} icon={IconReceipt} />
+                        <InfoCard title="Laba kotor" value={formatCurrency(managerOperations.gross_profit)} icon={IconTrendingUp} />
+                        <InfoCard title="Nilai stok bahan baku" value={formatCurrency(managerOperations.inventory.ingredients.value)} subtitle={`${managerOperations.inventory.ingredients.quantity.toLocaleString("id-ID")} satuan dasar`} icon={IconBox} />
+                        <InfoCard title="Nilai stok produk jadi" value={formatCurrency(managerOperations.inventory.finished_goods.value)} subtitle={`${managerOperations.inventory.finished_goods.quantity.toLocaleString("id-ID")} unit`} icon={IconBox} />
+                        <InfoCard title="Biaya barang rusak" value={formatCurrency(managerOperations.waste_cost)} icon={IconPackageOff} />
+                        <InfoCard title="Selisih stok" value={`${managerOperations.stock_variance.toLocaleString("id-ID")} unit`} icon={IconAlertTriangle} />
+                        <InfoCard title="Selisih kas" value={formatCurrency(managerOperations.cash_variance)} icon={IconWallet} />
+                        <InfoCard title="Perintah produksi" value={managerOperations.production.orders} subtitle={`${managerOperations.production.actual_output.toLocaleString("id-ID")} unit dihasilkan`} icon={IconTarget} />
+                        <InfoCard title="Selisih produksi" value={`${(managerOperations.production.actual_output - managerOperations.production.planned_output).toLocaleString("id-ID")} unit`} subtitle="Hasil aktual dibanding target" icon={IconChartBar} />
+                        <InfoCard title="Kas gudang" value={formatCurrency(managerOperations.warehouse_cash)} icon={IconWallet} />
+                        <InfoCard title="Serah terima tertunda" value={managerOperations.pending_handovers.count} subtitle={formatCurrency(managerOperations.pending_handovers.amount)} icon={IconClock} />
+                    </div>
+                    <div className="grid gap-4 xl:grid-cols-2">
+                        <div className="rounded-xl border border-slate-100 p-4 dark:border-slate-800">
+                            <h3 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">Pendapatan per cabang</h3>
+                            <div className="space-y-2">{managerOperations.revenue_by_outlet.map((row) => <div key={row.warehouse_id} className="flex items-center justify-between gap-3 text-sm"><span className="truncate text-slate-600 dark:text-slate-300">{row.outlet}</span><span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(row.revenue)}</span></div>)}{managerOperations.revenue_by_outlet.length === 0 && <p className="text-sm text-slate-500">Belum ada transaksi bulan ini.</p>}</div>
+                        </div>
+                        <div className="rounded-xl border border-slate-100 p-4 dark:border-slate-800">
+                            <h3 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">Status penutupan cabang hari ini</h3>
+                            <div className="space-y-2">{managerOperations.outlet_closing.map((row) => <div key={row.outlet} className="flex items-center justify-between gap-3 text-sm"><span className="truncate text-slate-600 dark:text-slate-300">{row.outlet}</span><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${row.status === "closed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : row.status === "open" ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>{row.status === "closed" ? "Sudah ditutup" : row.status === "open" ? "Masih buka" : "Belum dibuka"}</span></div>)}{managerOperations.outlet_closing.length === 0 && <p className="text-sm text-slate-500">Tidak ada cabang dalam cakupan Anda.</p>}</div>
+                        </div>
+                    </div>
+                </section>}
+
+                {canViewFinancialDashboard && accountingSummary && <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                    <div>
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Ringkasan Keuangan Bulan Ini</h2>
+                        <p className="mt-1 text-sm text-slate-500">Pendapatan, pembelian, HPP, dan kas pada cabang dalam cakupan Anda.</p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <InfoCard title="Total pendapatan" value={formatCurrency(accountingSummary.revenue)} icon={IconCoin} />
+                        <InfoCard title="Penjualan tunai" value={formatCurrency(accountingSummary.cash_sales)} icon={IconWallet} />
+                        <InfoCard title="Penjualan QRIS" value={formatCurrency(accountingSummary.qris_sales)} icon={IconReceipt} />
+                        <InfoCard title="Penjualan GoFood / online" value={formatCurrency(accountingSummary.online_sales)} icon={IconShoppingCart} />
+                        <InfoCard title="Pembelian bahan" value={formatCurrency(accountingSummary.purchases)} icon={IconBox} />
+                        <InfoCard title="Harga pokok penjualan" value={formatCurrency(accountingSummary.cogs)} icon={IconReceipt} />
+                        <InfoCard title="Laba kotor" value={formatCurrency(accountingSummary.gross_profit)} icon={IconTrendingUp} />
+                        <InfoCard title="Biaya operasional" value={formatCurrency(accountingSummary.operational_expenses)} icon={IconMoneybag} />
+                        <InfoCard title="Biaya produk terbuang" value={formatCurrency(accountingSummary.waste_cost)} icon={IconPackageOff} />
+                        <InfoCard title="Kas gudang" value={formatCurrency(accountingSummary.warehouse_cash)} icon={IconWallet} />
+                        <InfoCard title="Kas menunggu serah terima" value={formatCurrency(accountingSummary.pending_handovers.amount)} subtitle={`${accountingSummary.pending_handovers.count} serah terima`} icon={IconClock} />
+                        <InfoCard title="Selisih stok" value={`${accountingSummary.stock_variance.toLocaleString("id-ID")} unit`} icon={IconAlertTriangle} />
+                        <InfoCard title="Selisih produksi" value={`${accountingSummary.production_variance.toLocaleString("id-ID")} unit`} icon={IconChartBar} />
+                    </div>
+                    <div className="grid gap-4 xl:grid-cols-2">
+                        <div className="rounded-xl border border-slate-100 p-4 dark:border-slate-800">
+                            <h3 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">Pendapatan per cabang</h3>
+                            <div className="space-y-2">{accountingSummary.revenue_by_outlet.map((row) => <div key={row.warehouse_id} className="flex items-center justify-between gap-3 text-sm"><span className="truncate text-slate-600 dark:text-slate-300">{row.outlet}</span><span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(row.revenue)}</span></div>)}{accountingSummary.revenue_by_outlet.length === 0 && <p className="text-sm text-slate-500">Belum ada penjualan lunas bulan ini.</p>}</div>
+                        </div>
+                        <div className="rounded-xl border border-slate-100 p-4 dark:border-slate-800">
+                            <h3 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">Persediaan</h3>
+                            <div className="space-y-3 text-sm"><div className="flex items-center justify-between gap-3"><span className="text-slate-600 dark:text-slate-300">Bahan baku</span><span className="font-semibold">{formatCurrency(accountingSummary.inventory.ingredients.value)}</span></div><div className="flex items-center justify-between gap-3"><span className="text-slate-600 dark:text-slate-300">Produk jadi</span><span className="font-semibold">{formatCurrency(accountingSummary.inventory.finished_goods.value)}</span></div></div>
+                        </div>
+                    </div>
+                </section>}
 
                 {/* Secondary Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -398,7 +464,7 @@ export default function Dashboard({
                 </div>
 
                 {/* Revenue Chart - Full Width */}
-                <ListCard
+                {canViewFinancialDashboard && <ListCard
                     data-tour="dashboard-chart"
                     title="Tren Pendapatan"
                     subtitle="12 data terakhir"
@@ -410,7 +476,7 @@ export default function Dashboard({
                             <canvas ref={chartRef} />
                         </div>
                     )}
-                </ListCard>
+                </ListCard>}
 
                 {/* 4-Column Bottom Widgets */}
                 <div
@@ -439,9 +505,9 @@ export default function Dashboard({
                                                     {shift.transactions_count} transaksi
                                                 </p>
                                             </div>
-                                            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                                            {canViewFinancialDashboard && <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
                                                 {formatCurrency(shift.expected_cash)}
-                                            </span>
+                                            </span>}
                                         </div>
                                     </div>
                                 ))}
@@ -452,7 +518,7 @@ export default function Dashboard({
                     {/* Top Products */}
                     <ListCard
                         title="Produk Terlaris"
-                        subtitle="Best seller"
+                        subtitle="Produk terlaris"
                         icon={IconBox}
                         emptyMessage="Belum ada data"
                     >
@@ -472,7 +538,7 @@ export default function Dashboard({
                                                     {product.name}
                                                 </p>
                                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                                    SKU: {product.sku || "-"}
+                                                    Kode SKU: {product.sku || "-"}
                                                 </p>
                                             </div>
                                         </div>
@@ -492,7 +558,7 @@ export default function Dashboard({
 
                     {/* Slow Moving Products */}
                     <ListCard
-                        title="Slow Moving"
+                        title="Produk Lambat Terjual"
                         subtitle="Tidak terjual 30 hari"
                         icon={IconPackageOff}
                         emptyMessage="Semua produk laku"
@@ -513,7 +579,7 @@ export default function Dashboard({
                                             </span>
                                         </div>
                                         <span className="text-xs text-warning-500 font-semibold">
-                                            {product.stock} pcs
+                                            {product.stock} buah
                                         </span>
                                     </li>
                                 ))}
@@ -524,7 +590,7 @@ export default function Dashboard({
                     {/* Top Customers */}
                     <ListCard
                         title="Pelanggan Terbaik"
-                        subtitle="Top spender"
+                        subtitle="Pelanggan dengan transaksi terbanyak"
                         icon={IconUsers}
                         emptyMessage="Belum ada data"
                     >
@@ -609,9 +675,9 @@ export default function Dashboard({
                                             {trx.date} • {trx.customer}
                                         </p>
                                     </div>
-                                    <p className="text-sm font-bold text-primary-600 dark:text-primary-400">
+                                    {canViewFinancialDashboard && <p className="text-sm font-bold text-primary-600 dark:text-primary-400">
                                         {formatCurrency(trx.total)}
-                                    </p>
+                                    </p>}
                                 </div>
                             ))}
                         </div>
@@ -642,7 +708,7 @@ export default function Dashboard({
                                         </span>
                                     </div>
                                     <span className="text-xs font-semibold text-rose-700 dark:text-rose-200">
-                                        {product.stock} pcs
+                                        {product.stock} buah
                                     </span>
                                 </div>
                             ))}

@@ -5,26 +5,28 @@ import Button from "@/Components/Dashboard/Button";
 import Table from "@/Components/Dashboard/Table";
 import { IconArrowLeft, IconBrandWhatsapp, IconChecks, IconPlayerPlay, IconPlayerStop } from "@tabler/icons-react";
 import toast from "react-hot-toast";
+import { crmStatusLabel, crmTypeLabel } from "@/Utils/crmLabels";
 
 const formatDateTime = (value) =>
     value
         ? new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
         : "-";
 
+
 export default function Show({ campaign }) {
     const processCampaign = () => {
         router.post(route("crm-campaigns.process", campaign.id), {}, {
             preserveScroll: true,
-            onSuccess: () => toast.success("Campaign berhasil diproses"),
-            onError: () => toast.error("Gagal memproses campaign"),
+            onSuccess: () => toast.success("Kampanye berhasil diproses"),
+            onError: () => toast.error("Gagal memproses kampanye"),
         });
     };
 
     const cancelCampaign = () => {
         router.post(route("crm-campaigns.cancel", campaign.id), {}, {
             preserveScroll: true,
-            onSuccess: () => toast.success("Campaign dibatalkan"),
-            onError: () => toast.error("Gagal membatalkan campaign"),
+            onSuccess: () => toast.success("Kampanye dibatalkan"),
+            onError: () => toast.error("Gagal membatalkan kampanye"),
         });
     };
 
@@ -40,7 +42,7 @@ export default function Show({ campaign }) {
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{campaign.name}</h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            {campaign.type} • status {campaign.status} • diproses {formatDateTime(campaign.processed_at)}
+                            {crmTypeLabel(campaign.type)} • status {crmStatusLabel(campaign.status)} • diproses {formatDateTime(campaign.processed_at)}
                         </p>
                     </div>
                     <div className="flex gap-2">
@@ -71,13 +73,13 @@ export default function Show({ campaign }) {
             <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
                 <div className="space-y-6">
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Delivery Logs</h2>
+                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Riwayat Pengiriman</h2>
                         <Table>
                             <Table.Thead>
                                 <tr>
-                                    <Table.Th>Customer</Table.Th>
+                                    <Table.Th>Pelanggan</Table.Th>
                                     <Table.Th>Status</Table.Th>
-                                    <Table.Th>Payload</Table.Th>
+                                    <Table.Th>Isi Pesan</Table.Th>
                                     <Table.Th className="w-36 text-center">Aksi</Table.Th>
                                 </tr>
                             </Table.Thead>
@@ -87,11 +89,11 @@ export default function Show({ campaign }) {
                                         <tr key={log.id}>
                                             <Table.Td>
                                                 <Link href={log.customer ? route("customers.show", log.customer.id) : "#"} className="font-semibold text-slate-800 hover:text-primary-600 dark:text-slate-100">
-                                                    {log.customer?.name || "Tanpa customer"}
+                                                    {log.customer?.name || "Tanpa pelanggan"}
                                                 </Link>
                                                 <p className="text-xs text-slate-500 dark:text-slate-400">{log.customer?.no_telp || "-"}</p>
                                             </Table.Td>
-                                            <Table.Td>{log.status}</Table.Td>
+                                            <Table.Td>{crmStatusLabel(log.status)}</Table.Td>
                                             <Table.Td>
                                                 <p className="line-clamp-2 text-sm text-slate-600 dark:text-slate-300">{log.payload?.message || "-"}</p>
                                             </Table.Td>
@@ -130,7 +132,7 @@ export default function Show({ campaign }) {
 
                 <div className="space-y-6">
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Audience Snapshot</h2>
+                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Ringkasan Penerima</h2>
                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
                             <pre className="overflow-x-auto whitespace-pre-wrap text-xs text-slate-600 dark:text-slate-300">
                                 {JSON.stringify(campaign.audience_snapshot || [], null, 2)}

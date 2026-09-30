@@ -35,7 +35,7 @@ const statusBadge = (status) => {
         cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400",
     };
     const labels = {
-        draft: "Draft",
+        draft: "Draf",
         completed: "Selesai",
         cancelled: "Dibatalkan",
     };
@@ -82,7 +82,7 @@ export default function Show({ return: ret }) {
                             {statusBadge(ret.status)}
                         </div>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Supplier: {ret.supplier?.name || "-"}
+                            Pemasok: {ret.supplier?.name || "-"}
                             &bull; Dibuat oleh {ret.creator?.name || "-"}
                             &bull; {formatDateTime(ret.created_at)}
                         </p>
@@ -197,7 +197,7 @@ export default function Show({ return: ret }) {
                             )}
                             {ret.payable && (
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Hutang Supplier</span>
+                                    <span className="text-slate-500">Utang Pemasok</span>
                                     <Link
                                         href={route("payables.show", ret.payable.id)}
                                         className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
@@ -207,7 +207,7 @@ export default function Show({ return: ret }) {
                                 </div>
                             )}
                             <div className="flex justify-between">
-                                <span className="text-slate-500">Supplier</span>
+                                <span className="text-slate-500">Pemasok</span>
                                 <span className="font-semibold text-slate-800 dark:text-white">{ret.supplier?.name || "-"}</span>
                             </div>
                             <div className="flex justify-between">

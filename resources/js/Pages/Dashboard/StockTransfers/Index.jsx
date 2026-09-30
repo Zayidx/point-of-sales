@@ -18,7 +18,7 @@ const statusBadge = (status) => {
         completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
         cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400",
     };
-    const labels = { draft: "Draft", in_transit: "In Transit", completed: "Selesai", cancelled: "Batal" };
+    const labels = { draft: "Draf", in_transit: "Dalam Pengiriman", completed: "Selesai", cancelled: "Dibatalkan" };
     return (
         <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${styles[status] || styles.draft}`}>
             {labels[status] || status}

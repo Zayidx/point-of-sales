@@ -36,7 +36,7 @@ export default function Form({ mode = "create", campaign = null, audienceOptions
 
     return (
         <>
-            <Head title={isEdit ? "Edit CRM Campaign" : "Buat CRM Campaign"} />
+            <Head title={isEdit ? "Ubah Kampanye CRM" : "Buat Kampanye CRM"} />
             <div className="w-full">
                 <div className="mb-6">
                     <Button
@@ -44,13 +44,13 @@ export default function Form({ mode = "create", campaign = null, audienceOptions
                         href={route("crm-campaigns.index")}
                         icon={<IconArrowLeft size={18} />}
                         className="mb-3 border-none bg-transparent px-0 text-slate-500 shadow-none hover:bg-transparent hover:text-primary-600 dark:text-slate-400"
-                        label="Kembali ke CRM campaigns"
+                        label="Kembali ke kampanye CRM"
                     />
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                        {isEdit ? "Edit CRM Campaign" : "Buat CRM Campaign"}
+                        {isEdit ? "Ubah Kampanye CRM" : "Buat Kampanye CRM"}
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Bangun audience dari segment dan siapkan campaign WhatsApp/manual follow-up.
+                        Pilih penerima dari segmen pelanggan dan siapkan pesan WhatsApp untuk tindak lanjut.
                     </p>
                 </div>
 
@@ -61,13 +61,13 @@ export default function Form({ mode = "create", campaign = null, audienceOptions
                                 <IconBroadcast size={22} />
                             </div>
                             <div>
-                                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Informasi Campaign</h2>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">Campaign disimpan sebagai draft dan dapat diproses menjadi audience nyata.</p>
+                                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Informasi Kampanye</h2>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Kampanye disimpan sebagai draf dan dapat diproses menjadi daftar penerima.</p>
                             </div>
                         </div>
                         <div className="grid gap-4 md:grid-cols-2">
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Nama Campaign</label>
+                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Nama Kampanye</label>
                                 <input
                                     type="text"
                                     value={data.name}
@@ -76,26 +76,26 @@ export default function Form({ mode = "create", campaign = null, audienceOptions
                                 />
                             </div>
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Tipe Campaign</label>
+                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Jenis Kampanye</label>
                                 <select
                                     value={data.type}
                                     onChange={(event) => setData("type", event.target.value)}
                                     className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                 >
-                                    <option value="promo_broadcast">Promo Broadcast</option>
-                                    <option value="due_date_reminder">Due Date Reminder</option>
-                                    <option value="repeat_order_reminder">Repeat Order Reminder</option>
+                                    <option value="promo_broadcast">Promosi</option>
+                                    <option value="due_date_reminder">Pengingat jatuh tempo</option>
+                                    <option value="repeat_order_reminder">Pengingat pemesanan ulang</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Channel</label>
+                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Saluran</label>
                                 <select
                                     value={data.channel}
                                     onChange={(event) => setData("channel", event.target.value)}
                                     className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                 >
-                                    <option value="internal">Internal</option>
-                                    <option value="whatsapp_link">WhatsApp Link</option>
+                                    <option value="internal">Di dalam sistem</option>
+                                    <option value="whatsapp_link">Tautan WhatsApp</option>
                                 </select>
                             </div>
                             <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
@@ -104,16 +104,16 @@ export default function Form({ mode = "create", campaign = null, audienceOptions
                                     checked={data.save_as_draft}
                                     onChange={(event) => setData("save_as_draft", event.target.checked)}
                                 />
-                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Simpan sebagai draft</span>
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Simpan sebagai draf</span>
                             </label>
                         </div>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Audience Builder</h2>
+                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Pilih Penerima</h2>
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="md:col-span-2">
-                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Segment Customer</label>
+                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Segmen Pelanggan</label>
                                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                                     {audienceOptions.segment_options.map((segment) => {
                                         const checked = data.audience_filters.segment_ids.includes(segment.value);
@@ -137,7 +137,7 @@ export default function Form({ mode = "create", campaign = null, audienceOptions
                             </div>
 
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Customer Type</label>
+                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Jenis Pelanggan</label>
                                 <select
                                     value={data.audience_filters.customer_type}
                                     onChange={(event) => setAudienceFilter("customer_type", event.target.value)}
@@ -161,7 +161,7 @@ export default function Form({ mode = "create", campaign = null, audienceOptions
                                 </select>
                             </div>
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Voucher Filter</label>
+                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Penyaring Voucher</label>
                                 <select
                                     value={data.audience_filters.voucher_filter}
                                     onChange={(event) => setAudienceFilter("voucher_filter", event.target.value)}
@@ -198,7 +198,7 @@ export default function Form({ mode = "create", campaign = null, audienceOptions
                             className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-500 px-5 py-2.5 font-medium text-white hover:bg-primary-600 disabled:opacity-50"
                         >
                             <IconDeviceFloppy size={18} />
-                            {processing ? "Menyimpan..." : "Simpan Campaign"}
+                            {processing ? "Menyimpan..." : "Simpan Kampanye"}
                         </button>
                     </div>
                 </form>

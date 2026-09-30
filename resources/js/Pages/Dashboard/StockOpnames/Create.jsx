@@ -17,13 +17,13 @@ export default function Create({ warehouses = [] }) {
         event.preventDefault();
 
         post(route("stock-opnames.store"), {
-            onError: () => toast.error("Gagal membuat sesi stock opname"),
+            onError: () => toast.error("Gagal membuat sesi opname stok"),
         });
     };
 
     return (
         <>
-            <Head title="Buat Stock Opname" />
+            <Head title="Buat Opname Stok" />
 
             <div className="mb-6">
                 <Link
@@ -31,11 +31,11 @@ export default function Create({ warehouses = [] }) {
                     className="mb-3 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary-600"
                 >
                     <IconArrowLeft size={16} />
-                    Kembali ke daftar stock opname
+                    Kembali ke daftar opname stok
                 </Link>
                 <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
                     <IconClipboardCheck size={28} className="text-primary-500" />
-                    Buat Sesi Stock Opname
+                    Buat Sesi Opname Stok
                 </h1>
             </div>
 

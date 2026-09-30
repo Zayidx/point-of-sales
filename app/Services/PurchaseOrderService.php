@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\Ingredient;
+use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PurchaseOrderService
 {
@@ -31,6 +34,10 @@ class PurchaseOrderService
     public function createOrder(array $data, array $items, int $userId): PurchaseOrder
     {
         $warehouseId = $data['warehouse_id'] ?? null;
+        if (! $warehouseId && collect($items)->contains(fn (array $item) => ($item['item_type'] ?? 'product') === 'ingredient')) {
+            throw ValidationException::withMessages(['warehouse_id' => 'Tujuan gudang wajib dipilih untuk pembelian bahan baku.']);
+        }
+
         if ($warehouseId) {
             $user = User::findOrFail($userId);
             $warehouse = Warehouse::findOrFail($warehouseId);
@@ -48,9 +55,22 @@ class PurchaseOrderService
             ]);
 
             foreach ($items as $item) {
+                $itemType = $item['item_type'] ?? 'product';
+                $productId = $itemType === 'product' ? (int) ($item['product_id'] ?? 0) : null;
+                $ingredientId = $itemType === 'ingredient' ? (int) ($item['ingredient_id'] ?? 0) : null;
+                if (($productId && $ingredientId) || (! $productId && ! $ingredientId)) {
+                    throw ValidationException::withMessages(['items' => 'Pilih tepat satu produk atau bahan baku untuk setiap item PO.']);
+                }
+                if ($productId) {
+                    Product::findOrFail($productId);
+                } else {
+                    Ingredient::whereKey($ingredientId)->where('is_active', true)->firstOrFail();
+                }
+
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $order->id,
-                    'product_id' => $item['product_id'],
+                    'product_id' => $productId,
+                    'ingredient_id' => $ingredientId,
                     'qty_ordered' => $item['qty_ordered'],
                     'qty_received' => 0,
                     'unit_price' => $item['unit_price'],
@@ -84,6 +104,18 @@ class PurchaseOrderService
                 'status' => 'ordered',
                 'ordered_at' => now(),
             ]);
+
+            if ($order->warehouse_id) {
+                app(OperationalNotificationService::class)->notifyWarehouseUsers(
+                    event: 'purchase.sent_to_warehouse',
+                    idempotencyKey: 'purchase-order:'.$order->id.':sent',
+                    title: 'Pembelian dikirim ke gudang',
+                    body: 'PO '.$order->document_number.' siap diterima di gudang.',
+                    url: '/goods-receivings/create?purchase_order_id='.$order->id,
+                    warehouseId: (int) $order->warehouse_id,
+                    permissions: ['goods-receivings-create', 'goods-receivings-access'],
+                );
+            }
 
             $this->auditLogService->log(
                 event: 'purchase_order.ordered',

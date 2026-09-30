@@ -82,7 +82,7 @@ export default function AgingIndex() {
                             <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/30">
                                 <IconTruck size={20} className="text-rose-500" />
                             </div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Hutang</p>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Utang</p>
                         </div>
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">
                             {formatCurrency(payableTotalOutstanding)}
@@ -108,7 +108,7 @@ export default function AgingIndex() {
                             <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30">
                                 <IconAlertTriangle size={20} className="text-amber-500" />
                             </div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Hutang Overdue</p>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Utang Jatuh Tempo</p>
                         </div>
                         <p className="text-2xl font-bold text-amber-600">
                             {formatCurrency(
@@ -124,7 +124,7 @@ export default function AgingIndex() {
                             <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/30">
                                 <IconReceipt size={20} className="text-rose-500" />
                             </div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Piutang Overdue</p>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Piutang Jatuh Tempo</p>
                         </div>
                         <p className="text-2xl font-bold text-rose-600">
                             {formatCurrency(
@@ -142,7 +142,7 @@ export default function AgingIndex() {
                         <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
                             <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                                 <IconTruck size={20} className="text-rose-500" />
-                                Aging Hutang Supplier
+                                Umur Utang Pemasok
                             </h2>
                         </div>
                         <div className="p-5">

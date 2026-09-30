@@ -42,7 +42,7 @@ export default function ReceivableShow({ receivable, bankAccounts = [] }) {
         if (flash?.error) toast.error(flash.error);
     }, [flash]);
 
-    const shareText = `Invoice ${receivable.invoice} - Total ${formatCurrency(
+    const shareText = `Faktur ${receivable.invoice} - Total ${formatCurrency(
         receivable.total
     )} - Sisa ${formatCurrency(receivable.remaining)}`;
 
@@ -129,7 +129,7 @@ export default function ReceivableShow({ receivable, bankAccounts = [] }) {
                             Kembali
                         </Link>
                         <div>
-                            <p className="text-xs text-slate-500">Invoice</p>
+                            <p className="text-xs text-slate-500">Faktur</p>
                             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                                 {receivable.invoice}
                             </h1>
@@ -147,7 +147,7 @@ export default function ReceivableShow({ receivable, bankAccounts = [] }) {
                                 className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
                             >
                                 <IconBrandWhatsapp size={18} />
-                                Campaign WA
+                                Kampanye WhatsApp
                             </Link>
                         )}
                         <a
@@ -261,7 +261,7 @@ export default function ReceivableShow({ receivable, bankAccounts = [] }) {
                         </p>
                         <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
                             <div className="flex justify-between">
-                                <span>Invoice</span>
+                                <span>Faktur</span>
                                 <span className="font-semibold text-slate-800 dark:text-white">
                                     {receivable.invoice}
                                 </span>
@@ -488,7 +488,7 @@ export default function ReceivableShow({ receivable, bankAccounts = [] }) {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-xs text-slate-500">Invoice</p>
+                                        <p className="text-xs text-slate-500">Faktur</p>
                                         <p className="text-lg font-bold text-slate-900 dark:text-white">
                                             {receivable.invoice}
                                         </p>

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\GoodsReceiving;
 use App\Models\GoodsReceivingItem;
+use App\Models\Ingredient;
 use App\Models\Payable;
 use App\Models\ProductBatch;
 use App\Models\ProductWarehouse;
@@ -20,7 +21,8 @@ class GoodsReceivingService
     public function __construct(
         private readonly StockMutationService $stockMutationService,
         private readonly AuditLogService $auditLogService,
-        private readonly OutletAccessService $outletAccessService
+        private readonly OutletAccessService $outletAccessService,
+        private readonly InventoryLedgerService $inventoryLedgerService
     ) {}
 
     public function generateDocumentNumber(): string
@@ -35,13 +37,37 @@ class GoodsReceivingService
         return $prefix.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
     }
 
-    public function receive(PurchaseOrder $order, array $items, ?string $notes, int $userId): GoodsReceiving
+    public function receive(PurchaseOrder $order, array $items, ?string $notes, int $userId, string $requestKey): GoodsReceiving
     {
+        $normalizedItems = collect($items)->map(fn (array $item) => [
+            'purchase_order_item_id' => (int) $item['purchase_order_item_id'],
+            'qty_received' => (string) $item['qty_received'],
+            'qty_accepted' => (string) ($item['qty_accepted'] ?? $item['qty_received']),
+            'qc_status' => $item['qc_status'] ?? 'good',
+            'condition_notes' => $item['condition_notes'] ?? null,
+            'notes' => $item['notes'] ?? null,
+            'proof_hash' => $item['proof_hash'] ?? null,
+        ])->sortBy('purchase_order_item_id')->values()->all();
+        $payloadHash = hash('sha256', json_encode([
+            'purchase_order_id' => $order->id,
+            'notes' => $notes,
+            'items' => $normalizedItems,
+        ], JSON_THROW_ON_ERROR));
+
         // ponytail: retry only on document_number unique collisions (concurrent receipts pick the same next number)
-        return retry(3, function () use ($order, $items, $notes, $userId) {
-            return DB::transaction(function () use ($order, $items, $notes, $userId) {
+        return retry(3, function () use ($order, $items, $notes, $userId, $requestKey, $payloadHash) {
+            return DB::transaction(function () use ($order, $items, $notes, $userId, $requestKey, $payloadHash) {
                 // ponytail: lock the order + its items so concurrent receipts cannot double-consume the same PO item
                 $order = PurchaseOrder::with('items')->whereKey($order->id)->lockForUpdate()->firstOrFail();
+                $existing = GoodsReceiving::where('request_key', $requestKey)->first();
+                if ($existing) {
+                    if ($existing->payload_hash !== $payloadHash || (int) $existing->purchase_order_id !== (int) $order->id) {
+                        throw ValidationException::withMessages(['request_key' => 'Kunci penerimaan sudah digunakan untuk pengiriman berbeda.']);
+                    }
+
+                    return $existing;
+                }
+
                 $user = User::findOrFail($userId);
                 $warehouse = $order->warehouse_id ? Warehouse::findOrFail($order->warehouse_id) : null;
                 abort_unless($this->outletAccessService->canUseWarehouse($user, $warehouse), 403);
@@ -54,6 +80,8 @@ class GoodsReceivingService
 
                 $receiving = GoodsReceiving::create([
                     'purchase_order_id' => $order->id,
+                    'request_key' => $requestKey,
+                    'payload_hash' => $payloadHash,
                     'supplier_id' => $order->supplier_id,
                     'warehouse_id' => $order->warehouse_id,
                     'document_number' => $this->generateDocumentNumber(),
@@ -69,35 +97,80 @@ class GoodsReceivingService
                             'items' => 'Item tidak ditemukan di PO.',
                         ]);
                     }
-                    $qtyReceived = (int) $item['qty_received'];
+                    $qtyReceived = (float) $item['qty_received'];
+                    $qtySent = (float) $item['qty_sent'];
+                    $qtyAccepted = (float) ($item['qty_accepted'] ?? $qtyReceived);
 
                     $outstanding = $poItem->qty_ordered - $poItem->qty_received;
-                    if ($qtyReceived > $outstanding) {
+                    if ($qtySent > $outstanding || $qtyReceived > $outstanding || $qtyReceived > $qtySent) {
                         throw ValidationException::withMessages([
                             'items' => "Qty diterima melebihi sisa item {$poItem->product_id}.",
                         ]);
+                    }
+
+                    if ($qtyAccepted < 0 || $qtyAccepted > $qtyReceived) {
+                        throw ValidationException::withMessages(['items' => 'Jumlah lolos QC harus berada di antara nol dan jumlah diterima.']);
+                    }
+                    if ($poItem->product_id && (floor($qtyReceived) !== $qtyReceived || floor($qtyAccepted) !== $qtyAccepted)) {
+                        throw ValidationException::withMessages(['items' => 'Jumlah produk jadi harus berupa bilangan bulat.']);
                     }
 
                     GoodsReceivingItem::create([
                         'goods_receiving_id' => $receiving->id,
                         'purchase_order_item_id' => $poItem->id,
                         'product_id' => $poItem->product_id,
+                        'ingredient_id' => $poItem->ingredient_id,
                         'qty_received' => $qtyReceived,
+                        'qty_sent' => $qtySent,
+                        'qty_accepted' => $qtyAccepted,
                         'notes' => $item['notes'] ?? null,
+                        'qc_status' => $item['qc_status'] ?? 'good',
+                        'condition_notes' => $item['condition_notes'] ?? null,
+                        'proof_path' => $item['proof_path'] ?? null,
                     ]);
 
                     $poItem->increment('qty_received', $qtyReceived);
 
+                    if ($qtyAccepted <= 0) {
+                        continue;
+                    }
+
+                    if ($poItem->ingredient_id) {
+                        if (! $order->warehouse_id) {
+                            throw ValidationException::withMessages(['warehouse_id' => 'Penerimaan bahan baku harus memiliki tujuan gudang.']);
+                        }
+
+                        $ingredient = Ingredient::with('baseUnit')->findOrFail($poItem->ingredient_id);
+                        $this->inventoryLedgerService->record([
+                            'idempotency_key' => "goods-receiving:{$receiving->id}:ingredient:{$ingredient->id}:po-item:{$poItem->id}",
+                            'item_type' => 'ingredient',
+                            'item_id' => $ingredient->id,
+                            'location_type' => 'warehouse',
+                            'location_id' => (int) $order->warehouse_id,
+                            'movement_type' => 'purchase_receipt',
+                            'quantity' => (string) $qtyAccepted,
+                            'unit_id' => $ingredient->base_unit_id,
+                            'unit_cost' => (string) $poItem->unit_price,
+                            'reference_type' => GoodsReceiving::class,
+                            'reference_id' => $receiving->id,
+                            'reference_number' => $receiving->document_number,
+                            'notes' => $item['notes'] ?? 'Penerimaan bahan baku dari PO '.$order->document_number,
+                            'created_by' => $userId,
+                        ]);
+
+                        continue;
+                    }
+
                     $product = $poItem->product;
                     $stockBefore = (int) $product->stock;
                     // Increment legacy stock
-                    $product->increment('stock', $qtyReceived);
+                    $product->increment('stock', (int) $qtyAccepted);
                     // Increment warehouse pivot stock
                     if ($order->warehouse_id) {
                         ProductWarehouse::firstOrCreate(
                             ['product_id' => $product->id, 'warehouse_id' => $order->warehouse_id],
                             ['stock' => 0]
-                        )->increment('stock', $qtyReceived);
+                        )->increment('stock', (int) $qtyAccepted);
                     }
 
                     // Create batch record
@@ -108,18 +181,34 @@ class GoodsReceivingService
                             'batch_number' => $item['batch_number'],
                             'expired_at' => $item['expired_at'] ?? null,
                             'received_at' => now(),
-                            'stock' => $qtyReceived,
+                            'stock' => (int) $qtyAccepted,
                         ]);
                     }
 
                     $this->stockMutationService->recordPurchaseInbound(
                         product: $product,
                         goodsReceiving: $receiving,
-                        qty: $qtyReceived,
+                        qty: (int) $qtyAccepted,
                         stockBefore: $stockBefore,
                         stockAfter: (int) $product->stock,
                         notes: 'Penerimaan dari PO '.$order->document_number,
                         userId: $userId,
+                    );
+                }
+
+                $hasDiscrepancy = collect($items)->contains(fn (array $item) => (float) $item['qty_sent'] !== (float) $item['qty_received']
+                    || (float) ($item['qty_accepted'] ?? $item['qty_received']) !== (float) $item['qty_received']
+                    || ($item['qc_status'] ?? 'good') !== 'good'
+                );
+                if ($hasDiscrepancy && $order->warehouse_id) {
+                    app(OperationalNotificationService::class)->notifyWarehouseUsers(
+                        event: 'goods_receipt.discrepancy',
+                        idempotencyKey: 'goods-receiving:'.$receiving->id.':discrepancy',
+                        title: 'Ada selisih penerimaan barang',
+                        body: 'Penerimaan '.$receiving->document_number.' memerlukan tindak lanjut.',
+                        url: '/goods-receivings/'.$receiving->id,
+                        warehouseId: (int) $order->warehouse_id,
+                        permissions: ['purchase-orders-access', 'goods-receivings-access'],
                     );
                 }
 
@@ -165,24 +254,28 @@ class GoodsReceivingService
 
     private function createOrUpdatePayable(PurchaseOrder $order, GoodsReceiving $receiving, int $userId): void
     {
-        $total = $receiving->items()->sum(\DB::raw('qty_received * (SELECT unit_price FROM purchase_order_items WHERE id = goods_receiving_items.purchase_order_item_id)'));
+        $total = GoodsReceivingItem::query()
+            ->join('goods_receivings', 'goods_receivings.id', '=', 'goods_receiving_items.goods_receiving_id')
+            ->join('purchase_order_items', 'purchase_order_items.id', '=', 'goods_receiving_items.purchase_order_item_id')
+            ->where('goods_receivings.purchase_order_id', $order->id)
+            ->sum(\DB::raw('goods_receiving_items.qty_accepted * purchase_order_items.unit_price'));
 
         if ($total <= 0) {
-            $total = $order->items()->sum(\DB::raw('qty_ordered * unit_price'));
+            return;
         }
 
-        $payable = Payable::updateOrCreate(
-            ['purchase_order_id' => $order->id],
-            [
-                'supplier_id' => $order->supplier_id,
-                'document_number' => $receiving->document_number,
-                'total' => $total,
-                'paid' => 0,
-                'due_date' => now()->addDays(30),
-                'status' => 'unpaid',
-                'note' => 'Otomatis dari penerimaan PO '.$order->document_number,
-            ]
-        );
+        $payable = Payable::firstOrNew(['purchase_order_id' => $order->id]);
+        $paid = (int) ($payable->paid ?? 0);
+        $payable->fill([
+            'supplier_id' => $order->supplier_id,
+            'document_number' => $receiving->document_number,
+            'total' => $total,
+            'paid' => $paid,
+            'due_date' => now()->addDays(30),
+            'status' => $paid >= $total ? 'paid' : 'unpaid',
+            'note' => 'Otomatis dari penerimaan PO '.$order->document_number,
+        ]);
+        $payable->save();
 
         if ($payable->wasRecentlyCreated) {
             $this->auditLogService->log(

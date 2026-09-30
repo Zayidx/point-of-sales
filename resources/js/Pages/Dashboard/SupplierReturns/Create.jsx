@@ -112,7 +112,7 @@ export default function Create({ suppliers, goodsReceivings, products }) {
 
     return (
         <>
-            <Head title="Buat Retur Supplier" />
+            <Head title="Buat Retur Pemasok" />
             <div className="mb-6">
                 <Link
                     href={route("supplier-returns.index")}
@@ -123,7 +123,7 @@ export default function Create({ suppliers, goodsReceivings, products }) {
                 </Link>
                 <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
                     <IconTruckReturn size={28} className="text-primary-500" />
-                    Buat Retur Supplier
+                    Buat Retur Pemasok
                 </h1>
             </div>
 
@@ -133,7 +133,7 @@ export default function Create({ suppliers, goodsReceivings, products }) {
                         <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Informasi Retur</h2>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <div>
-                                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">Supplier</label>
+                                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">Pemasok</label>
                                 <select
                                     value={data.supplier_id}
                                     onChange={(e) => {
@@ -142,7 +142,7 @@ export default function Create({ suppliers, goodsReceivings, products }) {
                                     }}
                                     className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                 >
-                                    <option value="">Pilih Supplier</option>
+                                    <option value="">Pilih Pemasok</option>
                                     {suppliers.map((s) => (
                                         <option key={s.id} value={s.id}>{s.name}</option>
                                     ))}

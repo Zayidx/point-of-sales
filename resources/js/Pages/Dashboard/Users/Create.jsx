@@ -122,7 +122,7 @@ export default function Create() {
                             />
                             <Input
                                 type="email"
-                                label="Email"
+                                label="Alamat Email"
                                 placeholder="email@example.com"
                                 value={data.email}
                                 onChange={(e) =>
@@ -157,7 +157,7 @@ export default function Create() {
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                        <h3 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">Outlet yang Diizinkan</h3>
+                        <h3 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">Cabang yang Diizinkan</h3>
                         <div className="space-y-3">
                             {outlets.map((outlet) => (
                                 <label key={outlet.id} className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
@@ -167,7 +167,7 @@ export default function Create() {
                             ))}
                         </div>
                         <select className="mt-4 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm dark:border-slate-700 dark:bg-slate-800" value={data.default_outlet_id ?? ""} onChange={(event) => setData("default_outlet_id", event.target.value ? Number(event.target.value) : null)}>
-                            <option value="">Outlet default (opsional)</option>
+                            <option value="">Cabang utama (opsional)</option>
                             {outlets.map((outlet) => <option key={outlet.id} value={outlet.id}>{outlet.name}</option>)}
                         </select>
                     </div>

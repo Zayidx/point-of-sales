@@ -2,16 +2,19 @@
 
 namespace App\Imports;
 
+use App\Imports\Concerns\CollectsImportFailures;
 use App\Models\Category;
 use App\Models\Product;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\ToModel;
-use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 
-class ProductsImport implements ToModel, WithBatchInserts, WithChunkReading, WithHeadingRow, WithValidation
+class ProductsImport implements SkipsOnFailure, ToModel, WithChunkReading, WithHeadingRow, WithValidation
 {
+    use CollectsImportFailures;
+
     private int $rowCount = 0;
 
     public function model(array $row)
@@ -25,22 +28,21 @@ class ProductsImport implements ToModel, WithBatchInserts, WithChunkReading, Wit
 
         $barcode = (string) ($row['barcode'] ?? '');
 
-        return Product::updateOrCreate(
-            ['barcode' => $barcode],
-            [
-                'sku' => $row['sku'] ?? $barcode,
-                'title' => $row['nama'] ?? '',
-                'description' => $row['deskripsi'] ?? '',
-                'category_id' => $category->id,
-                'buy_price' => (int) ($row['harga_beli'] ?? 0),
-                'sell_price' => (int) ($row['harga_jual'] ?? 0),
-                'stock' => (int) ($row['stok'] ?? 0),
-                'min_stock' => (int) ($row['min_stok'] ?? 0),
-                'max_stock' => (int) ($row['max_stok'] ?? 0),
-                'tax_type' => $row['tipe_pajak'] ?? 'exclusive',
-                'tax_rate' => (float) ($row['tarif_pajak'] ?? 11.00),
-            ]
-        );
+        $product = Product::where('barcode', $barcode)->first() ?? new Product(['barcode' => $barcode, 'stock' => 0]);
+        $product->fill([
+            'sku' => $row['sku'] ?? $barcode,
+            'title' => $row['nama'] ?? '',
+            'description' => $row['deskripsi'] ?? '',
+            'category_id' => $category->id,
+            'buy_price' => (int) ($row['harga_beli'] ?? 0),
+            'sell_price' => (int) ($row['harga_jual'] ?? 0),
+            'min_stock' => (int) ($row['min_stok'] ?? 0),
+            'max_stock' => (int) ($row['max_stok'] ?? 0),
+            'tax_type' => $row['tipe_pajak'] ?? 'exclusive',
+            'tax_rate' => (float) ($row['tarif_pajak'] ?? 11.00),
+        ]);
+
+        return $product;
     }
 
     public function rules(): array
@@ -60,11 +62,6 @@ class ProductsImport implements ToModel, WithBatchInserts, WithChunkReading, Wit
             'barcode.unique' => 'Barcode sudah terdaftar.',
             'nama.required' => 'Nama produk wajib diisi.',
         ];
-    }
-
-    public function batchSize(): int
-    {
-        return 100;
     }
 
     public function chunkSize(): int

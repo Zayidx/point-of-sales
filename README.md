@@ -100,14 +100,14 @@ php artisan storage:link
 composer run dev
 
 # Setelah server berjalan, buka http://localhost:8000.
-# Pada instalasi pertama, aplikasi otomatis mengarahkan ke /setup.
+# Instalasi membuat profil Dimsum Weigu, outlet, gudang, kategori, dan akun awal melalui seeder.
 
 # WhatsApp Gateway (opsional) — untuk kirim WA otomatis
 cd whatsapp-service
 npm install && npm start
 ```
 
-Tidak ada akun default. Setelah `migrate --seed`, buka root aplikasi (`http://localhost:8000`); pada instalasi pertama aplikasi otomatis mengarahkan ke `/setup` untuk membuat akun admin dan profil toko.
+Setelah `migrate --seed`, buka root aplikasi (`http://localhost:8000`). Akun kasir dibuat terpisah per cabang: `cashier@gmail.com` untuk Galaxy BP, `cashier2@gmail.com` untuk Galaxy Hermina, `cashier3@gmail.com` untuk Pekayon Jaya, dan `cashier4@gmail.com` untuk Jalan Raya Pekayon (semua kata sandi awal `cashier123`). Akun lainnya: `manager@gmail.com` / `manager123`, `finance@gmail.com` / `finance123`, dan `warehouse@gmail.com` / `warehouse123`. Akun super-admin awal menggunakan `arya@gmail.com` / `password`; ubah kredensial tersebut di environment (`SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD`) sebelum seeding pada lingkungan yang dapat diakses publik.
 Ingin langsung mencoba dengan data contoh? Jalankan `php artisan seed:demo --force`. Seeder ini membuat dataset demo lengkap (outlet `MAL`/`TKB`/`PUT`, produk, transaksi, purchasing, CRM, dine-in) beserta tiga akun siap pakai — lihat `docs/demo-data.md`.
 
 ## Dokumentasi Detail
@@ -119,6 +119,7 @@ Ingin langsung mencoba dengan data contoh? Jalankan `php artisan seed:demo --for
 | `docs/configuration.md` | Konfigurasi environment, payment, pajak, printer, WhatsApp |
 | `docs/architecture-overview.md` | Arsitektur, middleware, service layer, Node service |
 | `docs/feature-index.md` | Indeks semua modul (44 fitur) |
+| `docs/backup-and-restore.md` | Backup database, retensi, dan panduan pemulihan |
 
 ## REST API (OpenAPI)
 

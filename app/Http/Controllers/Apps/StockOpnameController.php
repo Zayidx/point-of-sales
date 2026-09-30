@@ -13,6 +13,8 @@ use App\Models\StockOpname;
 use App\Models\StockOpnameItem;
 use App\Models\Warehouse;
 use App\Services\AuditLogService;
+use App\Services\InventoryLedgerService;
+use App\Services\OperationalNotificationService;
 use App\Services\OutletAccessService;
 use App\Services\StockMutationService;
 use Illuminate\Http\RedirectResponse;
@@ -28,7 +30,8 @@ class StockOpnameController extends Controller
     public function __construct(
         private readonly StockMutationService $stockMutationService,
         private readonly AuditLogService $auditLogService,
-        private readonly OutletAccessService $outletAccessService
+        private readonly OutletAccessService $outletAccessService,
+        private readonly InventoryLedgerService $inventoryLedgerService
     ) {}
 
     public function index(Request $request): Response
@@ -253,6 +256,36 @@ class StockOpnameController extends Controller
 
                     $stockBefore = (int) ($before?->stock ?? 0);
 
+                    $baseUnit = $product->baseUnit();
+                    if ($baseUnit && $stockAfter !== $stockBefore) {
+                        $this->inventoryLedgerService->ensureProductOpeningBalance(
+                            $product,
+                            (int) $stockOpname->warehouse_id,
+                            $request->user()?->id,
+                        );
+                        $balance = DB::table('inventory_balances')
+                            ->where('balance_key', "warehouse:{$stockOpname->warehouse_id}:product:{$product->id}")
+                            ->lockForUpdate()
+                            ->first();
+
+                        $this->inventoryLedgerService->record([
+                            'idempotency_key' => "stock-opname:{$stockOpname->id}:product:{$product->id}",
+                            'item_type' => 'product',
+                            'item_id' => $product->id,
+                            'location_type' => 'warehouse',
+                            'location_id' => (int) $stockOpname->warehouse_id,
+                            'movement_type' => 'stock_adjustment',
+                            'quantity' => (string) ($stockAfter - $stockBefore),
+                            'unit_id' => $baseUnit->id,
+                            'unit_cost' => (string) ($balance?->average_unit_cost ?? $product->buy_price),
+                            'reference_type' => StockOpname::class,
+                            'reference_id' => $stockOpname->id,
+                            'reference_number' => $stockOpname->code,
+                            'notes' => $item->adjustment_reason,
+                            'created_by' => $request->user()?->id,
+                        ]);
+                    }
+
                     ProductWarehouse::updateOrCreate(
                         ['product_id' => $product->id, 'warehouse_id' => $stockOpname->warehouse_id],
                         ['stock' => $stockAfter]
@@ -305,6 +338,19 @@ class StockOpnameController extends Controller
                 ])->values()->all(),
             ],
         );
+
+        $totalVariance = (int) $stockOpname->items->sum(fn (StockOpnameItem $item) => abs((int) ($item->difference ?? 0)));
+        if ($totalVariance > 0 && $stockOpname->warehouse_id) {
+            app(OperationalNotificationService::class)->notifyWarehouseUsers(
+                event: 'stock.variance',
+                idempotencyKey: 'stock-opname:'.$stockOpname->id.':variance',
+                title: 'Ada selisih pada stock opname',
+                body: 'Stock opname '.$stockOpname->code.' mencatat total selisih '.$totalVariance.' unit.',
+                url: '/stock-opnames/'.$stockOpname->id,
+                warehouseId: (int) $stockOpname->warehouse_id,
+                permissions: ['stock-opnames-access'],
+            );
+        }
 
         return back()->with('success', 'Stock opname berhasil difinalisasi.');
     }

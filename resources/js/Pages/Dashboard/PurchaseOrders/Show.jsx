@@ -39,7 +39,7 @@ const statusBadge = (status) => {
         cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400",
     };
     const labels = {
-        draft: "Draft",
+        draft: "Draf",
         ordered: "Dipesan",
         partial_received: "Sebagian Diterima",
         completed: "Selesai",
@@ -92,7 +92,7 @@ export default function Show({ order }) {
                             {statusBadge(order.status)}
                         </div>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Supplier: {order.supplier?.name || "-"} &bull; Dibuat oleh {order.creator?.name || "-"} &bull; {formatDateTime(order.created_at)}
+                            Pemasok: {order.supplier?.name || "-"} &bull; Dibuat oleh {order.creator?.name || "-"} &bull; {formatDateTime(order.created_at)}
                         </p>
                         {order.ordered_at && (
                             <p className="text-sm text-slate-500">Dipesan: {formatDateTime(order.ordered_at)}</p>
@@ -104,7 +104,7 @@ export default function Show({ order }) {
                                 type="button"
                                 icon={<IconCheck size={18} />}
                                 className="bg-primary-500 hover:bg-primary-600 text-white"
-                                label="Pesan ke Supplier"
+                                label="Kirim ke Pemasok"
                                 onClick={placeOrder}
                             />
                         )}
@@ -134,7 +134,7 @@ export default function Show({ order }) {
                 <div className="space-y-6">
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                         <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-                            Item Purchase Order
+                                Barang Pesanan Pembelian
                         </h2>
                         <Table>
                             <Table.Thead>
@@ -155,9 +155,9 @@ export default function Show({ order }) {
                                             <tr key={item.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                                 <Table.Td>
                                                     <p className="font-medium text-slate-800 dark:text-slate-200">
-                                                        {item.product?.title || "Produk #" + item.product_id}
+                                                        {item.product?.title || item.ingredient?.name || "Item"}
                                                     </p>
-                                                    <p className="text-xs text-slate-500">{item.product?.sku || "-"}</p>
+                                                    <p className="text-xs text-slate-500">{item.product?.sku || item.ingredient?.code || "-"}</p>
                                                 </Table.Td>
                                                 <Table.Td>{item.qty_ordered}</Table.Td>
                                                 <Table.Td>{item.qty_received}</Table.Td>
@@ -230,7 +230,7 @@ export default function Show({ order }) {
 
                     {order.payable && (
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                            <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Hutang Supplier</h2>
+                            <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Utang Pemasok</h2>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-slate-500">Dokumen</span>
@@ -248,7 +248,7 @@ export default function Show({ order }) {
                                     href={route("payables.show", order.payable.id)}
                                     className="mt-3 inline-flex text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
                                 >
-                                    Lihat Detail Hutang &rarr;
+                                    Lihat Detail Utang &rarr;
                                 </Link>
                             </div>
                         </div>
@@ -260,10 +260,10 @@ export default function Show({ order }) {
                             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
                                 <p className="font-medium text-slate-700 dark:text-slate-200">Alur PO</p>
                                 <ul className="mt-2 space-y-2">
-                                    <li>1. Buat PO dengan status Draft.</li>
-                                    <li>2. Pesan ke supplier untuk mengubah status menjadi Ordered.</li>
+                                    <li>1. Buat pesanan pembelian dengan status draf.</li>
+                                    <li>2. Pesan ke pemasok untuk mengubah status menjadi Dipesan.</li>
                                     <li>3. Terima barang melalui menu Terima Barang.</li>
-                                    <li>4. Hutang supplier akan otomatis tercatat.</li>
+                                    <li>4. Utang pemasok akan otomatis tercatat.</li>
                                 </ul>
                             </div>
                         </div>

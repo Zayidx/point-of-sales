@@ -18,17 +18,18 @@ class SeedDemoCommandTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_system_seeder_is_production_safe(): void
+    public function test_system_seeder_installs_the_business_and_initial_accounts(): void
     {
         $this->seed(DatabaseSeeder::class);
 
-        $this->assertSame(1, Outlet::count());
-        $this->assertSame(1, Warehouse::count());
+        $this->assertSame(5, Outlet::count());
+        $this->assertSame(5, Warehouse::count());
         $this->assertSame('PUSAT', Warehouse::first()->code);
         $this->assertFalse((bool) Outlet::first()->is_sales_enabled);
-        $this->assertNull(User::where('email', 'arya@gmail.com')->first());
+        $this->assertNotNull(User::where('email', 'arya@gmail.com')->first());
+        $this->assertNotNull(User::where('email', 'manager@gmail.com')->first());
         $this->assertSame(0, Product::count());
-        $this->assertFalse(Setting::getBool('app_setup_completed'));
+        $this->assertTrue(Setting::getBool('app_setup_completed'));
     }
 
     public function test_seed_demo_force_regenerates_full_demo_dataset(): void

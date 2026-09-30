@@ -150,7 +150,7 @@ export default function Units({ units = [] }) {
                 {showForm && (
                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 space-y-4">
                         <h3 className="font-semibold text-slate-800 dark:text-white">
-                            {editing ? "Edit Satuan" : "Tambah Satuan Baru"}
+                            {editing ? "Ubah Satuan" : "Tambah Satuan Baru"}
                         </h3>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -181,7 +181,7 @@ export default function Units({ units = [] }) {
                                     type="submit"
                                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold transition-colors"
                                 >
-                                    {editing ? "Update" : "Simpan"}
+                                    {editing ? "Perbarui" : "Simpan"}
                                 </button>
                                 <button
                                     type="button"

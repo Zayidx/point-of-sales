@@ -22,7 +22,7 @@ class DineOrderService
     public function accept(DineOrder $order): void
     {
         $cashierId = $order->cashier_id ?? auth()->id();
-        $shift = CashierShift::with('warehouse.outlet')
+        $shift = CashierShift::with(['warehouse.outlet', 'outlet'])
             ->where('user_id', $cashierId)
             ->open()
             ->first();
@@ -44,7 +44,7 @@ class DineOrderService
                 ->firstOrFail();
 
             $tableOutletId = $order->table?->area?->outlet_id;
-            $shiftOutletId = $shift->warehouse?->outlet_id;
+            $shiftOutletId = $shift->outlet_id ?? $shift->warehouse?->outlet_id;
 
             if ($tableOutletId && $shiftOutletId && $tableOutletId !== $shiftOutletId) {
                 throw ValidationException::withMessages([
@@ -59,6 +59,7 @@ class DineOrderService
                 'cashier_id' => $userId,
                 'cashier_shift_id' => $shift->id,
                 'warehouse_id' => $warehouseId,
+                'outlet_id' => $shiftOutletId,
                 'customer_id' => $order->customer_id,
                 'invoice' => 'TRX-'.strtoupper(Str::random(10)),
                 'cash' => 0,

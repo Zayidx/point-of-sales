@@ -47,7 +47,7 @@ export default function Form({ mode = "create", segment = null }) {
 
     return (
         <>
-            <Head title={isEdit ? "Edit Segment Customer" : "Buat Segment Customer"} />
+            <Head title={isEdit ? "Ubah Segmen Pelanggan" : "Buat Segmen Pelanggan"} />
 
             <div className="w-full">
                 <div className="mb-6">
@@ -56,13 +56,13 @@ export default function Form({ mode = "create", segment = null }) {
                         href={route("customer-segments.index")}
                         icon={<IconArrowLeft size={18} />}
                         className="mb-3 border-none bg-transparent px-0 text-slate-500 shadow-none hover:bg-transparent hover:text-primary-600 dark:text-slate-400"
-                        label="Kembali ke segment customer"
+                        label="Kembali ke segmen pelanggan"
                     />
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                        {isEdit ? "Edit Segment Customer" : "Buat Segment Customer"}
+                        {isEdit ? "Ubah Segmen Pelanggan" : "Buat Segmen Pelanggan"}
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Kelompokkan customer secara manual atau otomatis berdasarkan perilaku bisnis.
+                        Kelompokkan pelanggan secara manual atau otomatis berdasarkan perilaku bisnis.
                     </p>
                 </div>
 
@@ -74,10 +74,10 @@ export default function Form({ mode = "create", segment = null }) {
                             </div>
                             <div>
                                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                                    Informasi Segment
+                                    Informasi Segmen
                                 </h2>
                                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                                    Segment manual bisa diatur per customer, segment otomatis dihitung oleh sistem.
+                                    Segmen manual dapat diatur per pelanggan, sedangkan segmen otomatis dihitung oleh sistem.
                                 </p>
                             </div>
                         </div>
@@ -85,7 +85,7 @@ export default function Form({ mode = "create", segment = null }) {
                         <div className="grid gap-4 md:grid-cols-2">
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Nama Segment
+                                    Nama Segmen
                                 </label>
                                 <input
                                     type="text"
@@ -97,15 +97,15 @@ export default function Form({ mode = "create", segment = null }) {
                             </div>
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Tipe Segment
+                                    Jenis Segmen
                                 </label>
                                 <select
                                     value={data.type}
                                     onChange={(event) => setData("type", event.target.value)}
                                     className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                 >
-                                    <option value="manual">Manual Tag</option>
-                                    <option value="auto">Auto Segment</option>
+                                    <option value="manual">Label manual</option>
+                                    <option value="auto">Segmen otomatis</option>
                                 </select>
                             </div>
                             <div className="md:col-span-2">
@@ -126,7 +126,7 @@ export default function Form({ mode = "create", segment = null }) {
                                     onChange={(event) => setData("is_active", event.target.checked)}
                                 />
                                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Segment aktif
+                                    Segmen aktif
                                 </span>
                             </label>
                         </div>
@@ -135,21 +135,21 @@ export default function Form({ mode = "create", segment = null }) {
                     {data.type === "auto" && (
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                             <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-                                Rule Auto Segment
+                                Aturan Segmen Otomatis
                             </h2>
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                        Rule Type
+                                        Jenis Aturan
                                     </label>
                                     <select
                                         value={data.auto_rule_type}
                                         onChange={(event) => setData("auto_rule_type", event.target.value)}
                                         className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                     >
-                                        <option value="spending">Spending</option>
-                                        <option value="purchase_frequency">Purchase Frequency</option>
-                                        <option value="receivable_behavior">Receivable Behavior</option>
+                                        <option value="spending">Nilai belanja</option>
+                                        <option value="purchase_frequency">Frekuensi pembelian</option>
+                                        <option value="receivable_behavior">Riwayat pembayaran piutang</option>
                                     </select>
                                 </div>
 
@@ -249,7 +249,7 @@ export default function Form({ mode = "create", segment = null }) {
                             className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-500 px-5 py-2.5 font-medium text-white hover:bg-primary-600 disabled:opacity-50"
                         >
                             <IconDeviceFloppy size={18} />
-                            {processing ? "Menyimpan..." : "Simpan Segment"}
+                            {processing ? "Menyimpan..." : "Simpan Segmen"}
                         </button>
                     </div>
                 </form>

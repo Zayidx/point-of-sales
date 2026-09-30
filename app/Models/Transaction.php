@@ -21,6 +21,7 @@ class Transaction extends Model
         'cashier_id',
         'cashier_shift_id',
         'warehouse_id',
+        'outlet_id',
         'customer_id',
         'invoice',
         'client_uuid',
@@ -56,6 +57,7 @@ class Transaction extends Model
 
     protected $casts = [
         'cashier_id' => 'integer',
+        'outlet_id' => 'integer',
         'cashier_shift_id' => 'integer',
         'customer_id' => 'integer',
         'created_at' => 'datetime',
@@ -108,6 +110,11 @@ class Transaction extends Model
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class);
     }
 
     /**

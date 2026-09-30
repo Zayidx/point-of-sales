@@ -100,6 +100,8 @@ jobs:
             [ "$NPM_OK" = "1" ] || { echo "❌ npm ci/build failed after 3 attempts"; exit 1; }
 
             echo "==> Laravel housekeeping"
+            echo "==> Database backup before migrations"
+            sudo -u deploy php8.4 artisan backup:database
             sudo -u deploy php8.4 artisan migrate --force
             sudo -u deploy php8.4 artisan config:clear
             sudo -u deploy php8.4 artisan view:clear

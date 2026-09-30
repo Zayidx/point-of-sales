@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductWarehouse;
 use App\Models\StockMutation;
 use App\Models\StockTransfer;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\StockTransferService;
@@ -186,6 +187,39 @@ class StockTransferIntegrityTest extends TestCase
         $this->assertEquals($this->destination->id, $mutation->warehouse_id);
         $this->assertEquals(40, $mutation->stock_before);
         $this->assertEquals(50, $mutation->stock_after);
+    }
+
+    public function test_finished_goods_transfer_keeps_ledger_and_legacy_balances_in_sync(): void
+    {
+        $product = $this->createProduct(50, 0);
+        $unit = Unit::create(['name' => 'Pcs', 'code' => 'ST-PCS-'.self::$seq, 'symbol' => 'pcs']);
+        $product->units()->attach($unit->id, [
+            'is_base' => true,
+            'conversion_factor' => 1,
+            'buy_price' => 10000,
+            'sell_price' => 15000,
+        ]);
+        $transfer = $this->createDraft($product, 10);
+
+        app(StockTransferService::class)->send($transfer, $this->admin->id);
+        app(StockTransferService::class)->receive($transfer->fresh(), $this->admin->id);
+
+        $this->assertDatabaseHas('inventory_balances', [
+            'balance_key' => "warehouse:{$this->source->id}:product:{$product->id}",
+            'quantity' => '40.0000',
+        ]);
+        $this->assertDatabaseHas('inventory_balances', [
+            'balance_key' => "warehouse:{$this->destination->id}:product:{$product->id}",
+            'quantity' => '10.0000',
+        ]);
+        $this->assertDatabaseHas('inventory_ledgers', [
+            'idempotency_key' => "stock-transfer:{$transfer->id}:item:{$transfer->items->first()->id}:out",
+            'quantity' => '-10.0000',
+        ]);
+        $this->assertDatabaseHas('inventory_ledgers', [
+            'idempotency_key' => "stock-transfer:{$transfer->id}:item:{$transfer->items->first()->id}:in",
+            'quantity' => '10.0000',
+        ]);
     }
 
     public function test_double_receive_is_rejected(): void

@@ -22,7 +22,14 @@ class OutletController extends Controller
     public function index(): Response
     {
         $outlets = $this->outletAccessService->accessibleOutlets(request()->user())
-            ->load(['warehouses' => fn ($query) => $query->orderBy('sort_order')->orderBy('code')]);
+            ->load([
+                'warehouses' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')->orderBy('code'),
+                'sharedWarehouses' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')->orderBy('code'),
+            ]);
+        $outlets->each(fn (Outlet $outlet) => $outlet->setRelation(
+            'warehouses',
+            $outlet->warehouses->merge($outlet->sharedWarehouses)->unique('id')->values(),
+        ));
 
         return Inertia::render('Dashboard/Settings/Outlets/Index', ['outlets' => $outlets]);
     }
@@ -111,6 +118,13 @@ class OutletController extends Controller
 
     private function hasOperationalHistory(Outlet $outlet): bool
     {
+        foreach (['transactions', 'cashier_shifts'] as $table) {
+            if (Schema::hasTable($table) && Schema::hasColumn($table, 'outlet_id')
+                && DB::table($table)->where('outlet_id', $outlet->id)->exists()) {
+                return true;
+            }
+        }
+
         $warehouseIds = $outlet->warehouses()->pluck('id');
         if ($warehouseIds->isEmpty()) {
             return false;
@@ -135,7 +149,10 @@ class OutletController extends Controller
     private function hasOpenShift(Outlet $outlet): bool
     {
         return DB::table('cashier_shifts')
-            ->whereIn('warehouse_id', $outlet->warehouses()->pluck('id'))
+            ->where(function ($query) use ($outlet) {
+                $query->where('outlet_id', $outlet->id)
+                    ->orWhereIn('warehouse_id', $outlet->warehouses()->pluck('id'));
+            })
             ->where('status', 'open')
             ->exists();
     }

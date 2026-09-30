@@ -2,34 +2,34 @@
     "common": {
         "buttons": {
             "add": "Tambah",
-            "edit": "Edit",
+            "edit": "Ubah",
             "delete": "Hapus",
             "save": "Simpan",
             "cancel": "Batal",
             "close": "Tutup",
-            "submit": "Submit",
+            "submit": "Kirim",
             "back": "Kembali",
-            "next": "Next",
+            "next": "Selanjutnya",
             "confirm": "Konfirmasi",
-            "export": "Export",
-            "import": "Import",
+            "export": "Ekspor",
+            "import": "Impor",
             "print": "Cetak",
             "search": "Cari",
-            "filter": "Filter",
-            "reset": "Reset",
+            "filter": "Saring",
+            "reset": "Atur Ulang",
             "selectAll": "Pilih Semua",
             "view": "Lihat",
-            "download": "Download",
-            "upload": "Upload",
+            "download": "Unduh",
+            "upload": "Unggah",
             "send": "Kirim",
             "approve": "Setujui",
             "deny": "Tolak",
             "retry": "Coba Lagi",
             "selectFile": "Pilih File",
-            "downloadTemplate": "Download Template"
+            "downloadTemplate": "Unduh Templat"
         },
         "labels": {
-            "no": "No",
+            "no": "Nomor",
             "action": "Aksi",
             "status": "Status",
             "date": "Tanggal",
@@ -55,7 +55,7 @@
             "error": "Gagal",
             "warning": "Peringatan",
             "info": "Info",
-            "quantity": "Qty",
+            "quantity": "Kuantitas",
             "price": "Harga",
             "amount": "Jumlah",
             "discount": "Diskon",
@@ -106,14 +106,14 @@
             "namePlaceholder": "Contoh: Toko Berkah Jaya",
             "address": "Alamat",
             "phone": "Telepon",
-            "email": "Email"
+            "email": "Alamat Email"
         },
         "businessType": {
             "hint": "Pilih jenis usaha Anda — kami akan menyiapkan kategori produk yang sesuai",
             "food": "Makanan & Minuman",
-            "retail": "Retail",
+            "retail": "Eceran",
             "grocery": "Grosir & Sembako",
-            "fashion": "Fashion",
+            "fashion": "Busana",
             "pharmacy": "Apotek",
             "services": "Jasa"
         },
@@ -121,7 +121,7 @@
             "food": {
                 "food": "Makanan",
                 "beverages": "Minuman",
-                "snacks": "Snack",
+                "snacks": "Camilan",
                 "coffeeTea": "Kopi & Teh"
             },
             "retail": {
@@ -133,8 +133,8 @@
             "grocery": {
                 "staples": "Sembako",
                 "produce": "Sayur & Buah",
-                "meatSeafood": "Daging & Seafood",
-                "snacks": "Snack"
+                "meatSeafood": "Daging & Makanan Laut",
+                "snacks": "Camilan"
             },
             "fashion": {
                 "clothing": "Pakaian",
@@ -186,8 +186,8 @@
         "passwordHint": "Minimal 8 karakter",
         "back": "Kembali",
         "next": "Lanjut",
-        "finish": "Selesaikan Setup",
-        "completed": "Setup selesai! Silakan masuk dengan akun yang Anda buat.",
+        "finish": "Selesaikan Pengaturan Awal",
+        "completed": "Pengaturan awal selesai! Silakan masuk dengan akun yang telah dibuat.",
         "required": "Bagian ini wajib diisi",
         "duplicateCode": "Kode sudah digunakan"
     },
@@ -195,14 +195,14 @@
         "login": {
             "title": "Masuk",
             "subtitle": "Selamat Datang Kembali",
-            "description": "Masuk untuk mengakses dashboard Anda",
+            "description": "Masuk untuk mengakses dasbor Anda",
             "appName": "Aplikasi Kasir",
-            "email": "Email",
+            "email": "Alamat Email",
             "emailPlaceholder": "nama@email.com",
-            "password": "Password",
+            "password": "Kata Sandi",
             "passwordPlaceholder": "••••••••",
             "remember": "Ingat saya",
-            "forgotPassword": "Lupa Password?",
+            "forgotPassword": "Lupa kata sandi?",
             "submit": "Masuk",
             "submitting": "Memproses...",
             "noAccount": "Belum punya akun?",
@@ -216,22 +216,22 @@
             "title": "Daftar",
             "subtitle": "Buat Akun Baru",
             "name": "Nama Lengkap",
-            "email": "Email",
-            "password": "Password",
-            "confirmPassword": "Konfirmasi Password",
+            "email": "Alamat Email",
+            "password": "Kata Sandi",
+            "confirmPassword": "Konfirmasi Kata Sandi",
             "submit": "Daftar Sekarang",
             "submitting": "Memproses...",
             "hasAccount": "Sudah punya akun?",
             "loginHere": "Masuk disini"
         },
         "forgotPassword": {
-            "title": "Lupa Password",
-            "subtitle": "Reset Password Anda",
-            "email": "Email",
-            "submit": "Kirim Link Reset",
+            "title": "Lupa Kata Sandi",
+            "subtitle": "Atur ulang kata sandi Anda",
+            "email": "Alamat Email",
+            "submit": "Kirim Tautan",
             "submitting": "Mengirim...",
             "back": "Kembali",
-            "sentMessage": "Link reset password telah dikirim ke email Anda"
+            "sentMessage": "Tautan pengaturan ulang kata sandi telah dikirim ke alamat email Anda"
         },
         "hero": {
             "title": "Kelola Bisnis Anda dengan Mudah",
@@ -245,118 +245,126 @@
     },
     "sidebar": {
         "sections": {
-            "overview": "Overview",
-            "masterData": "Master Data",
+            "overview": "Ringkasan",
+            "masterData": "Data Utama",
             "sales": "Penjualan",
-            "approval": "Approval",
-            "inventory": "Inventori",
+            "approval": "Persetujuan",
+            "inventory": "Persediaan",
             "procurement": "Pengadaan",
             "crmPricing": "CRM & Harga",
             "reports": "Laporan",
-            "dineIn": "Dine-In",
+            "dineIn": "Makan di Tempat",
             "operations": "Operasional",
-            "userManagement": "Manajemen User",
+            "userManagement": "Manajemen Pengguna",
             "settings": "Pengaturan"
         },
         "items": {
-            "dashboard": "Dashboard",
+            "dashboard": "Dasbor",
             "categories": "Kategori",
             "products": "Produk",
+            "ingredients": "Bahan Baku",
+            "recipes": "Resep & HPP",
             "customers": "Pelanggan",
-            "suppliers": "Supplier",
+            "suppliers": "Pemasok",
             "transactions": "Transaksi",
             "transactionHistory": "Riwayat Transaksi",
             "salesReturns": "Retur Penjualan",
             "receivables": "Piutang",
-            "agingReminders": "Aging & Pengingat",
-            "discountApproval": "Approval Diskon",
-            "stockOpname": "Stock Opname",
+            "agingReminders": "Umur Piutang & Pengingat",
+            "discountApproval": "Persetujuan Diskon",
+            "stockOpname": "Stok Opname",
             "stockMutations": "Mutasi Stok",
             "stockTransfers": "Transfer Stok",
-            "purchaseOrders": "Purchase Order",
+            "purchaseOrders": "Pesanan Pembelian",
+    "productionRequests": "Permintaan Produksi",
+    "productionOrders": "Pesanan Produksi",
             "goodsReceiving": "Penerimaan Barang",
-            "supplierReturns": "Retur Supplier",
-            "supplierPayables": "Hutang Supplier",
-            "members": "Member",
+            "supplierReturns": "Retur Pemasok",
+            "supplierPayables": "Utang Pemasok",
+            "members": "Anggota",
             "pricePromos": "Promo Harga",
-            "customerVouchers": "Voucher Customer",
-            "customerSegments": "Segment Customer",
-            "crmCampaigns": "Campaign CRM",
-            "crmReminders": "Reminder CRM",
-            "dineAreas": "Area Dine-In",
-            "dineTables": "Meja Dine-In",
-            "dineOrders": "Pesanan Dine-In",
+            "customerVouchers": "Voucher Pelanggan",
+            "customerSegments": "Segmen Pelanggan",
+            "crmCampaigns": "Kampanye CRM",
+            "crmReminders": "Pengingat CRM",
+            "dineAreas": "Area Makan di Tempat",
+            "dineTables": "Meja Makan di Tempat",
+            "dineOrders": "Pesanan Makan di Tempat",
             "salesReport": "Laporan Penjualan",
             "profitReport": "Laporan Keuntungan",
-            "advancedInsights": "Advanced Insights",
+            "advancedInsights": "Analisis Lanjutan",
             "cashierShifts": "Shift Kasir",
-            "auditLogs": "Audit Log",
+    "outletOperations": "Operasional Cabang",
+            "cashManagement": "Pengelolaan Kas",
+            "outletStockReturns": "Pengembalian Stok Cabang",
+            "operationsReport": "Laporan Operasional",
+            "auditLogs": "Riwayat Audit",
             "permissions": "Hak Akses",
-            "roles": "Akses Group",
+            "roles": "Grup Akses",
             "users": "Pengguna",
             "usersList": "Data Pengguna",
             "usersCreate": "Tambah Data Pengguna",
-            "paymentGateway": "Payment Gateway",
+            "paymentGateway": "Gerbang Pembayaran",
             "storeProfile": "Profil Toko",
             "bankAccounts": "Rekening Bank",
-            "loyalty": "Loyalty",
+            "loyalty": "Loyalitas",
             "salesTarget": "Target Penjualan",
-            "priceLists": "Price List",
+            "priceLists": "Daftar Harga",
             "warehouses": "Gudang / Cabang",
-            "outlets": "Outlet",
+            "outlets": "Cabang",
             "units": "Satuan",
             "whatsApp": "WhatsApp"
         },
         "menu": {
-            "overview": "Overview",
-            "dashboard": "Dashboard",
-            "masterData": "Master Data",
+            "overview": "Ringkasan",
+            "dashboard": "Dasbor",
+            "masterData": "Data Utama",
             "categories": "Kategori",
             "products": "Produk",
             "customers": "Pelanggan",
-            "suppliers": "Supplier",
+            "suppliers": "Pemasok",
             "sales": "Penjualan",
             "transactions": "Transaksi",
             "transactionHistory": "Riwayat Transaksi",
             "salesReturns": "Retur Penjualan",
             "receivables": "Piutang",
-            "agingReminders": "Aging & Pengingat",
-            "approval": "Approval",
-            "discountApproval": "Approval Diskon",
-            "inventory": "Inventori",
-            "stockOpname": "Stock Opname",
+            "agingReminders": "Umur Piutang & Pengingat",
+            "approval": "Persetujuan",
+            "discountApproval": "Persetujuan Diskon",
+            "inventory": "Persediaan",
+            "stockOpname": "Stok Opname",
             "stockMutation": "Mutasi Stok",
             "stockTransfer": "Transfer Stok",
             "procurement": "Pengadaan",
-            "purchaseOrders": "Purchase Order",
+            "purchaseOrders": "Pesanan Pembelian",
             "goodsReceiving": "Penerimaan Barang",
-            "supplierReturns": "Retur Supplier",
-            "payables": "Hutang Supplier",
+            "supplierReturns": "Retur Pemasok",
+            "payables": "Utang Pemasok",
             "crmPricing": "CRM & Harga",
-            "members": "Member",
+            "members": "Anggota",
             "priceRules": "Aturan Harga",
-            "priceLists": "Price List",
+            "priceLists": "Daftar Harga",
             "vouchers": "Voucher",
-            "customerSegments": "Segment Customer",
-            "campaigns": "Campaign CRM",
-            "reminders": "Reminder CRM",
+            "customerSegments": "Segmen Pelanggan",
+            "campaigns": "Kampanye CRM",
+            "reminders": "Pengingat CRM",
             "reports": "Laporan",
             "salesReport": "Laporan Penjualan",
             "profitReport": "Laporan Keuntungan",
             "operations": "Operasional",
             "cashierShifts": "Shift Kasir",
-            "auditLogs": "Audit Log",
-            "userManagement": "Manajemen User",
+            "auditLogs": "Riwayat Audit",
+            "userManagement": "Manajemen Pengguna",
             "accessControl": "Hak Akses",
-            "accessGroups": "Akses Group",
+            "accessGroups": "Grup Akses",
             "users": "Pengguna",
             "userData": "Data Pengguna",
             "addUser": "Tambah Data Pengguna",
             "settings": "Pengaturan",
-            "paymentGateway": "Payment Gateway",
+            "paymentGateway": "Gerbang Pembayaran",
             "storeProfile": "Profil Toko",
             "bankAccounts": "Rekening Bank",
-            "loyalty": "Loyalty",
+            "loyalty": "Loyalitas",
             "salesTarget": "Target Penjualan",
             "warehouses": "Gudang / Cabang",
             "whatsapp": "WhatsApp",
@@ -365,7 +373,7 @@
         }
     },
     "dashboard": {
-        "title": "Dashboard",
+        "title": "Dasbor",
         "welcome": "Selamat Datang",
         "widgets": {
             "categories": "Kategori",
@@ -381,7 +389,7 @@
     "products": {
         "title": "Produk",
         "addProduct": "Tambah Produk",
-        "editProduct": "Edit Produk",
+        "editProduct": "Ubah Produk",
         "productList": "Daftar Produk",
         "barcode": "Barcode",
         "sku": "SKU",
@@ -407,8 +415,8 @@
         "actions": {
             "printBarcode": "Cetak Barcode",
             "printAllBarcode": "Cetak All Barcode",
-            "exportProducts": "Export Produk",
-            "importProducts": "Import Produk"
+            "exportProducts": "Ekspor Produk",
+            "importProducts": "Impor Produk"
         },
         "status": {
             "inStock": "Tersedia",
@@ -423,7 +431,7 @@
     "categories": {
         "title": "Kategori",
         "addCategory": "Tambah Kategori",
-        "editCategory": "Edit Kategori",
+        "editCategory": "Ubah Kategori",
         "categoryName": "Nama Kategori",
         "parentCategory": "Kategori Induk",
         "noParent": "Tanpa Induk",
@@ -433,18 +441,18 @@
     "customers": {
         "title": "Pelanggan",
         "addCustomer": "Tambah Pelanggan",
-        "editCustomer": "Edit Pelanggan",
+        "editCustomer": "Ubah Pelanggan",
         "customerName": "Nama Pelanggan",
         "phone": "Telepon",
-        "email": "Email",
+        "email": "Alamat Email",
         "address": "Alamat",
         "province": "Provinsi",
         "city": "Kota/Kabupaten",
         "district": "Kecamatan",
         "village": "Desa/Kelurahan",
-        "member": "Member",
-        "loyaltyPoints": "Poin Loyalty",
-        "loyaltyTier": "Tier Member",
+        "member": "Anggota",
+        "loyaltyPoints": "Poin Loyalitas",
+        "loyaltyTier": "Tingkatan Anggota",
         "tiers": {
             "regular": "Regular",
             "silver": "Silver",
@@ -488,7 +496,7 @@
         "total": "Total",
         "pay": "Bayar",
         "printReceipt": "Cetak Struk",
-        "printInvoice": "Cetak Invoice",
+        "printInvoice": "Cetak Nota",
         "shareTransaction": "Share Transaksi",
         "holdLabel": "Label Hold",
         "savedCart": "Transaksi Tersimpan",
@@ -499,7 +507,7 @@
     },
     "receivables": {
         "title": "Piutang",
-        "customerStatement": "Statement Pelanggan",
+        "customerStatement": "Laporan Pelanggan",
         "remainingBalance": "Sisa Piutang",
         "originalAmount": "Jumlah Awal",
         "amountPaid": "Sudah Dibayar",
@@ -544,8 +552,8 @@
     },
     "stock": {
         "opname": {
-            "title": "Stock Opname",
-            "create": "Buat Stock Opname",
+            "title": "Opname Stok",
+            "create": "Buat Opname Stok",
             "finalize": "Finalisasi",
             "systemStock": "Stok Sistem",
             "actualStock": "Stok Aktual",
@@ -570,7 +578,7 @@
             "fromWarehouse": "Dari Gudang",
             "toWarehouse": "Ke Gudang",
             "status": {
-                "draft": "Draft",
+                "draft": "Draf",
                 "sent": "Dikirim",
                 "received": "Diterima",
                 "cancelled": "Dibatalkan"
@@ -578,19 +586,19 @@
         }
     },
     "purchaseOrders": {
-        "title": "Purchase Order",
+        "title": "Pesanan Pembelian",
         "createPO": "Buat PO",
-        "placeOrder": "Order",
+        "placeOrder": "Buat Pesanan",
         "cancel": "Batal",
-        "supplier": "Supplier",
-        "orderDate": "Tanggal Order",
+        "supplier": "Pemasok",
+        "orderDate": "Tanggal Pesanan",
         "expectedDate": "Tanggal Datang",
         "items": "Item",
         "qty": "Jumlah",
         "unitPrice": "Harga Satuan",
         "status": {
-            "draft": "Draft",
-            "ordered": "Di-Order",
+            "draft": "Draf",
+            "ordered": "Dipesan",
             "partial": "Sebagian",
             "completed": "Selesai",
             "cancelled": "Dibatalkan"
@@ -599,20 +607,20 @@
     "goodsReceivings": {
         "title": "Penerimaan Barang",
         "createGR": "Buat Penerimaan",
-        "purchaseOrder": "Purchase Order",
+        "purchaseOrder": "Pesanan Pembelian",
         "receiveItems": "Terima Barang",
         "batchNumber": "No. Batch",
-        "expiredDate": "Tanggal Expired"
+        "expiredDate": "Tanggal Kedaluwarsa"
     },
     "supplierReturns": {
-        "title": "Retur Supplier",
+        "title": "Retur Pemasok",
         "createReturn": "Buat Retur",
         "complete": "Selesaikan",
         "reason": "Alasan Retur"
     },
     "payables": {
-        "title": "Hutang Supplier",
-        "supplierStatement": "Statement Supplier",
+        "title": "Utang Pemasok",
+        "supplierStatement": "Laporan Pemasok",
         "recordPayment": "Catat Pembayaran"
     },
     "pricingRules": {
@@ -630,7 +638,7 @@
         "scopeAll": "Semua Pelanggan",
         "scopeWalkIn": "Walk-in",
         "scopeRegistered": "Registered",
-        "scopeMember": "Member",
+        "scopeMember": "Anggota",
         "startDate": "Tanggal Mulai",
         "endDate": "Tanggal Selesai",
         "priority": "Prioritas",
@@ -644,9 +652,9 @@
         "preview": "Preview"
     },
     "priceLists": {
-        "title": "Price List",
-        "createList": "Buat Price List",
-        "listName": "Nama Price List",
+        "title": "Daftar Harga",
+        "createList": "Buat Daftar Harga",
+        "listName": "Nama Daftar Harga",
         "customerScope": "Scope Pelanggan",
         "products": "Produk",
         "addProducts": "Tambah Produk",
@@ -683,10 +691,10 @@
         "criteria": "Kriteria"
     },
     "campaigns": {
-        "title": "Campaign CRM",
-        "createCampaign": "Buat Campaign",
-        "campaignName": "Nama Campaign",
-        "campaignType": "Tipe Campaign",
+        "title": "Kampanye CRM",
+        "createCampaign": "Buat Kampanye",
+        "campaignName": "Nama Kampanye",
+        "campaignType": "Jenis Kampanye",
         "targetSegment": "Target Segment",
         "message": "Pesan",
         "schedule": "Jadwal",
@@ -698,7 +706,7 @@
             "broadcast": "Broadcast"
         },
         "status": {
-            "draft": "Draft",
+            "draft": "Draf",
             "scheduled": "Terjadwal",
             "processing": "Diproses",
             "completed": "Selesai",
@@ -711,10 +719,10 @@
         "approve": "Setujui",
         "deny": "Tolak",
         "requestedBy": "Diminta Oleh",
-        "requestedAt": "Waktu Request",
+        "requestedAt": "Waktu Pengajuan",
         "discountAmount": "Jumlah Diskon",
         "transaction": "Transaksi",
-        "noPending": "Tidak ada request pending"
+        "noPending": "Tidak ada permintaan yang menunggu"
     },
     "settings": {
         "title": "Pengaturan",
@@ -723,7 +731,7 @@
             "storeName": "Nama Toko",
             "storeAddress": "Alamat",
             "storePhone": "Telepon",
-            "storeEmail": "Email",
+            "storeEmail": "Alamat Email",
             "storeWebsite": "Website",
             "storeCity": "Kota",
             "storeLogo": "Logo Toko",
@@ -732,7 +740,7 @@
         },
         "payment": {
             "title": "Pengaturan Pembayaran",
-            "defaultGateway": "Gateway Default",
+            "defaultGateway": "Penyedia Pembayaran Utama",
             "midtrans": {
                 "title": "Midtrans",
                 "serverKey": "Server Key",
@@ -766,12 +774,12 @@
             "charset": "Karakter Set"
         },
         "loyalty": {
-            "title": "Pengaturan Loyalty",
-            "enabled": "Aktifkan Loyalty",
+            "title": "Pengaturan Loyalitas",
+            "enabled": "Aktifkan Program Loyalitas",
             "pointsPerRupiah": "Poin per Rp 1.000",
             "pointsToRupiah": "Nilai Tukar Poin",
             "tiers": {
-                "title": "Tier Member",
+                "title": "Tingkatan Anggota",
                 "regular": "Regular",
                 "silver": "Silver",
                 "gold": "Gold",
@@ -848,7 +856,7 @@
         }
     },
     "auditLogs": {
-        "title": "Audit Log",
+        "title": "Riwayat Audit",
         "event": "Event",
         "user": "User",
         "module": "Modul",
@@ -861,24 +869,24 @@
     "users": {
         "title": "Pengguna",
         "addUser": "Tambah Pengguna",
-        "editUser": "Edit Pengguna",
+        "editUser": "Ubah Pengguna",
         "userName": "Nama",
-        "userEmail": "Email",
-        "userRole": "Role",
+        "userEmail": "Alamat Email",
+        "userRole": "Peran",
         "userStatus": "Status",
-        "changePassword": "Ubah Password",
-        "newPassword": "Password Baru",
-        "confirmPassword": "Konfirmasi Password"
+        "changePassword": "Ubah Kata Sandi",
+        "newPassword": "Kata Sandi Baru",
+        "confirmPassword": "Konfirmasi Kata Sandi"
     },
     "roles": {
-        "title": "Role",
-        "addRole": "Tambah Role",
-        "editRole": "Edit Role",
-        "roleName": "Nama Role",
+        "title": "Peran",
+        "addRole": "Tambah Peran",
+        "editRole": "Ubah Peran",
+        "roleName": "Nama Peran",
         "permissions": "Permissions"
     },
     "pdf": {
-        "invoice": "Invoice",
+        "invoice": "Nota",
         "receipt": "Struk",
         "shippingLabel": "Label Pengiriman",
         "printDocument": "Cetak Dokumen"
@@ -899,11 +907,11 @@
         "button": "Panduan Penggunaan",
         "reset": "Putar Ulang Panduan",
         "dashboard": {
-            "title": "Halaman Dashboard",
+            "title": "Halaman Dasbor",
             "desc": "Ini adalah pusat ringkasan bisnis Anda. Mari kita jelajahi sekilas.",
             "stats": {
                 "title": "Kartu Statistik",
-                "desc": "Penjualan, profit, target bulanan, dan jumlah transaksi hari ini."
+                "desc": "Penjualan, laba, target bulanan, dan jumlah transaksi hari ini."
             },
             "chart": {
                 "title": "Tren Pendapatan",
@@ -911,7 +919,7 @@
             },
             "widgets": {
                 "title": "Widget Pemantauan",
-                "desc": "Shift kasir aktif, piutang, hutang, dan pesanan dine-in yang perlu perhatian."
+                "desc": "Shift kasir aktif, piutang, utang, dan pesanan makan di tempat yang perlu perhatian."
             },
             "recent": {
                 "title": "Transaksi Terbaru",
@@ -929,7 +937,7 @@
  },
  "products": {
   "title": "Daftar Produk",
-  "desc": "Klik produk untuk menambahkannya ke keranjang. Filter kategori tersedia di bagian atas."
+  "desc": "Klik produk untuk menambahkannya ke keranjang. Penyaringan kategori tersedia di bagian atas."
  },
             "customer": {
                 "title": "Pilih Pelanggan",
@@ -963,7 +971,7 @@
             },
             "list": {
                 "title": "Daftar Produk",
-                "desc": "Klik produk untuk melihat detail, edit, atau kelola stok per gudang."
+                "desc": "Klik produk untuk melihat detail, ubah, atau kelola stok per gudang."
             }
         },
         "shifts": {
@@ -980,8 +988,8 @@
   "desc": "Modal awal, kas yang diharapkan, dan jumlah transaksi berjalan."
  },
  "filters": {
-  "title": "Filter Histori",
-  "desc": "Filter histori shift berdasarkan kasir, status, dan rentang tanggal."
+  "title": "Saring Riwayat",
+  "desc": "Saring riwayat shift berdasarkan kasir, status, dan rentang tanggal."
  },
  "history": {
   "title": "Histori Shift",
@@ -991,31 +999,20 @@
         "reports": {
             "header": {
                 "title": "Halaman Laporan",
-                "desc": "Analisis performa bisnis berdasarkan periode dan filter."
+                "desc": "Analisis performa bisnis berdasarkan periode dan penyaringan."
             },
             "summary": {
                 "title": "Kartu Ringkasan",
-                "desc": "Metrik utama periode terpilih — pendapatan, profit, dan lainnya."
+                "desc": "Metrik utama periode terpilih: pendapatan, laba, dan lainnya."
             },
  "filters": {
-  "title": "Filter Laporan",
-  "desc": "Persempit data berdasarkan tanggal, invoice, kasir, atau pelanggan."
+  "title": "Saring Laporan",
+  "desc": "Persempit data berdasarkan tanggal, nomor nota, kasir, atau pelanggan."
  },
  "table": {
   "title": "Data Laporan",
   "desc": "Rincian per transaksi. Navigasi halaman tersedia di bawah."
  }
-        }
-    },
-    "setupChecklist": {
-        "title": "Checklist Persiapan Toko",
-        "subtitle": ":done dari :total langkah selesai — lengkapi untuk mulai berjualan.",
-        "items": {
-            "store_profile": "Lengkapi profil toko",
-            "category": "Buat kategori pertama",
-            "product": "Tambahkan produk pertama",
-            "customer": "Daftarkan pelanggan pertama",
-            "transaction": "Selesaikan transaksi pertama"
         }
     }
 }

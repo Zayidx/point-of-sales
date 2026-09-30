@@ -51,7 +51,7 @@ export default function Form({ mode = "create", voucher = null, customers = [] }
         <>
             <Head
                 title={
-                    isEdit ? "Edit Voucher Customer" : "Buat Voucher Customer"
+                    isEdit ? "Ubah Voucher Pelanggan" : "Buat Voucher Pelanggan"
                 }
             />
 
@@ -62,12 +62,12 @@ export default function Form({ mode = "create", voucher = null, customers = [] }
                         href={route("customer-vouchers.index")}
                         icon={<IconArrowLeft size={18} />}
                         className="mb-3 border-none bg-transparent px-0 text-slate-500 shadow-none hover:bg-transparent hover:text-primary-600 dark:text-slate-400"
-                        label="Kembali ke voucher customer"
+                        label="Kembali ke voucher pelanggan"
                     />
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                         {isEdit
-                            ? "Edit Voucher Customer"
-                            : "Buat Voucher Customer"}
+                            ? "Ubah Voucher Pelanggan"
+                            : "Buat Voucher Pelanggan"}
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                         Distribusikan voucher promosi untuk pelanggan tertentu.
@@ -144,7 +144,7 @@ export default function Form({ mode = "create", voucher = null, customers = [] }
                                     onChange={(event) =>
                                         setData("name", event.target.value)
                                     }
-                                    placeholder="Contoh: Voucher Member Mei"
+                                    placeholder="Contoh: Voucher Anggota Mei"
                                     className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                 />
                                 <InputError message={errors.name} />

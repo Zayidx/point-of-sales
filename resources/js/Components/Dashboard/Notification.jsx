@@ -16,6 +16,7 @@ export default function Notification() {
         expiringBatchNotifications = [],
         receivableNotifications = [],
         payableNotifications = [],
+        operationalNotifications = [],
     } = usePage().props;
 
     const mapItems = (items) =>
@@ -73,6 +74,13 @@ export default function Notification() {
                 type: "payable",
             }))
         ),
+        ...mapItems(operationalNotifications.map((n) => ({
+            ...n,
+            id: `operation-${n.id}`,
+            originalId: n.id,
+            type: "operation",
+            noAck: false,
+        }))),
     ];
 
     const [data, setData] = useState(mergeData());
@@ -105,7 +113,7 @@ export default function Notification() {
     // Sync when low stock changes (e.g., restocked items disappear)
     useEffect(() => {
         setData(mergeData());
-    },         [lowStockNotifications, expiringBatchNotifications, receivableNotifications, payableNotifications]);
+    }, [lowStockNotifications, expiringBatchNotifications, receivableNotifications, payableNotifications, operationalNotifications]);
 
     const handleMarkRead = (id) => {
         const item = data.find((d) => d.id === id);
@@ -119,13 +127,15 @@ export default function Notification() {
                 { product_id: item.originalId || id },
                 { preserveScroll: true, preserveState: true }
             );
+        } else if (item?.type === "operation") {
+            router.post(route("notifications.operations.read", item.originalId), {}, { preserveScroll: true, preserveState: true });
         }
     };
 
     const handleMarkAllRead = () => {
         setData([]);
         router.post(
-            route("notifications.stock.readAll"),
+            route("notifications.operations.readAll"),
             {},
             { preserveScroll: true, preserveState: true }
         );
@@ -149,7 +159,7 @@ export default function Notification() {
                         {item.icon}
                         <div>
                             <div className="font-semibold text-sm md:text-base text-gray-700 dark:text-gray-200">
-                                {item.title}
+                                {item.url ? <a href={item.url} className="hover:text-primary-600">{item.title}</a> : item.title}
                             </div>
                             <div className="text-gray-500 text-xs md:text-sm">
                                 {item.subtitle} {item.time && `• ${item.time}`}
@@ -232,7 +242,7 @@ export default function Notification() {
                     >
                         <div className="flex justify-between items-center gap-2 p-4 border-b mt-2 dark:border-gray-900 ">
                             <div className="text-base font-bold text-gray-500 dark:text-gray-400 ">
-                                Notifications
+                                Notifikasi
                             </div>
                             <IconDots className="text-gray-500 dark:text-gray-400" size={24} />
                         </div>

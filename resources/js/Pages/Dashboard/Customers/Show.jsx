@@ -167,7 +167,7 @@ export default function Show({
                             <div className="mb-4 flex items-center gap-2">
                                 <IconTags size={18} className="text-primary-500" />
                                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                                    Segment Customer
+                                    Segmen Pelanggan
                                 </h2>
                             </div>
                             {hasSegments ? (
@@ -183,7 +183,7 @@ export default function Show({
                                         >
                                             {segment.name}
                                             <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] uppercase tracking-wide dark:bg-slate-900/40">
-                                                {segment.source}
+                                                {segment.source === "manual" ? "Manual" : "Otomatis"}
                                             </span>
                                         </span>
                                     ))}
@@ -195,7 +195,7 @@ export default function Show({
                                         className="mx-auto mb-3 text-slate-400"
                                     />
                                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                                        Customer belum memiliki segment.
+                                        Pelanggan ini belum memiliki segmen.
                                     </p>
                                 </div>
                             )}

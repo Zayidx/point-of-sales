@@ -41,12 +41,12 @@ export default function Index({ stockOpnames, filters, warehouses = [] }) {
 
     return (
         <>
-            <Head title="Stock Opname" />
+            <Head title="Opname Stok" />
 
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                        Stock Opname
+                        Opname Stok
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                         Kelola sesi audit stok fisik dan finalisasi adjustment stok.
@@ -87,8 +87,8 @@ export default function Index({ stockOpnames, filters, warehouses = [] }) {
                     className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
                     <option value="">Semua Status</option>
-                    <option value="draft">Draft</option>
-                    <option value="finalized">Finalized</option>
+                    <option value="draft">Draf</option>
+                    <option value="finalized">Difinalisasi</option>
                 </select>
 
                 <select
@@ -122,7 +122,7 @@ export default function Index({ stockOpnames, filters, warehouses = [] }) {
                 </div>
             </div>
 
-            <Table.Card title="Daftar Sesi Stock Opname">
+            <Table.Card title="Daftar Sesi Opname Stok">
                 <Table>
                     <Table.Thead>
                         <tr>
@@ -130,7 +130,7 @@ export default function Index({ stockOpnames, filters, warehouses = [] }) {
                             <Table.Th>Status</Table.Th>
                             <Table.Th>Jumlah Item</Table.Th>
                             <Table.Th>Dibuat Oleh</Table.Th>
-                            <Table.Th>Finalized</Table.Th>
+                            <Table.Th>Waktu Finalisasi</Table.Th>
                             <Table.Th className="w-24 text-center">Aksi</Table.Th>
                         </tr>
                     </Table.Thead>
@@ -160,8 +160,8 @@ export default function Index({ stockOpnames, filters, warehouses = [] }) {
                                             }`}
                                         >
                                             {stockOpname.status === "finalized"
-                                                ? "Finalized"
-                                                : "Draft"}
+                                                ? "Difinalisasi"
+                                                : "Draf"}
                                         </span>
                                     </Table.Td>
                                     <Table.Td>{stockOpname.items_count}</Table.Td>
@@ -186,7 +186,7 @@ export default function Index({ stockOpnames, filters, warehouses = [] }) {
                                 colSpan={6}
                                 message={
                                     <div className="text-slate-500 dark:text-slate-400">
-                                        Belum ada sesi stock opname.
+                                        Belum ada sesi opname stok.
                                     </div>
                                 }
                             >

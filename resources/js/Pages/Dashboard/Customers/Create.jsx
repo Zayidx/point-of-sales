@@ -157,7 +157,7 @@ export default function Create() {
                                         }
                                         className="h-4 w-4 rounded border-slate-300 text-primary-500"
                                     />
-                                    Member
+                                    Anggota
                                 </label>
                             </div>
 
@@ -293,7 +293,7 @@ export default function Create() {
                         </div>
 
                         <Textarea
-                            label="Alamat Detail"
+                            label="Detail Alamat"
                             placeholder="Alamat lengkap pelanggan"
                             errors={errors.address}
                             onChange={(e) => setData("address", e.target.value)}

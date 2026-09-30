@@ -11,7 +11,9 @@ use App\Models\Profit;
 use App\Models\Setting;
 use App\Models\Transaction;
 use App\Models\TransactionDetail;
+use App\Services\AccountantDashboardSummaryService;
 use App\Services\CashierShiftService;
+use App\Services\ManagerDashboardSummaryService;
 use App\Services\OutletAccessService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -19,10 +21,22 @@ use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    public function index(CashierShiftService $cashierShiftService, OutletAccessService $outletAccessService)
-    {
+    public function index(
+        CashierShiftService $cashierShiftService,
+        AccountantDashboardSummaryService $accountantDashboardSummary,
+        OutletAccessService $outletAccessService,
+        ManagerDashboardSummaryService $managerDashboardSummary,
+    ) {
+        $canViewFinancialDashboard = request()->user()->can('reports-access')
+            || request()->user()->can('profits-access');
         $warehouseIds = $outletAccessService->warehousesFor(request()->user())->pluck('id');
         $activeOutlet = $outletAccessService->activeOutlet(request());
+        $managerOperations = $canViewFinancialDashboard
+            ? $managerDashboardSummary->summarize($outletAccessService->warehousesFor(request()->user()))
+            : null;
+        $accountingSummary = $canViewFinancialDashboard
+            ? $accountantDashboardSummary->summarize($outletAccessService->warehousesFor(request()->user()))
+            : null;
         if ($activeOutlet) {
             $warehouseIds = $outletAccessService->warehousesFor(request()->user())
                 ->where('outlet_id', $activeOutlet->id)
@@ -43,26 +57,26 @@ class DashboardController extends Controller
         $totalProducts = Product::count();
         $totalTransactions = $scopeTransactions(Transaction::query())->count();
         $totalCustomers = Customer::count();
-        $totalRevenue = $scopeTransactions(Transaction::query())->sum('grand_total');
-        $totalProfit = $scopeProfits(Profit::query())->sum('total');
-        $averageOrder = $scopeTransactions(Transaction::query())->avg('grand_total') ?? 0;
+        $totalRevenue = $canViewFinancialDashboard ? $scopeTransactions(Transaction::query())->sum('grand_total') : 0;
+        $totalProfit = $canViewFinancialDashboard ? $scopeProfits(Profit::query())->sum('total') : 0;
+        $averageOrder = $canViewFinancialDashboard ? ($scopeTransactions(Transaction::query())->avg('grand_total') ?? 0) : 0;
         $todayTransactions = $scopeTransactions(Transaction::whereDate('created_at', Carbon::today()))->count();
 
         // New: Today's Sales and Profit
-        $todaySales = $scopeTransactions(Transaction::whereDate('created_at', Carbon::today()))->sum('grand_total');
-        $todayProfit = $scopeProfits(Profit::whereDate('created_at', Carbon::today()))->sum('total');
+        $todaySales = $canViewFinancialDashboard ? $scopeTransactions(Transaction::whereDate('created_at', Carbon::today()))->sum('grand_total') : 0;
+        $todayProfit = $canViewFinancialDashboard ? $scopeProfits(Profit::whereDate('created_at', Carbon::today()))->sum('total') : 0;
 
         // New: Monthly Target (from settings)
-        $monthlyTarget = Setting::getForOutlet(
+        $monthlyTarget = $canViewFinancialDashboard ? Setting::getForOutlet(
             'monthly_sales_target',
             $outletAccessService->activeOutlet(request()),
             0
-        );
-        $currentMonthSales = $scopeTransactions(Transaction::whereMonth('created_at', Carbon::now()->month)
+        ) : 0;
+        $currentMonthSales = $canViewFinancialDashboard ? $scopeTransactions(Transaction::whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year))
-            ->sum('grand_total');
+            ->sum('grand_total') : 0;
 
-        $revenueTrend = $scopeTransactions(Transaction::selectRaw('DATE(created_at) as date, SUM(grand_total) as total'))
+        $revenueTrend = $canViewFinancialDashboard ? $scopeTransactions(Transaction::selectRaw('DATE(created_at) as date, SUM(grand_total) as total'))
             ->groupBy('date')
             ->orderBy('date', 'desc')
             ->take(12)
@@ -75,7 +89,7 @@ class DashboardController extends Controller
                 ];
             })
             ->reverse()
-            ->values();
+            ->values() : collect();
 
         $topProducts = $scopeDetails(TransactionDetail::select('product_id', DB::raw('SUM(qty) as qty'), DB::raw('SUM(price) as total')))
             ->with('product:id,title,sku')
@@ -83,13 +97,18 @@ class DashboardController extends Controller
             ->orderByDesc('qty')
             ->take(3)
             ->get()
-            ->map(function ($detail) {
-                return [
+            ->map(function ($detail) use ($canViewFinancialDashboard) {
+                $data = [
                     'name' => $detail->product?->title ?? 'Produk terhapus',
                     'sku' => $detail->product?->sku ?? '-',
                     'qty' => (int) $detail->qty,
-                    'total' => (int) $detail->total,
                 ];
+
+                if ($canViewFinancialDashboard) {
+                    $data['total'] = (int) $detail->total;
+                }
+
+                return $data;
             });
 
         // New: Low Stock Products (stock < 10)
@@ -152,14 +171,19 @@ class DashboardController extends Controller
             ->latest()
             ->take(5)
             ->get()
-            ->map(function ($transaction) {
-                return [
+            ->map(function ($transaction) use ($canViewFinancialDashboard) {
+                $data = [
                     'invoice' => $transaction->invoice,
                     'date' => Carbon::parse($transaction->created_at)->format('d M Y'),
                     'customer' => $transaction->customer?->name ?? '-',
                     'cashier' => $transaction->cashier?->name ?? '-',
-                    'total' => (int) $transaction->grand_total,
                 ];
+
+                if ($canViewFinancialDashboard) {
+                    $data['total'] = (int) $transaction->grand_total;
+                }
+
+                return $data;
             });
 
         $topCustomers = $scopeTransactions(Transaction::select('customer_id', DB::raw('COUNT(*) as orders'), DB::raw('SUM(grand_total) as total')))
@@ -169,12 +193,17 @@ class DashboardController extends Controller
             ->orderByDesc('total')
             ->take(5)
             ->get()
-            ->map(function ($row) {
-                return [
+            ->map(function ($row) use ($canViewFinancialDashboard) {
+                $data = [
                     'name' => $row->customer?->name ?? 'Pelanggan',
                     'orders' => (int) $row->orders,
-                    'total' => (int) $row->total,
                 ];
+
+                if ($canViewFinancialDashboard) {
+                    $data['total'] = (int) $row->total;
+                }
+
+                return $data;
             });
 
         $topLocations = $scopeTransactions(Transaction::join('customers', 'transactions.customer_id', '=', 'customers.id'))
@@ -198,21 +227,26 @@ class DashboardController extends Controller
             ->latest('opened_at')
             ->take(5)
             ->get()
-            ->map(function (CashierShift $shift) use ($cashierShiftService) {
+            ->map(function (CashierShift $shift) use ($cashierShiftService, $canViewFinancialDashboard) {
                 $summary = $cashierShiftService->calculateSummary($shift);
 
-                return [
+                $data = [
                     'id' => $shift->id,
                     'opened_at' => optional($shift->opened_at)?->toISOString(),
-                    'opening_cash' => (int) $shift->opening_cash,
-                    'expected_cash' => $summary['expected_cash'],
                     'transactions_count' => $summary['transactions_count'],
-                    'cash_sales_total' => $summary['cash_sales_total'],
                     'user' => [
                         'id' => $shift->user?->id,
                         'name' => $shift->user?->name,
                     ],
                 ];
+
+                if ($canViewFinancialDashboard) {
+                    $data['opening_cash'] = (int) $shift->opening_cash;
+                    $data['expected_cash'] = $summary['expected_cash'];
+                    $data['cash_sales_total'] = $summary['cash_sales_total'];
+                }
+
+                return $data;
             })
             ->values();
 
@@ -237,13 +271,10 @@ class DashboardController extends Controller
             'topCustomers' => $topCustomers,
             'topLocations' => $topLocations,
             'activeShifts' => $activeShifts,
-            'setupChecklist' => [
-                'store_profile' => (bool) Setting::get('app_setup_completed'),
-                'category' => Category::exists(),
-                'product' => Product::exists(),
-                'customer' => Customer::exists(),
-                'transaction' => Transaction::exists(),
-            ],
+            'canAccessTransactions' => request()->user()->can('transactions-access'),
+            'canViewFinancialDashboard' => $canViewFinancialDashboard,
+            'managerOperations' => $managerOperations,
+            'accountingSummary' => $accountingSummary,
         ]);
     }
 }

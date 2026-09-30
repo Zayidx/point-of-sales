@@ -12,14 +12,15 @@ class PurchaseOrderItem extends Model
     protected $fillable = [
         'purchase_order_id',
         'product_id',
+        'ingredient_id',
         'qty_ordered',
         'qty_received',
         'unit_price',
     ];
 
     protected $casts = [
-        'qty_ordered' => 'integer',
-        'qty_received' => 'integer',
+        'qty_ordered' => 'decimal:4',
+        'qty_received' => 'decimal:4',
         'unit_price' => 'float',
     ];
 
@@ -31,5 +32,10 @@ class PurchaseOrderItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function ingredient()
+    {
+        return $this->belongsTo(Ingredient::class);
     }
 }

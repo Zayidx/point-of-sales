@@ -4,7 +4,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import {
     IconShoppingCart,
     IconUsers,
-    IconFileInvoice,
+    IconFileDescription,
     IconCurrencyDollar,
     IconBuildingWarehouse,
     IconChartArrowsVertical,
@@ -29,19 +29,19 @@ const cards = [
     {
         title: "Piutang",
         desc: "Nota barang pelanggan",
-        icon: <IconFileInvoice size={22} />,
+        icon: <IconFileDescription size={22} />,
         route: "receivables.index",
         perms: ["receivables-access"],
     },
     {
-        title: "Hutang",
-        desc: "Catat hutang supplier",
+        title: "Utang",
+        desc: "Catat utang supplier",
         icon: <IconCurrencyDollar size={22} />,
         route: "payables.index",
         perms: ["payables-access"],
     },
     {
-        title: "Supplier",
+        title: "Pemasok",
         desc: "Kelola data supplier",
         icon: <IconBuildingWarehouse size={22} />,
         route: "suppliers.index",

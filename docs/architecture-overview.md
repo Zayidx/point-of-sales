@@ -59,7 +59,6 @@ dan diorkestrasi oleh `DemoSeeder` (dijalankan lewat `php artisan seed:demo` ata
 | `step_up` | EnsureRecentPasswordConfirmation | Minta konfirmasi password untuk aksi sensitif (role/user CRUD, payment settings, bank accounts, payment confirmation) |
 | `bot.guard` | EnsureBotGuard | Honeypot + timer anti-bot di form login/register/forgot-password |
 | `registration.enabled` | EnsurePublicRegistrationEnabled | Matikan registrasi publik (default: off) |
-| `setup.notinstalled` | EnsureNotInstalled | Redirect ke `/setup` saat app_setup_completed=false |
 | `abilities` | CheckAbilities (Sanctum) | Cek token abilities untuk endpoint API master-data |
 | `SetLocale` | (web group) | Prioritas locale: user column → session → cookie → Accept-Language (default `id`) |
 | `SecureHeaders` | (web group) | Set X-Content-Type-Options, Referrer-Policy, X-Frame-Options, Permissions-Policy |

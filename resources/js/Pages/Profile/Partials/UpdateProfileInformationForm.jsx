@@ -39,16 +39,16 @@ export default function UpdateProfileInformation({ className = '' }) {
     return (
         <section className={className}>
             <header>
-                <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
+                <h2 className="text-lg font-medium text-gray-900">Informasi Profil</h2>
 
                 <p className="mt-1 text-sm text-gray-600">
-                    Update your account's profile information and email address.
+                    Update informasi profil dan alamat email akun Anda.
                 </p>
             </header>
 
             <form onSubmit={submit} className="mt-6 space-y-6">
                 <div>
-                    <InputLabel htmlFor="name" value="Name" />
+                    <InputLabel htmlFor="name" value="Nama" />
 
                     <TextInput
                         id="name"
@@ -64,7 +64,7 @@ export default function UpdateProfileInformation({ className = '' }) {
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="email" value="Alamat Email" />
 
                     <TextInput
                         id="email"
@@ -80,12 +80,12 @@ export default function UpdateProfileInformation({ className = '' }) {
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="avatar" value="Avatar" />
+                    <InputLabel htmlFor="avatar" value="Foto Profil" />
 
                     <div className="flex items-center gap-4 mt-2">
                         <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                             {preview ? (
-                                <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                                    <img src={preview} alt="Pratinjau foto profil" className="w-full h-full object-cover" />
                             ) : (
                                 <span className="text-lg font-semibold text-gray-600">
                                     {user.name?.charAt(0)?.toUpperCase() || '?'}
@@ -109,7 +109,7 @@ export default function UpdateProfileInformation({ className = '' }) {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                    <PrimaryButton disabled={processing}>Simpan</PrimaryButton>
 
                     <Transition
                         show={recentlySuccessful}
@@ -118,7 +118,7 @@ export default function UpdateProfileInformation({ className = '' }) {
                         leave="transition ease-in-out"
                         leaveTo="opacity-0"
                     >
-                        <p className="text-sm text-gray-600">Saved.</p>
+                        <p className="text-sm text-gray-600">Tersimpan.</p>
                     </Transition>
                 </div>
             </form>

@@ -218,9 +218,53 @@ class CashierShiftTest extends TestCase
             'actual_cash' => 155000,
             'cash_difference' => 5000,
             'cash_sales_total' => 60000,
-            'non_cash_sales_total' => 50000,
+            'non_cash_sales_total' => 0,
             'cash_refund_total' => 10000,
         ]);
+    }
+
+    public function test_closing_shift_records_actual_stock_and_variance_without_adjusting_inventory(): void
+    {
+        $cashier = $this->createUserWithPermissions(['cashier-shifts-access', 'cashier-shifts-close']);
+        $outlet = Outlet::create(['code' => 'CLOSE-TEST', 'name' => 'Cabang Tutup Uji', 'is_active' => true, 'is_sales_enabled' => true]);
+        $warehouse = Warehouse::create(['outlet_id' => $outlet->id, 'code' => 'WH-CLOSE-TEST', 'name' => 'Gudang Tutup Uji', 'type' => 'branch', 'is_active' => true]);
+        $category = Category::create(['name' => 'Kategori Closing', 'description' => 'Uji closing', 'image' => 'closing.png']);
+        $product = Product::create([
+            'category_id' => $category->id,
+            'image' => 'closing-product.png',
+            'barcode' => 'BC-CLOSE-TEST',
+            'sku' => 'SKU-CLOSE-TEST',
+            'title' => 'Produk Closing',
+            'description' => 'Uji hitung stok',
+            'buy_price' => 1000,
+            'sell_price' => 1500,
+            'stock' => 5,
+            'tax_rate' => 0,
+        ]);
+        $product->warehouses()->attach($warehouse->id, ['stock' => 5]);
+        $shift = CashierShift::create([
+            'user_id' => $cashier->id,
+            'warehouse_id' => $warehouse->id,
+            'opened_by' => $cashier->id,
+            'opened_at' => now(),
+            'opening_cash' => 0,
+            'expected_cash' => 0,
+            'status' => CashierShift::STATUS_OPEN,
+        ]);
+
+        $this->actingAs($cashier)->post(route('cashier-shifts.close', $shift), [
+            'actual_cash' => 0,
+            'closing_stock' => [['product_id' => $product->id, 'actual_stock' => 3]],
+        ])->assertRedirect(route('cashier-shifts.show', $shift));
+
+        $this->assertDatabaseHas('cashier_shift_stock_counts', [
+            'cashier_shift_id' => $shift->id,
+            'product_id' => $product->id,
+            'expected_stock' => 5,
+            'actual_stock' => 3,
+            'variance' => -2,
+        ]);
+        $this->assertSame(5, (int) $product->warehouses()->whereKey($warehouse->id)->first()->pivot->stock);
     }
 
     public function test_split_tenders_count_only_cash_tender_in_expected_cash(): void
@@ -247,7 +291,7 @@ class CashierShiftTest extends TestCase
             'payment_status' => 'paid',
         ]);
         $transaction->tenders()->createMany([
-            ['method' => TransactionTender::METHOD_CASH, 'amount' => 50000, 'cash_received' => 50000, 'payment_status' => 'paid'],
+            ['method' => TransactionTender::METHOD_CASH, 'amount' => 50000, 'cash_received' => 55000, 'change' => 5000, 'payment_status' => 'paid'],
             ['method' => TransactionTender::METHOD_BANK_TRANSFER, 'amount' => 25000, 'payment_status' => 'paid'],
         ]);
 

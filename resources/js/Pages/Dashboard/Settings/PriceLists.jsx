@@ -34,21 +34,21 @@ export default function PriceLists({ priceLists }) {
     };
 
     const handleDelete = (pl) => {
-        if (!confirm(`Hapus price list ${pl.name}?`)) return;
+        if (!confirm(`Hapus daftar harga ${pl.name}?`)) return;
         router.delete(route("price-lists.destroy", pl.id));
     };
 
-    const scopeLabel = { all: "Semua", walk_in: "Walk-in", registered: "Terdaftar", member: "Member", segment: "Segmen" };
+    const scopeLabel = { all: "Semua", walk_in: "Walk-in", registered: "Terdaftar", member: "Anggota", segment: "Segmen" };
 
     return (
         <>
-            <Head title="Price List" />
+            <Head title="Daftar Harga" />
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
                             <IconListDetails size={28} className="text-primary-500" />
-                            Price List
+                            Daftar Harga
                         </h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400">Harga khusus per kelompok pelanggan</p>
                     </div>
@@ -59,7 +59,7 @@ export default function PriceLists({ priceLists }) {
 
                 {showForm && (
                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-                        <h3 className="font-semibold mb-4">{editing ? "Edit Price List" : "Price List Baru"}</h3>
+                        <h3 className="font-semibold mb-4">{editing ? "Ubah Daftar Harga" : "Daftar Harga Baru"}</h3>
                         <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -78,7 +78,7 @@ export default function PriceLists({ priceLists }) {
                                         <option value="all">Semua Pelanggan</option>
                                         <option value="walk_in">Walk-in</option>
                                         <option value="registered">Terdaftar</option>
-                                        <option value="member">Member</option>
+                                        <option value="member">Anggota</option>
                                     </select>
                                 </div>
                                 <div>
@@ -91,7 +91,7 @@ export default function PriceLists({ priceLists }) {
                                 <textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" rows={2} />
                             </div>
                             <div className="flex gap-3">
-                                <button type="submit" className="px-4 py-2 rounded-xl bg-primary-500 text-white text-sm font-medium">{editing ? "Update" : "Simpan"}</button>
+                                <button type="submit" className="px-4 py-2 rounded-xl bg-primary-500 text-white text-sm font-medium">{editing ? "Perbarui" : "Simpan"}</button>
                                 <button type="button" onClick={resetForm} className="px-4 py-2 rounded-xl border text-sm font-medium">Batal</button>
                             </div>
                         </form>
@@ -114,7 +114,7 @@ export default function PriceLists({ priceLists }) {
                             ))}
                         </div>
                     ) : (
-                        <div className="p-8 text-center text-slate-400">Belum ada price list.</div>
+                        <div className="p-8 text-center text-slate-400">Belum ada daftar harga.</div>
                     )}
                 </div>
             </div>

@@ -104,6 +104,11 @@ class Product extends Model
         return $this->hasMany(StockMutation::class);
     }
 
+    public function recipeVersions()
+    {
+        return $this->hasMany(RecipeVersion::class)->orderByDesc('version_number');
+    }
+
     public function salesReturnItems()
     {
         return $this->hasMany(SalesReturnItem::class);

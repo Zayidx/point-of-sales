@@ -109,6 +109,29 @@ class CheckoutStockIntegrityTest extends TestCase
         $this->assertSame(1, Cart::count());
     }
 
+    public function test_global_product_total_cannot_be_sold_from_a_warehouse_without_its_own_stock(): void
+    {
+        $product = $this->createProduct(10);
+        $otherWarehouse = Warehouse::factory()->create();
+        CashierShift::query()->where('user_id', $this->cashier->id)->where('status', 'open')
+            ->update(['warehouse_id' => $otherWarehouse->id]);
+        Cart::create([
+            'cashier_id' => $this->cashier->id,
+            'warehouse_id' => $otherWarehouse->id,
+            'product_id' => $product->id,
+            'qty' => 1,
+            'price' => $product->sell_price,
+            'conversion_factor' => 1,
+        ]);
+
+        $this->actingAs($this->cashier)
+            ->post(route('transactions.store'), ['payment_method' => 'cash', 'cash' => 50000])
+            ->assertSessionHasErrors('stock');
+
+        $this->assertSame(0, Transaction::count());
+        $this->assertSame(10, $product->fresh()->stock);
+    }
+
     public function test_checkout_rejects_second_item_shortage_and_rolls_back_first_item(): void
     {
         $productA = $this->createProduct(100);

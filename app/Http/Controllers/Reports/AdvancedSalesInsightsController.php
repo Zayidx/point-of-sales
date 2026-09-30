@@ -33,11 +33,6 @@ class AdvancedSalesInsightsController extends Controller
     {
         $warehouseIds = $this->outletAccessService->warehousesFor($request->user())->pluck('id');
         $activeOutlet = $this->outletAccessService->activeOutlet($request);
-        if ($activeOutlet) {
-            $warehouseIds = $this->outletAccessService->warehousesFor($request->user())
-                ->where('outlet_id', $activeOutlet->id)
-                ->pluck('id');
-        }
         $filters = [
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date'),
@@ -45,6 +40,7 @@ class AdvancedSalesInsightsController extends Controller
             'customer_id' => $request->input('customer_id'),
             'category_id' => $request->input('category_id'),
             'warehouse_ids' => $warehouseIds,
+            'outlet_id' => $activeOutlet?->id,
             'include_legacy' => Outlet::active()->count() <= 1,
         ];
 
@@ -130,7 +126,8 @@ class AdvancedSalesInsightsController extends Controller
                 if ($filters['include_legacy']) {
                     $q->orWhereNull('transactions.warehouse_id');
                 }
-            });
+            })
+            ->when($filters['outlet_id'] ?? null, fn (Builder $q, $outletId) => $q->where('transactions.outlet_id', $outletId));
     }
 
     protected function detailMetricsQuery(array $filters)
@@ -149,7 +146,8 @@ class AdvancedSalesInsightsController extends Controller
                 if ($filters['include_legacy']) {
                     $q->orWhereNull('t.warehouse_id');
                 }
-            });
+            })
+            ->when($filters['outlet_id'] ?? null, fn ($q, $outletId) => $q->where('t.outlet_id', $outletId));
     }
 
     private function warehouseStockSubquery($warehouseIds)

@@ -43,6 +43,11 @@ class Warehouse extends Model
         return $this->belongsTo(Outlet::class);
     }
 
+    public function outlets(): BelongsToMany
+    {
+        return $this->belongsToMany(Outlet::class, 'outlet_warehouse_access')->withTimestamps();
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

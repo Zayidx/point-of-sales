@@ -34,7 +34,7 @@ export default function BarcodePrintModal({
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Print Barcode</title>
+                <title>Cetak Barcode</title>
                 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
                 <style>
                     @page {

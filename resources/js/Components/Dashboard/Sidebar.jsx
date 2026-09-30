@@ -69,8 +69,9 @@ export default function Sidebar({ sidebarOpen }) {
             {/* Navigation */}
             <nav className="dashboard-scrollbar min-h-0 flex-1 overflow-y-auto py-3">
                 {menuNavigation.map((section, index) => {
-                    const hasPermission = section.details.some(
-                        (detail) => detail.permissions === true
+                    const hasPermission = section.details.some((detail) =>
+                        detail.permissions === true ||
+                        detail.subdetails?.some((subdetail) => subdetail.permissions === true)
                     );
                     if (!hasPermission) return null;
 
@@ -94,7 +95,7 @@ export default function Sidebar({ sidebarOpen }) {
                                 }
                             >
                                 {section.details.map((detail, idx) => {
-                                    if (!detail.permissions) return null;
+                                    if (!detail.permissions && !detail.subdetails?.some((subdetail) => subdetail.permissions === true)) return null;
 
                                     if (detail.hasOwnProperty("subdetails")) {
                                         return (
@@ -130,7 +131,7 @@ export default function Sidebar({ sidebarOpen }) {
             {sidebarOpen && (
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800">
                     <p className="text-[10px] text-slate-400 dark:text-slate-600 text-center">
-                        Point of Sales {appVersion}
+                        Sistem Kasir {appVersion}
                     </p>
                 </div>
             )}

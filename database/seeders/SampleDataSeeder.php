@@ -47,6 +47,21 @@ class SampleDataSeeder extends Seeder
         LoyaltyPointHistory::truncate();
         CustomerVoucher::truncate();
         CustomerCredit::truncate();
+        foreach (['outlet_expenses', 'outlet_waste_records'] as $table) {
+            if (Schema::hasTable($table)) {
+                DB::table($table)->delete();
+            }
+        }
+        foreach (['cash_handovers', 'cash_pickups', 'warehouse_cash_ledger'] as $table) {
+            if (Schema::hasTable($table)) {
+                DB::table($table)->delete();
+            }
+        }
+        foreach (['outlet_stock_return_items', 'outlet_stock_returns'] as $table) {
+            if (Schema::hasTable($table)) {
+                DB::table($table)->delete();
+            }
+        }
         SalesReturnItem::truncate();
         SalesReturn::truncate();
         DiscountApprovalLog::truncate();
@@ -64,6 +79,23 @@ class SampleDataSeeder extends Seeder
         }
         if (Schema::hasTable('product_warehouse')) {
             DB::table('product_warehouse')->truncate();
+        }
+        // Ledger and production snapshots reference product ids. Demo reseeding
+        // deliberately replaces the product dataset, so clear these descendants
+        // explicitly (SQLite cannot reliably toggle FK checks inside test txns).
+        foreach ([
+            'production_order_items',
+            'production_orders',
+            'production_request_items',
+            'production_requests',
+            'recipe_items',
+            'recipe_versions',
+            'inventory_ledgers',
+            'inventory_balances',
+        ] as $table) {
+            if (Schema::hasTable($table)) {
+                DB::table($table)->delete();
+            }
         }
         foreach ([
             'composite_product_items',

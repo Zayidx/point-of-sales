@@ -159,7 +159,7 @@ export default function Create({ warehouses, products }) {
 
                     <div className="flex justify-end gap-3">
                         <Link href={route("stock-transfers.index")} className="flex h-11 items-center rounded-xl border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">Batal</Link>
-                        <Button type="submit" icon={<IconPlus size={18} />} className="bg-primary-500 hover:bg-primary-600 text-white shadow-lg shadow-primary-500/30" label={processing ? "Menyimpan..." : "Simpan Draft"} disabled={processing} />
+                        <Button type="submit" icon={<IconPlus size={18} />} className="bg-primary-500 hover:bg-primary-600 text-white shadow-lg shadow-primary-500/30" label={processing ? "Menyimpan..." : "Simpan Draf"} disabled={processing} />
                     </div>
                 </div>
             </form>

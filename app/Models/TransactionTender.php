@@ -17,6 +17,12 @@ class TransactionTender extends Model
 
     public const METHOD_QRIS = 'qris';
 
+    public const METHOD_QRIS_1 = 'qris_1';
+
+    public const METHOD_QRIS_2 = 'qris_2';
+
+    public const METHOD_QRIS_3 = 'qris_3';
+
     public const STATUS_PAID = 'paid';
 
     public const STATUS_PENDING = 'pending';

@@ -58,7 +58,7 @@ export default function Index({
     products = [],
     categories = [],
     initialPricingPreview = { items: [], summary: {} },
-    paymentGateways = [],
+    paymentMethods = [],
     defaultPaymentGateway = "cash",
     bankAccounts = [],
     warehouses = [],
@@ -87,6 +87,7 @@ export default function Index({
     const [discountInput, setDiscountInput] = useState("");
     const [redeemPointsInput, setRedeemPointsInput] = useState("");
     const [cashInput, setCashInput] = useState("");
+    const [manualOnlineTotal, setManualOnlineTotal] = useState("");
     const [shippingInput, setShippingInput] = useState("");
     const [orderType, setOrderType] = useState("in_store");
     const [orderNote, setOrderNote] = useState("");
@@ -313,10 +314,10 @@ export default function Index({
 
     // Payment options
     const paymentOptions = useMemo(() => {
-        const options = Array.isArray(paymentGateways)
-            ? paymentGateways.filter(
-                  (gateway) =>
-                      gateway?.value && gateway.value.toLowerCase() !== "cash"
+        const options = Array.isArray(paymentMethods)
+            ? paymentMethods.filter(
+                  (method) =>
+                      method?.value && method.value.toLowerCase() !== "cash"
               )
             : [];
 
@@ -327,8 +328,9 @@ export default function Index({
                 description: "Pembayaran tunai langsung di kasir.",
             },
             ...options,
+            { value: "gofood", label: "GoFood / Online", description: "Pembayaran platform dicatat manual." },
         ];
-    }, [paymentGateways]);
+    }, [paymentMethods]);
 
     // Auto-set cash input for non-cash payment
     useEffect(() => {
@@ -684,6 +686,11 @@ export default function Index({
             return;
         }
 
+        if (!payLater && paymentMethod === "gofood" && Number(manualOnlineTotal || payable) < 1) {
+            toast.error("Masukkan nilai transaksi GoFood yang valid");
+            return;
+        }
+
         // Validate bank transfer requires bank selection
         const isBankTransfer = paymentMethod === "bank_transfer";
         if (!splitMode && isBankTransfer && !selectedBankAccount) {
@@ -736,6 +743,12 @@ export default function Index({
             return;
         }
 
+        if (!navigator.onLine && paymentMethod === "gofood") {
+            toast.error("Pencatatan GoFood manual memerlukan koneksi internet");
+            setIsSubmitting(false);
+            return;
+        }
+
         if (!navigator.onLine) {
             const payload = {
                 client_uuid: crypto.randomUUID(),
@@ -754,6 +767,7 @@ export default function Index({
                         ? "bank_transfer"
                         : paymentMethod,
                 payment_gateway: null,
+                manual_online_total: null,
                 pay_later: payLater,
                 due_date: payLater ? dueDate : null,
                 bank_account_id: isBankTransfer ? selectedBankAccount?.id : null,
@@ -808,6 +822,9 @@ export default function Index({
                       : isCashPayment
                         ? null
                         : paymentMethod,
+                manual_online_total: paymentMethod === "gofood"
+                    ? Number(manualOnlineTotal || payable)
+                    : null,
                 bank_account_id: isBankTransfer
                     ? selectedBankAccount?.id
                     : null,
@@ -821,6 +838,7 @@ export default function Index({
                     setDiscountInput("");
                     setRedeemPointsInput("");
                     setCashInput("");
+                    setManualOnlineTotal("");
                     setShippingInput("");
                     setSelectedCustomer(null);
                     setSelectedBankAccount(null);
@@ -1398,8 +1416,7 @@ export default function Index({
                                         <button
                                             key={method.value}
                                             onClick={() =>
-                                                !payLater &&
-                                                setPaymentMethod(method.value)
+                                                !payLater && setPaymentMethod(method.value)
                                             }
                                             disabled={payLater}
                                             className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 ${
@@ -1443,6 +1460,22 @@ export default function Index({
                                         </button>
                                     ))}
                                 </div>
+                                {paymentMethod === "gofood" && !payLater && (
+                                    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
+                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                            Nilai transaksi GoFood / online
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                value={manualOnlineTotal}
+                                                onChange={(event) => setManualOnlineTotal(event.target.value.replace(/[^\d]/g, ""))}
+                                                placeholder={String(payable)}
+                                                className="mt-2 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+                                            />
+                                        </label>
+                                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">Masukkan total akhir sesuai platform. Pembayaran dicatat manual tanpa penyedia pembayaran.</p>
+                                    </div>
+                                )}
                                 {!payLater && (
                                     <button
                                         type="button"
@@ -1836,7 +1869,7 @@ export default function Index({
                                     .length > 0 && (
                                     <div>
                                         <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
-                                            Voucher Customer
+                                            Voucher Pelanggan
                                         </label>
                                         <select
                                             value={selectedVoucherId}
@@ -1982,7 +2015,6 @@ export default function Index({
                             onClick={handleSubmitTransaction}
                             disabled={
                                 !carts.length ||
-                                !selectedCustomer ||
                                 (!payLater &&
                                     paymentMethod === "cash" &&
                                     cash < payable) ||
@@ -1991,7 +2023,6 @@ export default function Index({
                             }
                             className={`w-full h-12 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
                                 carts.length &&
-                                selectedCustomer &&
                                 (paymentMethod !== "cash" || cash >= payable)
                                     && !isLoadingPricing
                                     ? "bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white shadow-lg shadow-primary-500/30"
@@ -2006,8 +2037,6 @@ export default function Index({
                                     <span>
                                         {!carts.length
                                             ? "Keranjang Kosong"
-                                            : !selectedCustomer
-                                            ? "Pilih Pelanggan"
                                             : paymentMethod === "cash" &&
                                               cash < payable
                                             ? `Kurang ${formatPrice(

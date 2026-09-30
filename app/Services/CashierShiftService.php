@@ -3,12 +3,17 @@
 namespace App\Services;
 
 use App\Models\CashierShift;
+use App\Models\CashierShiftStockCount;
+use App\Models\InventoryBalance;
 use App\Models\Outlet;
+use App\Models\Product;
+use App\Models\ProductWarehouse;
 use App\Models\SalesReturn;
 use App\Models\ShiftCashMovement;
 use App\Models\Transaction;
 use App\Models\TransactionTender;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -49,8 +54,16 @@ class CashierShiftService
         return $shift;
     }
 
-    public function openShift(User $cashier, User $actor, int $openingCash, ?string $notes = null, ?int $warehouseId = null): CashierShift
-    {
+    public function openShift(
+        User $cashier,
+        User $actor,
+        int $openingCash,
+        ?string $notes = null,
+        ?int $warehouseId = null,
+        ?int $outletId = null,
+    ): CashierShift {
+        $outletId ??= app(OutletAccessService::class)->defaultOutlet($cashier)?->id;
+
         $existing = CashierShift::query()
             ->open()
             ->where('user_id', $cashier->id)
@@ -70,6 +83,7 @@ class CashierShiftService
             'expected_cash' => $openingCash,
             'notes' => $notes,
             'warehouse_id' => $warehouseId,
+            'outlet_id' => $outletId,
             'status' => CashierShift::STATUS_OPEN,
         ]);
     }
@@ -96,12 +110,13 @@ class CashierShiftService
                 ->where('payment_method', 'split')
                 ->where('payment_status', 'paid'))
             ->where('method', TransactionTender::METHOD_CASH)
-            ->sum('cash_received');
+            ->sum('amount');
 
         $cashSalesTotal += $splitCashTenderTotal;
 
         $nonCashSalesTotal = (int) (clone $transactions)
             ->where('payment_method', '!=', 'cash')
+            ->where('payment_status', 'paid')
             ->sum('grand_total');
 
         // Split payments: non-cash portion = grand_total minus cash tenders.
@@ -174,7 +189,8 @@ class CashierShiftService
         User $actor,
         int $actualCash,
         ?string $closeNotes = null,
-        bool $forceClose = false
+        bool $forceClose = false,
+        ?array $closingStock = null,
     ): CashierShift {
         if (! $shift->isOpen()) {
             throw ValidationException::withMessages([
@@ -182,7 +198,7 @@ class CashierShiftService
             ]);
         }
 
-        return DB::transaction(function () use ($shift, $actor, $actualCash, $closeNotes, $forceClose) {
+        return DB::transaction(function () use ($shift, $actor, $actualCash, $closeNotes, $forceClose, $closingStock) {
             $lockedShift = CashierShift::query()->lockForUpdate()->findOrFail($shift->id);
 
             if (! $lockedShift->isOpen()) {
@@ -193,6 +209,45 @@ class CashierShiftService
 
             $summary = $this->calculateSummary($lockedShift);
             $cashDifference = $actualCash - $summary['expected_cash'];
+
+            $stockVariance = 0;
+            if ($closingStock !== null) {
+                $sharedSalesOutlets = $lockedShift->warehouse_id
+                    ? $lockedShift->warehouse()->first()?->outlets()->where('outlets.is_sales_enabled', true)->count() > 1
+                    : false;
+                if ($sharedSalesOutlets) {
+                    throw ValidationException::withMessages([
+                        'closing_stock' => 'Stok gudang bersama dihitung oleh petugas gudang, bukan per shift outlet.',
+                    ]);
+                }
+
+                $expectedRows = $lockedShift->warehouse_id
+                    ? DB::table('product_warehouse')->where('warehouse_id', $lockedShift->warehouse_id)->orderBy('product_id')->get(['product_id', 'stock'])
+                    : collect();
+                $provided = collect($closingStock)->keyBy(fn (array $item) => (int) $item['product_id']);
+                $expectedIds = $expectedRows->pluck('product_id')->map(fn ($id) => (int) $id)->all();
+                $providedIds = $provided->keys()->map(fn ($id) => (int) $id)->sort()->values()->all();
+
+                if ($providedIds !== $expectedIds) {
+                    throw ValidationException::withMessages([
+                        'closing_stock' => 'Hitung stok untuk seluruh menu yang tercatat di gudang sebelum menutup shift.',
+                    ]);
+                }
+
+                foreach ($expectedRows as $row) {
+                    $productId = (int) $row->product_id;
+                    $actual = (int) $provided->get($productId)['actual_stock'];
+                    $expected = (int) $row->stock;
+                    $variance = $actual - $expected;
+                    $stockVariance += abs($variance);
+                    CashierShiftStockCount::updateOrCreate(
+                        ['cashier_shift_id' => $lockedShift->id, 'product_id' => $productId],
+                        ['expected_stock' => $expected, 'actual_stock' => $actual, 'variance' => $variance],
+                    );
+                }
+
+                $this->returnClosingStockToCentral($lockedShift, $provided, $expectedRows, $actor);
+            }
 
             $lockedShift->update([
                 'actual_cash' => $actualCash,
@@ -212,8 +267,96 @@ class CashierShiftService
                     : CashierShift::STATUS_CLOSED,
             ]);
 
+            if ($cashDifference !== 0 && $lockedShift->warehouse_id) {
+                app(OperationalNotificationService::class)->notifyWarehouseUsers(
+                    event: 'cash.variance',
+                    idempotencyKey: 'cashier-shift:'.$lockedShift->id.':cash-variance',
+                    title: 'Ada selisih kas saat closing',
+                    body: 'Shift #'.$lockedShift->id.' memiliki selisih Rp'.number_format(abs($cashDifference), 0, ',', '.').'.',
+                    url: '/cashier-shifts/'.$lockedShift->id,
+                    warehouseId: (int) $lockedShift->warehouse_id,
+                    permissions: ['cashier-shifts-access'],
+                );
+            }
+
+            if ($stockVariance > 0 && $lockedShift->warehouse_id) {
+                app(OperationalNotificationService::class)->notifyWarehouseUsers(
+                    event: 'stock.variance',
+                    idempotencyKey: 'cashier-shift:'.$lockedShift->id.':stock-variance',
+                    title: 'Ada selisih stok saat closing',
+                    body: 'Shift #'.$lockedShift->id.' mencatat selisih absolut '.$stockVariance.' unit.',
+                    url: '/cashier-shifts/'.$lockedShift->id,
+                    warehouseId: (int) $lockedShift->warehouse_id,
+                    permissions: ['cashier-shifts-access'],
+                );
+            }
+
             return $lockedShift->fresh(['user:id,name', 'openedBy:id,name', 'closedBy:id,name']);
         });
+    }
+
+    private function returnClosingStockToCentral(CashierShift $shift, $provided, $expectedRows, User $actor): void
+    {
+        $source = Warehouse::findOrFail($shift->warehouse_id);
+        $central = Warehouse::where('code', 'PUSAT')->where('is_active', true)->first();
+        if (! $central || $source->is($central)) {
+            return;
+        }
+
+        foreach ($expectedRows as $row) {
+            $productId = (int) $row->product_id;
+            $quantity = (int) $provided->get($productId)['actual_stock'];
+            $available = (int) $row->stock;
+            if ($quantity > $available) {
+                throw ValidationException::withMessages([
+                    'closing_stock' => 'Jumlah sisa '.$productId.' melebihi stok tercatat di outlet.',
+                ]);
+            }
+            if ($quantity === 0) {
+                continue;
+            }
+
+            $product = Product::with('units')->findOrFail($productId);
+            $unit = $product->baseUnit();
+            if ($unit) {
+                $ledger = app(InventoryLedgerService::class);
+                $ledger->ensureProductOpeningBalance($product, $source->id, $actor->id);
+                $ledger->ensureProductOpeningBalance($product, $central->id, $actor->id);
+                $sourceBalance = InventoryBalance::where('balance_key', "warehouse:{$source->id}:product:{$productId}")->first();
+                $centralBalance = InventoryBalance::where('balance_key', "warehouse:{$central->id}:product:{$productId}")->first();
+                foreach ([[$source, -$quantity, $sourceBalance], [$central, $quantity, $centralBalance]] as [$warehouse, $amount, $balance]) {
+                    $ledger->record([
+                        'idempotency_key' => "shift-closing-return:{$shift->id}:product:{$productId}:warehouse:{$warehouse->id}",
+                        'item_type' => 'product',
+                        'item_id' => $productId,
+                        'location_type' => 'warehouse',
+                        'location_id' => $warehouse->id,
+                        'movement_type' => 'outlet_to_warehouse',
+                        'quantity' => (string) $amount,
+                        'unit_id' => $unit->id,
+                        'unit_cost' => (string) ($balance?->average_unit_cost ?? $product->buy_price),
+                        'reference_type' => CashierShift::class,
+                        'reference_id' => $shift->id,
+                        'reference_number' => 'SHIFT-'.$shift->id,
+                        'notes' => 'Sisa stok outlet dikembalikan saat tutup shift.',
+                        'created_by' => $actor->id,
+                    ]);
+                }
+            }
+
+            $sourceStock = ProductWarehouse::where('product_id', $productId)->where('warehouse_id', $source->id)->lockForUpdate()->firstOrFail();
+            if ((int) $sourceStock->stock < $quantity) {
+                throw ValidationException::withMessages(['closing_stock' => "Stok {$product->title} outlet berubah. Hitung ulang sebelum menutup shift."]);
+            }
+            $sourceBefore = (int) $sourceStock->stock;
+            $sourceStock->decrement('stock', $quantity);
+            $centralStock = ProductWarehouse::firstOrCreate(['product_id' => $productId, 'warehouse_id' => $central->id], ['stock' => 0]);
+            $centralBefore = (int) $centralStock->stock;
+            $centralStock->increment('stock', $quantity);
+            $mutations = app(StockMutationService::class);
+            $mutations->recordMutation($product, $source->id, 'cashier_shift_return', $shift->id, 'out', $quantity, $sourceBefore, $sourceBefore - $quantity, 'Sisa stok dikembalikan ke PUSAT', $actor->id);
+            $mutations->recordMutation($product, $central->id, 'cashier_shift_return', $shift->id, 'in', $quantity, $centralBefore, $centralBefore + $quantity, 'Sisa stok outlet diterima kembali', $actor->id);
+        }
     }
 
     public function summarizeForDisplay(?CashierShift $shift): ?array
@@ -255,10 +398,13 @@ class CashierShiftService
             }
 
             $warehouseIds = $this->outletAccessService->warehousesFor($user)->pluck('id')->all();
+            $outletIds = $this->outletAccessService->accessibleOutlets($user)->pluck('id')->all();
 
-            return $query->where(function (Builder $query) use ($user, $warehouseIds) {
+            return $query->where(function (Builder $query) use ($user, $warehouseIds, $outletIds) {
                 $query->where('user_id', $user->id);
-                if ($warehouseIds !== []) {
+                if ($outletIds !== []) {
+                    $query->orWhereIn('outlet_id', $outletIds);
+                } elseif ($warehouseIds !== []) {
                     $query->orWhereIn('warehouse_id', $warehouseIds);
                 }
             });

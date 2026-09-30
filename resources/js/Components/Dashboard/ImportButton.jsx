@@ -2,15 +2,15 @@ import React, { useRef } from "react";
 import toast from "react-hot-toast";
 import { router } from "@inertiajs/react";
 
-export default function ImportButton({ routeName, label = "Import", accept = ".xlsx,.xls,.csv" }) {
+export default function ImportButton({ routeName, label = "Impor", accept = ".xlsx,.xls,.csv" }) {
     const inputRef = useRef(null);
 
     const handleFile = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
         router.post(route(routeName), { file }, {
-            onSuccess: () => { toast.success("Import selesai"); e.target.value = ""; },
-            onError: () => { toast.error("Gagal import"); e.target.value = ""; },
+            onSuccess: () => { toast.success("Impor selesai"); e.target.value = ""; },
+            onError: () => { toast.error("Impor gagal"); e.target.value = ""; },
         });
     };
 

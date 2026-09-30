@@ -16,6 +16,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertRedirect(route('setup.index'));
+        $response->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Welcome'));
     }
 }

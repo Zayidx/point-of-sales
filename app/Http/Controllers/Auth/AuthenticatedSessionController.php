@@ -56,6 +56,12 @@ class AuthenticatedSessionController extends Controller
             ],
         );
 
+        // Managers should land on their monitoring dashboard after login;
+        // cashier and specialist roles keep their most relevant workspace.
+        if ($user?->hasRole('manager') && $user->can('dashboard-access')) {
+            return redirect()->intended(route('dashboard', absolute: false));
+        }
+
         $routePriority = [
             'transactions-access' => 'transactions.index',
             'receivables-access' => 'receivables.index',

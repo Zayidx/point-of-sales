@@ -18,6 +18,7 @@ class CashierShift extends Model
     protected $fillable = [
         'user_id',
         'warehouse_id',
+        'outlet_id',
         'opened_by',
         'closed_by',
         'opened_at',
@@ -40,6 +41,7 @@ class CashierShift extends Model
     protected $casts = [
         'id' => 'integer',
         'user_id' => 'integer',
+        'outlet_id' => 'integer',
         'opened_by' => 'integer',
         'closed_by' => 'integer',
         'opened_at' => 'datetime',
@@ -66,6 +68,11 @@ class CashierShift extends Model
         return $this->belongsTo(Warehouse::class);
     }
 
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class);
+    }
+
     public function openedBy()
     {
         return $this->belongsTo(User::class, 'opened_by');
@@ -89,6 +96,16 @@ class CashierShift extends Model
     public function cashMovements()
     {
         return $this->hasMany(ShiftCashMovement::class, 'cashier_shift_id');
+    }
+
+    public function cashHandover()
+    {
+        return $this->hasOne(CashHandover::class, 'cashier_shift_id');
+    }
+
+    public function stockCounts()
+    {
+        return $this->hasMany(CashierShiftStockCount::class);
     }
 
     public function scopeOpen($query)

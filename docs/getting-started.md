@@ -39,21 +39,26 @@ composer run dev
 2. jalankan `php artisan migrate --seed`
 3. jalankan `php artisan storage:link`
 4. jalankan `composer run dev`
-5. buka `http://localhost:8000`; pada instalasi pertama aplikasi otomatis membuka wizard `/setup`
-6. selesaikan wizard untuk membuat akun admin, profil toko, kategori, dan gudang utama
-7. login menggunakan akun yang dibuat pada wizard setup
+5. buka `http://localhost:8000` untuk homepage Dimsum Weigu
+6. login ke `/login` menggunakan salah satu akun awal yang dibuat oleh seeder
 
 ## Seed Data
 
-`DatabaseSeeder` hanya akan membuat:
+`DatabaseSeeder` membuat:
 
 - permission
 - role
 - payment setting awal
 - pengaturan dine-in
-- warehouse utama `PUSAT`
+- gudang pusat `PUSAT` dan satu gudang stok aktif untuk setiap outlet
+- profil usaha Dimsum Weigu, empat outlet, dan kategori awal
+- akun admin, manager, finance, cashier, dan warehouse
 
-Tidak ada user default atau sample data pada seeder utama. Outlet `PUSAT` dibuat sebagai gudang pusat non-penjualan. Pada instalasi pertama, buka root aplikasi dan wizard `/setup` akan terbuka otomatis untuk membuat akun admin.
+`PUSAT` menyimpan stok pusat dan bukan outlet penjualan. Gudang outlet menerima stok melalui transfer dari PUSAT; transaksi mengurangi stok gudang outlet. Saat menutup shift, kasir menghitung sisa stok dan sistem mengembalikannya ke PUSAT. Setiap shift dan transaksi menyimpan outlet kasirnya agar laporan cabang terpisah. Wizard setup telah dihapus; konfigurasi awal disediakan melalui seeder.
+
+Akun awal kasir per cabang (semua kata sandi awal `cashier123`): `cashier@gmail.com` (Galaxy BP), `cashier2@gmail.com` (Galaxy Hermina), `cashier3@gmail.com` (Pekayon Jaya), dan `cashier4@gmail.com` (Jalan Raya Pekayon). Akun lainnya: `manager@gmail.com` / `manager123`, `finance@gmail.com` / `finance123`, dan `warehouse@gmail.com` / `warehouse123`. Super-admin awal: `arya@gmail.com` / `password`. Untuk lingkungan yang dapat diakses publik, atur `SUPER_ADMIN_EMAIL` dan `SUPER_ADMIN_PASSWORD` sebelum menjalankan seeder.
+
+Untuk menambahkan atau menyelaraskan empat akun kasir outlet saja tanpa mengubah akun lain, jalankan `php artisan db:seed --class=OutletCashierSeeder`. Seeder ini mempertahankan kata sandi akun yang sudah ada dan menetapkan setiap akun ke tepat satu cabang.
 
 Untuk dataset demo lengkap secara eksplisit:
 
@@ -99,13 +104,9 @@ Cek minimal:
 
 Jika toko memiliki lebih dari satu cabang, gunakan skenario ini:
 
-1. Saat instalasi pertama (`/setup`), isi minimal satu cabang pada langkah "Cabang". Contoh untuk Cafe UD Djaya:
-   - `PUSAT` (pusat) sudah dibuat otomatis sebagai gudang pusat non-penjualan.
-   - `MAL` / Malabar (cabang penjualan)
-   - `TKB` / Taman Kencana (cabang penjualan)
-   - `PUT` / Puter (cabang penjualan)
-2. Akun Super Admin otomatis terasosiasi ke setiap outlet; kasir baru dibuat lewat `Pengguna` dengan outlet assignment dan satu default outlet.
-3. Stok awal cabang: transfer dari `PUSAT → WH-MAL/WH-TKB/WH-PUT` lewat menu **Stock Transfer** atau isi lewat **Stock Opname**.
+1. Seeder membuat `PUSAT` dan gudang stok aktif untuk masing-masing empat cabang Dimsum Weigu.
+2. Akun super-admin memiliki akses ke semua outlet; manager dan finance mendapat semua outlet penjualan, cashier mendapat cabang pertama, dan warehouse mendapat pusat serta seluruh cabang.
+3. Catat stok awal di `PUSAT`, lalu buat dan kirim transfer ke gudang outlet. Kasir menjual dari stok outlet dan mengembalikan sisa lewat hitung stok saat tutup shift.
 4. Pengaturan per-cabang (logo, struk, payment gateway, bank account, printer, WhatsApp, target) ada di halaman Settings dengan outlet switcher di navbar.
 5. Tutup shift sebelum pindah outlet — selector outlet terkunci selama shift kasir aktif.
 

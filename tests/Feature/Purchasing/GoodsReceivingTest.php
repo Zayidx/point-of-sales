@@ -4,11 +4,16 @@ namespace Tests\Feature\Purchasing;
 
 use App\Models\Category;
 use App\Models\GoodsReceiving;
+use App\Models\Ingredient;
+use App\Models\IngredientCategory;
+use App\Models\InventoryBalance;
+use App\Models\InventoryLedger;
 use App\Models\Product;
 use App\Models\ProductWarehouse;
 use App\Models\PurchaseOrder;
 use App\Models\StockMutation;
 use App\Models\Supplier;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\PurchaseOrderService;
@@ -16,6 +21,7 @@ use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class GoodsReceivingTest extends TestCase
@@ -102,10 +108,13 @@ class GoodsReceivingTest extends TestCase
     private function receivingPayload(PurchaseOrder $order, int $qty): array
     {
         return [
+            'request_key' => (string) Str::uuid(),
             'purchase_order_id' => $order->id,
             'items' => [[
                 'purchase_order_item_id' => $order->items->first()->id,
+                'qty_sent' => $qty,
                 'qty_received' => $qty,
+                'qc_status' => 'good',
             ]],
         ];
     }
@@ -142,6 +151,88 @@ class GoodsReceivingTest extends TestCase
         $this->assertEquals(100, $mutation->stock_before);
         $this->assertEquals(104, $mutation->stock_after);
         $this->assertEquals($this->warehouse->id, $mutation->warehouse_id);
+    }
+
+    public function test_receiving_ingredient_updates_weighted_average_inventory_ledger(): void
+    {
+        $unit = Unit::create(['code' => 'GRAM', 'name' => 'Gram', 'symbol' => 'g']);
+        $category = IngredientCategory::create(['name' => 'Bahan Uji']);
+        $ingredient = Ingredient::create([
+            'code' => 'TEST-FLOUR',
+            'name' => 'Tepung Uji',
+            'ingredient_category_id' => $category->id,
+            'base_unit_id' => $unit->id,
+            'default_unit_cost' => 2,
+            'is_active' => true,
+        ]);
+        $service = app(PurchaseOrderService::class);
+        $order = $service->createOrder(
+            data: ['supplier_id' => $this->supplier->id, 'warehouse_id' => $this->warehouse->id],
+            items: [[
+                'item_type' => 'ingredient',
+                'ingredient_id' => $ingredient->id,
+                'qty_ordered' => 1250.5,
+                'unit_price' => 2.5,
+            ]],
+            userId: $this->admin->id,
+        );
+        $service->placeOrder($order);
+
+        $this->post(route('goods-receivings.store'), [
+            'request_key' => (string) Str::uuid(),
+            'purchase_order_id' => $order->id,
+            'items' => [[
+                'purchase_order_item_id' => $order->items->first()->id,
+                'qty_sent' => 1250.5,
+                'qty_received' => 1000.5,
+                'qc_status' => 'good',
+            ]],
+        ])->assertSessionHas('success');
+
+        $balance = InventoryBalance::where('item_type', 'ingredient')->where('item_id', $ingredient->id)->firstOrFail();
+        $this->assertSame('1000.5000', $balance->quantity);
+        $this->assertSame('2.50', $balance->average_unit_cost);
+        $this->assertDatabaseHas('inventory_ledgers', [
+            'item_type' => 'ingredient',
+            'item_id' => $ingredient->id,
+            'movement_type' => 'purchase_receipt',
+            'quantity' => '1000.5000',
+        ]);
+        $this->assertSame(1, InventoryLedger::count());
+    }
+
+    public function test_repeated_goods_receipt_request_is_idempotent(): void
+    {
+        $product = $this->createProduct(100);
+        $order = $this->createOrderedPo($product, 10, $this->warehouse->id);
+        $payload = $this->receivingPayload($order, 4);
+
+        $this->post(route('goods-receivings.store'), $payload)->assertRedirect();
+        $this->post(route('goods-receivings.store'), $payload)->assertRedirect();
+
+        $this->assertSame(1, GoodsReceiving::count());
+        $this->assertEquals(104, $product->fresh()->stock);
+    }
+
+    public function test_qc_acceptance_controls_usable_stock_and_records_discrepancy(): void
+    {
+        $product = $this->createProduct(100);
+        $order = $this->createOrderedPo($product, 10, $this->warehouse->id);
+        $payload = $this->receivingPayload($order, 5);
+        $payload['items'][0]['qty_accepted'] = 2;
+        $payload['items'][0]['qc_status'] = 'damaged';
+        $payload['items'][0]['condition_notes'] = 'Tiga unit rusak saat diterima.';
+
+        $this->post(route('goods-receivings.store'), $payload)->assertRedirect();
+
+        $this->assertEquals(102, $product->fresh()->stock);
+        $this->assertDatabaseHas('goods_receiving_items', [
+            'qty_sent' => 5,
+            'qty_received' => 5,
+            'qty_accepted' => 2,
+            'qc_status' => 'damaged',
+            'condition_notes' => 'Tiga unit rusak saat diterima.',
+        ]);
     }
 
     public function test_receiving_rejects_draft_po(): void
@@ -216,6 +307,19 @@ class GoodsReceivingTest extends TestCase
         $this->assertNotNull($order->fresh()->completed_at);
     }
 
+    public function test_full_receipt_can_be_retried_after_po_is_completed_without_duplicate_stock(): void
+    {
+        $product = $this->createProduct(100);
+        $order = $this->createOrderedPo($product, 10, $this->warehouse->id);
+        $payload = $this->receivingPayload($order, 10);
+
+        $this->post(route('goods-receivings.store'), $payload)->assertRedirect();
+        $this->post(route('goods-receivings.store'), $payload)->assertRedirect();
+
+        $this->assertSame(1, GoodsReceiving::count());
+        $this->assertEquals(110, $product->fresh()->stock);
+    }
+
     public function test_receiving_rejects_duplicate_po_item_in_one_payload(): void
     {
         $product = $this->createProduct(100);
@@ -223,10 +327,11 @@ class GoodsReceivingTest extends TestCase
         $poItemId = $order->items->first()->id;
 
         $payload = [
+            'request_key' => (string) Str::uuid(),
             'purchase_order_id' => $order->id,
             'items' => [
-                ['purchase_order_item_id' => $poItemId, 'qty_received' => 4],
-                ['purchase_order_item_id' => $poItemId, 'qty_received' => 4],
+                ['purchase_order_item_id' => $poItemId, 'qty_sent' => 4, 'qty_received' => 4, 'qc_status' => 'good'],
+                ['purchase_order_item_id' => $poItemId, 'qty_sent' => 4, 'qty_received' => 4, 'qc_status' => 'good'],
             ],
         ];
 
@@ -245,10 +350,11 @@ class GoodsReceivingTest extends TestCase
         $poItemId = $order->items->first()->id;
 
         $this->post(route('goods-receivings.store'), [
+            'request_key' => (string) Str::uuid(),
             'purchase_order_id' => $order->id,
             'items' => [
-                ['purchase_order_item_id' => $poItemId, 'qty_received' => 6],
-                ['purchase_order_item_id' => $poItemId, 'qty_received' => 6],
+                ['purchase_order_item_id' => $poItemId, 'qty_sent' => 6, 'qty_received' => 6, 'qc_status' => 'good'],
+                ['purchase_order_item_id' => $poItemId, 'qty_sent' => 6, 'qty_received' => 6, 'qc_status' => 'good'],
             ],
         ])->assertSessionHas('error');
 

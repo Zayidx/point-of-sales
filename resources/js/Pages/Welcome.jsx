@@ -1,481 +1,300 @@
-import { Head, Link } from "@inertiajs/react";
-import PublicLayout from "@/Layouts/PublicLayout";
+import { useEffect, useState } from "react";
+import { Head } from "@inertiajs/react";
 import {
-    IconShoppingCart,
-    IconWallet,
-    IconBuildingWarehouse,
-    IconReceiptTax,
-    IconChartBar,
-    IconReportMoney,
-    IconUsers,
-    IconBrandWhatsapp,
-    IconShieldLock,
-    IconCloudOff,
-    IconBrandGithub,
-    IconStar,
-    IconArrowRight,
-    IconDeviceMobile,
-    IconTerminal2,
-    IconQrcode,
-    IconApi,
+    IconArrowDown,
+    IconArrowUpRight,
+    IconClock,
+    IconMapPin,
+    IconPhone,
+    IconSoup,
 } from "@tabler/icons-react";
 
-const GITHUB_URL = "https://github.com/aryadwiputra/point-of-sales";
-const DOCS_URL = `${GITHUB_URL}/blob/main/docs/getting-started.md`;
-const GALLERY_URL = `${GITHUB_URL}/blob/main/docs/screenshots.md`;
+const formatPrice = (price) =>
+    new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        maximumFractionDigits: 0,
+    }).format(price || 0);
 
-const stats = [
-    { value: "200+", label: "GitHub Stars" },
-    { value: "44+", label: "Fitur Lengkap" },
-    { value: "MIT", label: "Open Source" },
-    { value: "8", label: "Modul Terintegrasi" },
-];
-
-const features = [
+const menuCategories = [
     {
-        icon: IconShoppingCart,
-        title: "POS Cepat & Mudah",
-        desc: "Cari produk via barcode atau keyboard, scan pakai kamera (PWA), cart hold/resume, dan checkout dalam hitungan detik.",
+        id: "dimsum-kukus", title: "Dimsum Kukus",
+        items: [
+            { name: "Dimsum Ori", variants: [{ label: "4 pcs", price: 16000 }, { label: "6 pcs", price: 24000 }, { label: "8 pcs", price: 30000 }] },
+            { name: "Dimsum Mentai", variants: [{ label: "4 pcs", price: 21000 }, { label: "6 pcs", price: 28000 }, { label: "8 pcs", price: 38000 }] },
+            { name: "Dimsum Cheesemelt", variants: [{ label: "4 pcs", price: 25000 }, { label: "6 pcs", price: 35000 }, { label: "8 pcs", price: 48000 }] },
+            { name: "Dimsum Mix", variants: [{ label: "6 pcs", price: 30000 }, { label: "8 pcs", price: 45000 }] },
+        ],
     },
     {
-        icon: IconWallet,
-        title: "Multi-Payment",
-        desc: "Tunai, transfer bank, QRIS (Midtrans), Xendit, hingga pay later (piutang) — semua dalam satu kasir.",
+        id: "lumpia", title: "Lumpia",
+        items: [
+            { name: "Lumpia Original", variants: [{ label: "3 pcs", price: 24000 }, { label: "5 pcs", price: 36000 }] },
+            { name: "Lumpia Mentai", variants: [{ label: "3 pcs", price: 28000 }, { label: "5 pcs", price: 40000 }] },
+        ],
     },
     {
-        icon: IconBuildingWarehouse,
-        title: "Multi-Warehouse",
-        desc: "Stok terpisah per gudang/cabang, transfer antar gudang, stock opname, dan tracking batch/expiry (FEFO).",
+        id: "chiquro", title: "Chiquro",
+        items: [
+            { name: "Chiquro Garlic", variants: [{ label: "Per porsi", price: 26000 }] },
+            { name: "Chiquro Lava", variants: [{ label: "Per porsi", price: 26000 }] },
+            { name: "Chiquro Mentai", variants: [{ label: "Per porsi", price: 26000 }] },
+            { name: "Chiquro Cheese", variants: [{ label: "Per porsi", price: 28000 }] },
+        ],
     },
     {
-        icon: IconReceiptTax,
-        title: "PPN & Pajak",
-        desc: "Dukungan PPN 11% (exclusive/inclusive), data NPWP pelanggan, dan laporan pajak yang rapi.",
-    },
-    {
-        icon: IconChartBar,
-        title: "Laporan & Insight",
-        desc: "Laporan penjualan, profit & margin, performa per kasir, jam sibuk, dan repeat customer.",
-    },
-    {
-        icon: IconReportMoney,
-        title: "Piutang & Hutang",
-        desc: "Kelola piutang pelanggan & hutang supplier dengan aging analysis dan partial payment.",
-    },
-    {
-        icon: IconUsers,
-        title: "CRM & Loyalty",
-        desc: "Member tiers, poin loyalty, voucher, segmentasi pelanggan otomatis, dan campaign marketing.",
-    },
-    {
-        icon: IconBrandWhatsapp,
-        title: "WhatsApp Gateway",
-        desc: "Kirim struk, reminder piutang, dan promo via WhatsApp jika service Node dan perangkat sudah terhubung.",
-    },
-    {
-        icon: IconShieldLock,
-        title: "RBAC & Audit Log",
-        desc: "Kontrol akses per role (admin/kasir), persetujuan diskon, dan jejak audit before/after setiap perubahan.",
-    },
-    {
-        icon: IconCloudOff,
-        title: "Offline Mode",
-        desc: "Checkout yang sudah disiapkan dapat masuk antrean offline dan tersinkron saat koneksi kembali.",
-    },
-    {
-        icon: IconQrcode,
-        title: "Dine-in QR Menu",
-        desc: "Pelanggan scan QR meja, melihat menu, membuat pesanan, dan memantau status sampai diproses staff.",
-    },
-    {
-        icon: IconApi,
-        title: "API & Integrasi",
-        desc: "API terautentikasi untuk master data, POS, checkout, shift, transaksi, dan sinkronisasi offline.",
+        id: "paket-besar", title: "Paket Besar",
+        items: [
+            { name: "Big Package Dimsum Mix", variants: [{ label: "Paket", price: 90000 }] },
+            { name: "Big Package Dimsum Mentai", variants: [{ label: "Paket", price: 85000 }] },
+            { name: "Big Package Dimsum Cheesemelt", variants: [{ label: "Paket", price: 100000 }] },
+        ],
     },
 ];
 
-const techStack = [
-    { name: "Laravel 13", color: "bg-red-500" },
-    { name: "Inertia.js 3", color: "bg-purple-500" },
-    { name: "React 19", color: "bg-cyan-500" },
-    { name: "Tailwind CSS", color: "bg-sky-500" },
-    { name: "MySQL", color: "bg-orange-500" },
-    { name: "PWA", color: "bg-emerald-500" },
-];
+const contact = {
+    phone: "083129701342",
+    email: "faridindrawan@gmail.com",
+};
+const GOFOOD_URL = "https://gofood.co.id/";
 
-const screenshots = [
-    { src: "/screenshots/01-dashboard.png", title: "Dashboard", span: "col-span-2 row-span-2" },
-    { src: "/screenshots/02-pos-checkout.png", title: "POS Checkout" },
-    { src: "/screenshots/06-stock-opnames.png", title: "Stock Opname" },
-    { src: "/screenshots/12-receivables.png", title: "Receivables" },
-    { src: "/screenshots/15-sales-report.png", title: "Sales Report" },
-];
-
-const faqs = [
+const branches = [
     {
-        q: "Apakah Dikasir benar-benar gratis?",
-        a: "Ya. Dikasir dirilis di bawah lisensi MIT, sehingga bebas digunakan, dimodifikasi, dan didistribusikan. Hosting, hardware, biaya payment gateway, dan layanan pihak ketiga tetap menjadi tanggung jawab pengguna.",
+        name: "Cabang 1 · Galaxy",
+        address: "Di depan SPBU BP, Galaxy",
+        hours: [{ days: "Setiap hari", time: "14.00–00.00" }],
+        map: "https://maps.app.goo.gl/u9Gg5ufsxPXNCmwd9",
     },
     {
-        q: "Bisakah dipakai untuk bisnis multi-cabang?",
-        a: "Bisa. Dikasir mendukung multi-warehouse dengan stok terpisah per gudang/cabang, transfer stok antar gudang, dan laporan per gudang.",
+        name: "Cabang 2 · Galaxy",
+        address: "Di samping RS Hermina, Galaxy",
+        hours: [{ days: "Setiap hari", time: "08.00–18.00" }],
+        map: "https://maps.app.goo.gl/xyGKHdRHhcAeBMkA7",
     },
     {
-        q: "Bagaimana kalau internet di toko mati?",
-        a: "Checkout yang sudah disiapkan dapat masuk antrean lokal dan tersinkron otomatis saat koneksi kembali. Menambahkan produk baru ke cart saat offline masih memiliki keterbatasan karena cart berbasis server.",
+        name: "Cabang 3 · Pekayon Jaya",
+        address: "Pekayon Jaya",
+        hours: [
+            { days: "Senin–Sabtu", time: "14.00–22.00" },
+            { days: "Minggu", time: "06.00–16.00" },
+        ],
+        map: "https://maps.app.goo.gl/vBkAyD4WVhMoQUvm6",
     },
     {
-        q: "Apa saja yang dibutuhkan untuk instalasi?",
-        a: "PHP 8.3+, MySQL/MariaDB, Composer, Node.js 18+, dan npm. Untuk WhatsApp Gateway, siapkan Chrome/Chromium dan service Node terpisah. Semua panduan ada di dokumentasi getting-started.",
-    },
-    {
-        q: "Bagaimana cara berkontribusi?",
-        a: "Fork repository, buat branch dari development (feature/nama-fitur), lalu buat Pull Request ke development. Pastikan php artisan test lulus sebelum submit.",
+        name: "Cabang 4 · Jalan Raya Pekayon",
+        address: "Di samping Pakuwon Mall Bekasi",
+        hours: [{ days: "Setiap hari", time: "14.30–22.15" }],
+        map: "https://maps.app.goo.gl/6efBgdCTcRjrqytH7",
     },
 ];
 
-const quickStart = `git clone https://github.com/aryadwiputra/point-of-sales
-cd point-of-sales
-composer install
-PUPPETEER_SKIP_DOWNLOAD=true npm install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate --seed
-php artisan storage:link
+function MenuPriceList() {
+    const [activeCategoryId, setActiveCategoryId] = useState(menuCategories[0].id);
+    const activeCategory = menuCategories.find((category) => category.id === activeCategoryId);
 
-# Jalankan server, queue, logs, dan Vite
-composer run dev
-
-# Buka http://localhost:8000 dan selesaikan wizard /setup`;
-
-export default function Welcome() {
     return (
-        <PublicLayout>
-            <Head title="Dikasir — Sistem Kasir Open Source untuk UMKM" />
-
-            {/* ============ HERO ============ */}
-            <section className="pt-28 pb-16 px-6">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center max-w-4xl mx-auto">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 text-sm font-medium mb-6 border border-primary-100 dark:border-primary-900">
-                            <IconBrandGithub size={16} />
-                            Open Source · MIT License · 200+ Stars
-                        </div>
-
-                        <h1 className="text-5xl md:text-6xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                            Sistem Kasir Modern
-                            <span className="block mt-2 bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-                                Gratis &amp; Open Source
-                            </span>
-                        </h1>
-
-                        <p className="mt-6 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-                            Dikasir adalah aplikasi point of sale lengkap untuk warung, toko, dan
-                            UMKM Indonesia — multi-warehouse, PPN, loyalty &amp; CRM, WhatsApp
-                            gateway, hingga offline mode. Self-hosted, data 100% milik Anda.
-                        </p>
-
-                        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <a
-                                href={GITHUB_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-full sm:w-auto px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl hover:from-primary-600 hover:to-primary-700 shadow-xl shadow-primary-500/30 transition-all flex items-center justify-center gap-2"
-                            >
-                                <IconStar size={20} />
-                                Star di GitHub
-                                <IconArrowRight size={18} />
-                            </a>
-                            <Link
-                                href="/login"
-                                className="w-full sm:w-auto px-8 py-4 text-base font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl hover:border-primary-300 dark:hover:border-primary-700 transition-all flex items-center justify-center gap-2"
-                            >
-                                <IconDeviceMobile size={20} />
-                                Coba Demo
-                            </Link>
-                        </div>
-                    </div>
-
-                    {/* App preview */}
-                    <div className="mt-16 relative">
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-50 dark:from-slate-950 to-transparent z-10 pointer-events-none h-32 bottom-0 top-auto" />
-                        <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-900">
-                            <div className="bg-slate-100 dark:bg-slate-800 px-4 py-3 flex items-center gap-2">
-                                <div className="flex gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-red-400" />
-                                    <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                                    <div className="w-3 h-3 rounded-full bg-green-400" />
+        <>
+            <div role="tablist" aria-label="Kategori menu" className="scroll-reveal -mx-5 mb-6 flex gap-2 overflow-x-auto px-5 pb-2 sm:mx-0 sm:px-0">
+                {menuCategories.map((category) => (
+                    <button
+                        key={category.id}
+                        id={`tab-${category.id}`}
+                        type="button"
+                        role="tab"
+                        aria-selected={activeCategoryId === category.id}
+                        aria-controls={`panel-${category.id}`}
+                        onClick={() => setActiveCategoryId(category.id)}
+                        className={`shrink-0 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${activeCategoryId === category.id ? "border-[#a84127] bg-[#a84127] text-white" : "border-[#e7d8ca] bg-white text-[#674d41] hover:border-[#bd795d]"}`}
+                    >
+                        {category.title}
+                    </button>
+                ))}
+            </div>
+            <div id={`panel-${activeCategory.id}`} role="tabpanel" aria-labelledby={`tab-${activeCategory.id}`} className="divide-y divide-[#eee3d9] border-y border-[#e8d9cb] bg-white/70 px-4 sm:px-6">
+                {activeCategory.items.map((item) => (
+                    <article key={item.name} className="grid gap-3 py-5 sm:grid-cols-[minmax(155px,0.8fr)_1.6fr] sm:items-center sm:gap-6">
+                        <h3 className="font-semibold text-[#3d2c25]">{item.name}</h3>
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3 sm:gap-x-5">
+                            {item.variants.map((variant) => (
+                                <div key={variant.label} className="flex min-h-14 flex-col items-start justify-center gap-1 rounded-lg bg-[#fffaf5] px-3 py-2 sm:bg-transparent sm:px-2">
+                                    <span className="whitespace-nowrap text-xs leading-tight tracking-normal text-[#806a5f]">{variant.label}</span>
+                                    <span className="whitespace-nowrap text-sm font-semibold leading-tight tracking-normal tabular-nums text-[#34251f]">{formatPrice(variant.price)}</span>
                                 </div>
-                                <div className="flex-1 text-center text-xs text-slate-500">
-                                    dikasir.web.id
-                                </div>
-                            </div>
-                            <img
-                                src="/media/revamp-pos.png"
-                                alt="Preview POS Dikasir"
-                                className="w-full"
-                                loading="lazy"
-                            />
+                            ))}
                         </div>
-                    </div>
-                </div>
-            </section>
+                    </article>
+                ))}
+            </div>
+        </>
+    );
+}
 
-            {/* ============ STATS ============ */}
-            <section className="py-12 px-6 border-y border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50">
-                <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-                    {stats.map((stat) => (
-                        <div key={stat.label} className="text-center">
-                            <div className="text-3xl md:text-4xl font-extrabold text-primary-600 dark:text-primary-400">
-                                {stat.value}
-                            </div>
-                            <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                                {stat.label}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </section>
+export default function Welcome({ business = {}, outlets = [] }) {
+    useEffect(() => {
+        const elements = document.querySelectorAll(".scroll-reveal");
+        const showAll = () => elements.forEach((element) => element.classList.add("is-visible"));
 
-            {/* ============ SCREENSHOTS ============ */}
-            <section id="screenshot" className="py-20 px-6">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-14">
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-                            Tampilan Aplikasi
-                        </h2>
-                        <p className="mt-4 text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-                            Dari kasir harian hingga laporan manajemen — semua dalam satu aplikasi
-                            yang rapi dan cepat.
-                        </p>
-                    </div>
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
+            showAll();
+            return;
+        }
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[140px] md:auto-rows-[180px]">
-                        {screenshots.map((shot) => (
-                            <div
-                                key={shot.title}
-                                className={`${shot.span || ""} relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 group`}
-                            >
-                                <img
-                                    src={shot.src}
-                                    alt={shot.title}
-                                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
-                                    loading="lazy"
-                                />
-                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 py-2">
-                                    <span className="text-xs font-medium text-white">
-                                        {shot.title}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("is-visible");
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12, rootMargin: "0px 0px -48px 0px" });
 
-                    <div className="text-center mt-8">
-                        <a
-                            href={GALLERY_URL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 transition-colors"
-                        >
-                            Lihat galeri lengkap (33 screenshot)
-                            <IconArrowRight size={16} />
-                        </a>
-                    </div>
-                </div>
-            </section>
+        elements.forEach((element) => observer.observe(element));
+        return () => observer.disconnect();
+    }, []);
 
-            {/* ============ FEATURES ============ */}
-            <section id="fitur" className="py-20 px-6 bg-white dark:bg-slate-900/50 border-y border-slate-200 dark:border-slate-800">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-                            Fitur Lengkap untuk Bisnis Nyata
-                        </h2>
-                        <p className="mt-4 text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-                            44+ modul terintegrasi — dari transaksi harian sampai analitik
-                            lanjutan, dirancang untuk kebutuhan UMKM Indonesia.
-                        </p>
-                    </div>
+    const phone = business.phone || contact.phone;
+    const email = business.email || contact.email;
+    const displayBranches = outlets.length ? outlets : branches;
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {features.map((feature) => (
-                            <div
-                                key={feature.title}
-                                className="group p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-lg hover:shadow-primary-500/5 transition-all"
-                            >
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                    <feature.icon size={24} className="text-white" />
-                                </div>
-                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                                    {feature.title}
-                                </h3>
-                                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                                    {feature.desc}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
+    return (
+        <>
+            <Head title={`${business.name || "Dimsum"} — Dimsum Hangat, Dibuat dengan Hati`}>
+                <meta
+                    name="description"
+                    content={`${business.name || "Dimsum"} menyajikan dimsum hangat dan lezat untuk menemani waktu makan Anda.`}
+                />
+            </Head>
 
-                    <div className="text-center mt-10">
-                        <Link
-                            href="/fitur"
-                            className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800 rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 transition-colors"
-                        >
-                            Jelajahi semua fitur
-                            <IconArrowRight size={16} />
-                        </Link>
-                    </div>
-                </div>
-            </section>
-
-            {/* ============ TECH STACK ============ */}
-            <section className="py-16 px-6">
-                <div className="max-w-4xl mx-auto text-center">
-                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
-                        Tech Stack Modern
-                    </h2>
-                    <p className="text-slate-600 dark:text-slate-400 mb-10">
-                        Dibangun dengan teknologi yang teruji, cepat, dan mudah dikembangkan
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-4">
-                        {techStack.map((tech) => (
-                            <div
-                                key={tech.name}
-                                className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700"
-                            >
-                                <div className={`w-3 h-3 rounded-full ${tech.color}`} />
-                                <span className="font-medium text-slate-700 dark:text-slate-300">
-                                    {tech.name}
+            <div className="min-h-screen bg-[#fffaf4] text-[#34251f]">
+                <header className="absolute inset-x-0 top-0 z-20">
+                    <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
+                        <a href="#beranda" className="flex items-center gap-3" aria-label={`${business.name} — beranda`}>
+                            {business.logo ? (
+                                <img src={business.logo} alt="" className="h-11 w-11 rounded-full object-cover" />
+                            ) : (
+                                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#a84127] text-white">
+                                    <IconSoup size={24} />
                                 </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ============ INSTALLATION ============ */}
-            <section id="instalasi" className="py-20 px-6 bg-white dark:bg-slate-900/50 border-y border-slate-200 dark:border-slate-800">
-                <div className="max-w-4xl mx-auto">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-                            Instalasi dalam Hitungan Menit
-                        </h2>
-                        <p className="mt-4 text-slate-600 dark:text-slate-400">
-                             Clone, install, lalu buka wizard setup untuk membuat akun admin,
-                             profil toko, kategori, dan gudang utama.
-                        </p>
-                    </div>
-
-                    <div className="bg-slate-900 dark:bg-slate-800 rounded-2xl p-6 overflow-hidden">
-                        <div className="flex items-center gap-2 mb-4">
-                            <IconTerminal2 size={16} className="text-slate-500" />
-                            <span className="text-xs font-mono text-slate-500">bash</span>
-                        </div>
-                        <pre className="text-sm text-slate-300 font-mono overflow-x-auto leading-relaxed">
-                            {quickStart}
-                        </pre>
-                    </div>
-
-                    <div className="mt-6 text-center">
-                        <a
-                            href={DOCS_URL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 transition-colors"
-                        >
-                            Baca dokumentasi lengkap
-                            <IconArrowRight size={16} />
+                            )}
+                            <span className="font-serif text-lg font-bold tracking-tight sm:text-xl">
+                                {business.name || "Dimsum"}
+                            </span>
                         </a>
-                    </div>
-                </div>
-            </section>
-
-            {/* ============ DEMO ============ */}
-            <section className="py-16 px-6">
-                <div className="max-w-3xl mx-auto">
-                    <div className="rounded-2xl border border-primary-200 dark:border-primary-900 bg-primary-50/50 dark:bg-primary-950/30 p-8 text-center">
-                        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                            Ingin Coba Langsung?
-                        </h2>
-                        <p className="text-slate-600 dark:text-slate-400 mb-6">
-                             Untuk mencoba aplikasi, jalankan instalasi lokal dan selesaikan
-                             wizard setup. Seeder utama tidak membuat akun demo atau sample data.
-                        </p>
-                        <Link
-                            href="/setup"
-                            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-2xl hover:from-primary-600 hover:to-primary-700 shadow-lg shadow-primary-500/25 transition-all"
-                        >
-                            Mulai Setup
-                            <IconArrowRight size={18} />
-                        </Link>
-                    </div>
-                </div>
-            </section>
-
-            {/* ============ FAQ ============ */}
-            <section id="faq" className="py-20 px-6 bg-white dark:bg-slate-900/50 border-y border-slate-200 dark:border-slate-800">
-                <div className="max-w-3xl mx-auto">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-                            Pertanyaan Umum
-                        </h2>
-                    </div>
-                    <div className="space-y-4">
-                        {faqs.map((faq) => (
-                            <details
-                                key={faq.q}
-                                className="group rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 open:shadow-md transition-all"
-                            >
-                                <summary className="flex items-center justify-between gap-4 px-5 py-4 cursor-pointer list-none">
-                                    <span className="font-medium text-slate-900 dark:text-white">
-                                        {faq.q}
-                                    </span>
-                                    <span className="text-primary-500 group-open:rotate-45 transition-transform text-lg">
-                                        +
-                                    </span>
-                                </summary>
-                                <p className="px-5 pb-5 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                                    {faq.a}
-                                </p>
-                            </details>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ============ CTA ============ */}
-            <section className="py-20 px-6">
-                <div className="max-w-4xl mx-auto">
-                    <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-3xl p-12 text-center text-white">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                            Siap Kelola Bisnis dengan Dikasir?
-                        </h2>
-                        <p className="text-lg opacity-90 mb-8 max-w-xl mx-auto">
-                             Gratis digunakan dan dimodifikasi di bawah lisensi MIT, dengan data
-                             tetap berada di infrastruktur Anda.
-                        </p>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <a
-                                href={GITHUB_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-600 font-semibold rounded-2xl hover:bg-slate-50 transition-colors"
-                            >
-                                <IconBrandGithub size={20} />
-                                Star di GitHub
-                            </a>
-                            <Link
-                                href="/login"
-                                className="inline-flex items-center gap-2 px-8 py-4 border border-white/40 text-white font-semibold rounded-2xl hover:bg-white/10 transition-colors"
-                            >
-                                Coba Demo
-                                <IconArrowRight size={18} />
-                            </Link>
+                        <div className="hidden items-center gap-8 text-sm font-medium text-[#695850] md:flex">
+                            <a href="#cerita" className="transition hover:text-[#a84127]">Cerita Kami</a>
+                            <a href="#menu" className="transition hover:text-[#a84127]">Menu</a>
+                            <a href="#outlet" className="transition hover:text-[#a84127]">Outlet</a>
                         </div>
+                    </nav>
+                </header>
+
+                <main>
+                    <section id="beranda" className="relative isolate overflow-hidden">
+                        <div className="absolute inset-0 -z-10 bg-[#f7ecdf]" />
+                        <div className="absolute inset-0 -z-10 bg-cover bg-center md:bg-[position:center_54%]" style={{ backgroundImage: "url('/images/dimsum-hero.png')" }} />
+                        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#fffaf4]/95 via-[#fffaf4]/80 to-[#fffaf4]/20 md:to-transparent" />
+                        <div className="mx-auto flex min-h-[680px] max-w-7xl items-center px-5 pb-20 pt-32 sm:px-8 md:min-h-[760px]">
+                            <div className="scroll-reveal max-w-2xl">
+                                <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#d8bca8] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[#9b482d]">
+                                    Dimsum hangat, setiap hari
+                                </p>
+                                <h1 className="font-serif text-5xl font-semibold leading-[1.08] tracking-tight text-[#34251f] sm:text-6xl md:text-7xl">
+                                    Momen kecil,
+                                    <span className="block text-[#a84127]">rasa yang istimewa.</span>
+                                </h1>
+                                <p className="mt-6 max-w-xl text-base leading-7 text-[#695850] sm:text-lg sm:leading-8">
+                                    {business.description || "Dibuat hangat dengan bahan pilihan dan penuh perhatian. Temukan dimsum favorit untuk dinikmati bersama orang-orang tersayang."}
+                                </p>
+                                <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                                    <a href="#menu" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#a84127] px-7 py-3.5 font-semibold text-white shadow-lg shadow-[#a84127]/20 transition hover:-translate-y-0.5 hover:bg-[#87351f]">
+                                        Lihat menu <IconArrowDown size={18} />
+                                    </a>
+                                    <a href={GOFOOD_URL} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full border border-[#b99c8b] bg-white/80 px-7 py-3.5 font-semibold text-[#49372f] transition hover:bg-white">Pesan lewat GoFood <IconArrowUpRight size={17} /></a>
+                                </div>
+                                <div className="mt-12 flex items-center gap-3 text-sm text-[#695850]">
+                                    <span className="flex -space-x-2" aria-hidden="true">
+                                        {["bg-[#d99765]", "bg-[#e9bd8a]", "bg-[#b97858]"].map((color) => <span key={color} className={`h-8 w-8 rounded-full border-2 border-[#fffaf4] ${color}`} />)}
+                                    </span>
+                                    <span>Diracik segar, disajikan dengan hangat</span>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="#cerita" aria-label="Lanjut ke cerita kami" className="absolute bottom-7 left-1/2 hidden -translate-x-1/2 items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#695850] md:flex">
+                            Jelajahi <IconArrowDown size={15} />
+                        </a>
+                    </section>
+
+                    <section id="cerita" className="mx-auto grid max-w-7xl gap-12 px-5 py-24 sm:px-8 md:grid-cols-[0.8fr_1.2fr] md:items-center md:py-32">
+                        <div className="scroll-reveal">
+                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#a84127]">Dari dapur kami</p>
+                            <h2 className="mt-4 font-serif text-4xl font-semibold leading-tight sm:text-5xl">Rasa rumahan, dibuat sepenuh hati.</h2>
+                        </div>
+                        <div className="scroll-reveal space-y-5 text-base leading-8 text-[#695850]" style={{ "--reveal-delay": "120ms" }}>
+                            <p>{business.description || `${business.name || "Kami"} percaya hidangan yang baik dimulai dari bahan yang baik dan dibuat dengan penuh perhatian. Setiap sajian kami siapkan agar terasa hangat, nyaman, dan selalu ingin dinikmati lagi.`}</p>
+                            <p>Kami menyambut Anda untuk menikmati dimsum bersama keluarga, teman, atau sebagai teman istirahat di tengah kesibukan.</p>
+                            <a href="#menu" className="inline-flex items-center gap-2 font-semibold text-[#a84127] hover:text-[#87351f]">Kenali menu kami <IconArrowUpRight size={18} /></a>
+                        </div>
+                    </section>
+
+                    <section id="menu" className="bg-[#f7eee5] px-5 py-20 sm:px-8 md:py-24">
+                        <div className="mx-auto max-w-5xl">
+                            <div className="scroll-reveal mb-8">
+                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#a84127]">Menu</p>
+                                <div className="mt-2 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                                    <div><h2 className="font-serif text-4xl font-semibold sm:text-5xl">Dimsum, lumpia &amp; lainnya.</h2><p className="mt-3 text-sm text-[#75645c]">Pilih kategori untuk melihat menu dan harga.</p></div>
+                                    <a href={GOFOOD_URL} target="_blank" rel="noreferrer" className="inline-flex w-fit items-center gap-2 rounded-full bg-[#a84127] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#87351f]">Pesan lewat GoFood <IconArrowUpRight size={17} /></a>
+                                </div>
+                            </div>
+                            <MenuPriceList />
+                        </div>
+                    </section>
+
+                    <section id="outlet" className="border-t border-[#ead9c8] bg-white px-5 py-24 sm:px-8 md:py-28">
+                        <div className="mx-auto max-w-7xl">
+                            <div className="scroll-reveal mb-12 max-w-xl"><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#a84127]">Kami menanti Anda</p><h2 className="mt-3 font-serif text-4xl font-semibold sm:text-5xl">Mampir atau sapa kami.</h2><p className="mt-4 text-base leading-7 text-[#75645c]">Pilih cabang terdekat, cek jam buka, lalu mampir untuk menikmati dimsum hangat.</p></div>
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                {displayBranches.map((branch, index) => (
+                                    <article key={branch.id || branch.name} className="scroll-reveal rounded-3xl border border-[#f0e4d8] bg-[#fffaf4] p-7 shadow-[0_8px_30px_rgba(80,47,31,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(80,47,31,0.1)] sm:p-8" style={{ "--reveal-delay": `${index * 90}ms` }}>
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div>
+                                                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f4e4d5] text-[#a84127]"><IconMapPin size={22} /></span>
+                                                <h3 className="mt-5 font-serif text-xl font-semibold">{branch.name}</h3>
+                                                <p className="mt-2 text-sm leading-6 text-[#75645c]">{branch.address}</p>
+                                            </div>
+                                            <a href={branch.map} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d9c5b7] px-3.5 py-2.5 text-xs font-semibold text-[#8f3825] transition hover:border-[#a84127] hover:bg-white" aria-label={`Buka peta ${branch.name}`}>
+                                                Peta <IconArrowUpRight size={15} />
+                                            </a>
+                                        </div>
+                                        <div className="mt-6 border-t border-[#ead9c8] pt-5">
+                                            <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#9b482d]"><IconClock size={16} /> Jam operasional</p>
+                                            {branch.hours.map((schedule) => (
+                                                <div key={schedule.days} className="flex justify-between gap-4 py-1.5 text-sm">
+                                                    <span className="text-[#75645c]">{schedule.days}</span>
+                                                    <span className="font-semibold tabular-nums text-[#49372f]">{schedule.time} WIB</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+                            <div className="scroll-reveal mt-6 flex flex-col justify-between gap-6 rounded-3xl bg-[#34251f] p-7 text-white sm:flex-row sm:items-center sm:p-9">
+                                <div className="flex items-start gap-4">
+                                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-[#f0c3a7]"><IconPhone size={23} /></span>
+                                    <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#e9b99f]">Kontak</p><h3 className="mt-1 font-serif text-2xl font-semibold">Kami siap menyapa.</h3><div className="mt-3 flex flex-col gap-1 text-sm text-white/75 sm:flex-row sm:gap-5"><a href={`tel:${phone}`} className="transition hover:text-white">{phone}</a><a href={`mailto:${email}`} className="transition hover:text-white">{email}</a></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                </main>
+
+                <footer className="bg-[#34251f] px-5 py-8 text-white sm:px-8">
+                    <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+                        <div><p className="font-serif text-lg font-semibold">{business.name || "Dimsum"}</p><p className="mt-1 text-xs text-white/60">Dibuat hangat, dinikmati bersama.</p></div>
+                        <p className="text-xs text-white/50">© {new Date().getFullYear()} {business.name || "Dimsum"}</p>
                     </div>
-                </div>
-            </section>
-        </PublicLayout>
+                </footer>
+            </div>
+        </>
     );
 }

@@ -166,7 +166,7 @@ export default function SalesReturnForm({
             preserveScroll: true,
             onSuccess: () =>
                 toast.success(
-                    salesReturn ? "Draft retur diperbarui" : "Draft retur dibuat"
+                    salesReturn ? "Draf retur diperbarui" : "Draf retur dibuat"
                 ),
             onError: () => toast.error("Gagal menyimpan draft retur"),
         });
@@ -208,7 +208,7 @@ export default function SalesReturnForm({
                             {title}
                         </h1>
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                            Invoice {transaction.invoice} •{" "}
+                            Faktur {transaction.invoice} •{" "}
                             {formatDateTime(transaction.created_at)}
                         </p>
                     </div>
@@ -223,8 +223,8 @@ export default function SalesReturnForm({
                                 }`}
                             >
                                 {salesReturn.status === "completed"
-                                    ? "Completed"
-                                    : "Draft"}
+                                    ? "Selesai"
+                                    : "Draf"}
                             </span>
                             {salesReturn.completed_at && (
                                 <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -270,7 +270,7 @@ export default function SalesReturnForm({
                                     type="submit"
                                     icon={<IconDeviceFloppy size={18} />}
                                     className="bg-primary-500 text-white hover:bg-primary-600"
-                                    label={salesReturn ? "Simpan Draft" : "Buat Draft"}
+                                    label={salesReturn ? "Simpan Draf" : "Buat Draf"}
                                     disabled={form.processing}
                                 />
                             )}

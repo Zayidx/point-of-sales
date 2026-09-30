@@ -13,6 +13,9 @@ class TransactionTenderService
     public const METHODS = [
         TransactionTender::METHOD_CASH,
         TransactionTender::METHOD_BANK_TRANSFER,
+        TransactionTender::METHOD_QRIS_1,
+        TransactionTender::METHOD_QRIS_2,
+        TransactionTender::METHOD_QRIS_3,
         TransactionTender::METHOD_MIDTRANS,
         TransactionTender::METHOD_XENDIT,
         TransactionTender::METHOD_QRIS,
@@ -122,8 +125,13 @@ class TransactionTenderService
                 'cash_received' => $cashReceived,
                 'change' => $change,
                 'bank_account_id' => $bankAccountId,
-                'payment_status' => $method === TransactionTender::METHOD_CASH
-                || $method === TransactionTender::METHOD_BANK_TRANSFER
+                'payment_status' => in_array($method, [
+                    TransactionTender::METHOD_CASH,
+                    TransactionTender::METHOD_BANK_TRANSFER,
+                    TransactionTender::METHOD_QRIS_1,
+                    TransactionTender::METHOD_QRIS_2,
+                    TransactionTender::METHOD_QRIS_3,
+                ], true)
                     ? TransactionTender::STATUS_PAID
                     : TransactionTender::STATUS_PENDING,
             ];

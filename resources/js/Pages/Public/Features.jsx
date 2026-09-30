@@ -129,7 +129,7 @@ const modules = [
         features: [
             "Payment gateway: Midtrans & Xendit",
             "Bank accounts untuk transfer manual",
-            "Multi price list per kelompok pelanggan",
+            "Multi daftar harga per kelompok pelanggan",
             "Sales target & store profile",
             "Pengaturan printer & pajak",
             "Multi-bahasa: Indonesia & English",

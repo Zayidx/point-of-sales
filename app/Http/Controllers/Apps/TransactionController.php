@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Apps;
 
-use App\Exceptions\PaymentGatewayException;
 use App\Http\Controllers\Controller;
 use App\Models\BankAccount;
 use App\Models\Cart;
@@ -11,7 +10,7 @@ use App\Models\Customer;
 use App\Models\CustomerVoucher;
 use App\Models\DiscountApprovalLog;
 use App\Models\Outlet;
-use App\Models\PaymentSetting;
+use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionTender;
@@ -22,7 +21,6 @@ use App\Services\CashierShiftService;
 use App\Services\CheckoutService;
 use App\Services\LoyaltyService;
 use App\Services\OutletAccessService;
-use App\Services\Payments\PaymentGatewayManager;
 use App\Services\PriceListService;
 use App\Services\PricingService;
 use App\Services\TransactionTenderService;
@@ -59,9 +57,9 @@ class TransactionController extends Controller
     {
         $userId = auth()->user()->id;
         $activeShift = $this->cashierShiftService->getActiveShiftForUser($userId);
-        $activeShift?->load('warehouse.outlet');
+        $activeShift?->load(['warehouse.outlet', 'outlet']);
         $warehouseId = $activeShift?->warehouse_id;
-        $outlet = $activeShift?->warehouse?->outlet;
+        $outlet = $activeShift?->outlet ?? $activeShift?->warehouse?->outlet;
 
         // Get active cart items (not held)
         $carts = Cart::with('product')
@@ -137,23 +135,33 @@ class TransactionController extends Controller
             ->orderBy('name')
             ->get();
 
-        $paymentSetting = PaymentSetting::forOutlet($outlet);
-
         $carts_total = 0;
         foreach ($carts as $cart) {
             $carts_total += $cart->price;
         }
 
-        $defaultGateway = $paymentSetting?->default_gateway ?? 'cash';
-        if (
-            $defaultGateway !== 'cash'
-            && (! $paymentSetting || ! $paymentSetting->isGatewayReady($defaultGateway))
-        ) {
-            $defaultGateway = 'cash';
-        }
+        $paymentMethods = PaymentMethod::query()
+            ->where('is_active', true)
+            ->whereNotIn('code', ['CASH', 'GOFOOD'])
+            ->orderBy('sort_order')
+            ->get(['code', 'name'])
+            ->map(fn (PaymentMethod $method) => [
+                'value' => strtolower(str_replace('-', '_', $method->code)),
+                'label' => $method->name,
+                'description' => 'Pembayaran dicatat langsung oleh kasir.',
+            ])
+            ->values();
 
-        // Get active bank accounts for bank transfer
+        // Rekening aktif hanya dipakai untuk transfer manual.
         $bankAccounts = BankAccount::active()->forOutlet($outlet)->ordered()->get();
+
+        if ($bankAccounts->isNotEmpty()) {
+            $paymentMethods->push([
+                'value' => 'bank_transfer',
+                'label' => 'Transfer Bank',
+                'description' => 'Pembayaran manual melalui rekening cabang.',
+            ]);
+        }
 
         return Inertia::render('Dashboard/Transactions/Index', [
             'carts' => $carts,
@@ -163,8 +171,8 @@ class TransactionController extends Controller
             'products' => $products,
             'categories' => $categories,
             'initialPricingPreview' => $initialPricingPreview,
-            'paymentGateways' => $paymentSetting?->enabledGateways($outlet) ?? [],
-            'defaultPaymentGateway' => $defaultGateway,
+            'paymentMethods' => $paymentMethods,
+            'defaultPaymentGateway' => 'cash',
             'bankAccounts' => $bankAccounts,
             'warehouses' => $this->outletAccessService->salesWarehousesFor(auth()->user())->values(),
             'shiftSummary' => $this->cashierShiftService->summarizeForDisplay($activeShift),
@@ -222,7 +230,7 @@ class TransactionController extends Controller
             ? CustomerVoucher::find($validated['customer_voucher_id'])
             : null;
         $activeShift = $this->cashierShiftService->getActiveShiftForUser($request->user()->id);
-        $activeShift?->loadMissing('warehouse.outlet');
+        $activeShift?->loadMissing(['warehouse.outlet', 'outlet']);
 
         $carts = Cart::with('product.category')
             ->where('cashier_id', $request->user()->id)
@@ -230,7 +238,8 @@ class TransactionController extends Controller
             ->latest()
             ->get();
 
-        $pricingPreview = $this->pricingService->previewCart($carts, $customer, null, $activeShift?->warehouse?->outlet);
+        $activeOutlet = $activeShift?->outlet ?? $activeShift?->warehouse?->outlet;
+        $pricingPreview = $this->pricingService->previewCart($carts, $customer, null, $activeOutlet);
 
         return response()->json([
             'success' => true,
@@ -239,7 +248,7 @@ class TransactionController extends Controller
                 'shipping_cost' => (int) ($validated['shipping_cost'] ?? 0),
                 'redeem_points' => (int) ($validated['redeem_points'] ?? 0),
                 'voucher' => $voucher,
-            ], null, $activeShift?->warehouse?->outlet),
+            ], null, $activeOutlet),
         ]);
     }
 
@@ -591,16 +600,34 @@ class TransactionController extends Controller
      * @param  mixed  $request
      * @return void
      */
-    public function store(Request $request, PaymentGatewayManager $paymentGatewayManager)
+    public function store(Request $request)
     {
         $isPayLater = $request->boolean('pay_later');
         $paymentGateway = $isPayLater ? null : $request->input('payment_gateway');
         if ($paymentGateway) {
             $paymentGateway = strtolower($paymentGateway);
         }
+        $manualPaymentMethods = ['bank_transfer', 'qris_1', 'qris_2', 'qris_3', 'gofood'];
+        if ($paymentGateway && ! in_array($paymentGateway, $manualPaymentMethods, true)) {
+            return redirect()
+                ->route('transactions.index')
+                ->with('error', 'Metode pembayaran POS tidak tersedia. Gunakan pembayaran manual.');
+        }
+        if (in_array($paymentGateway, ['qris_1', 'qris_2', 'qris_3'], true)) {
+            $paymentMethodCode = strtoupper(str_replace('_', '-', $paymentGateway));
+            if (! PaymentMethod::query()->where('code', $paymentMethodCode)->where('is_active', true)->exists()) {
+                return redirect()
+                    ->route('transactions.index')
+                    ->with('error', 'Metode QRIS yang dipilih sedang tidak aktif.');
+            }
+        }
+        $isManualOnlineSale = $paymentGateway === 'gofood';
+        $manualOnlineTotal = $isManualOnlineSale
+            ? (int) $request->validate(['manual_online_total' => ['required', 'integer', 'min:1']])['manual_online_total']
+            : null;
         $activeShift = $this->cashierShiftService->getActiveShiftForUser($request->user()->id);
-        $activeShift?->load('warehouse.outlet');
-        $outlet = $activeShift?->warehouse?->outlet;
+        $activeShift?->load(['warehouse.outlet', 'outlet']);
+        $outlet = $activeShift?->outlet ?? $activeShift?->warehouse?->outlet;
         $orderType = in_array($request->input('order_type'), ['in_store', 'takeaway', 'delivery'])
             ? $request->input('order_type')
             : null;
@@ -619,23 +646,28 @@ class TransactionController extends Controller
                 ->with('error', 'Nota barang memerlukan pelanggan.');
         }
 
-        $paymentSetting = null;
-        if ($paymentGateway) {
-            $paymentSetting = PaymentSetting::forOutlet($outlet);
-
-            $gatewayReady = $paymentSetting && ($paymentGateway === 'qris'
-                ? $paymentSetting->isGatewayReady(PaymentSetting::GATEWAY_MIDTRANS)
-                    || $paymentSetting->isGatewayReady(PaymentSetting::GATEWAY_XENDIT)
-                : $paymentSetting->isGatewayReady($paymentGateway));
-
-            if (! $gatewayReady) {
+        if ($paymentGateway === 'bank_transfer') {
+            $bankAccount = BankAccount::active()
+                ->forOutlet($outlet)
+                ->whereKey($request->input('bank_account_id'))
+                ->first();
+            if (! $bankAccount) {
                 return redirect()
                     ->route('transactions.index')
-                    ->with('error', 'Gateway pembayaran belum dikonfigurasi.');
+                    ->with('error', 'Pilih rekening cabang yang aktif untuk transfer manual.');
             }
         }
 
         $tenderInput = is_array($request->input('tenders')) ? $request->input('tenders') : [];
+        if (collect($tenderInput)->contains(fn ($tender) => in_array(
+            strtolower((string) ($tender['method'] ?? '')),
+            [TransactionTender::METHOD_MIDTRANS, TransactionTender::METHOD_XENDIT, TransactionTender::METHOD_QRIS],
+            true,
+        ))) {
+            return redirect()
+                ->route('transactions.index')
+                ->with('error', 'Pembayaran gateway tidak tersedia pada POS.');
+        }
         $useTenders = ! $isPayLater && $tenderInput !== [];
         // ponytail: legacy single-method path kept — split tenders only activate when payload has tenders[]
         $isCashPayment = empty($paymentGateway) && ! $isPayLater && ! $useTenders;
@@ -660,6 +692,7 @@ class TransactionController extends Controller
             tenderInput: $tenderInput,
             outlet: $outlet,
             bankAccountId: $request->input('bank_account_id'),
+            manualOnlineTotal: $manualOnlineTotal,
         );
 
         $result = $this->checkoutService->execute($context);
@@ -680,53 +713,6 @@ class TransactionController extends Controller
             return redirect()
                 ->route('transactions.print', $result->transaction->invoice)
                 ->with('info', 'Transaksi menunggu approval supervisor.');
-        }
-
-        if ($useTenders) {
-            $gatewayTenders = $result->transaction->tenders()
-                ->whereIn('method', [TransactionTender::METHOD_MIDTRANS, TransactionTender::METHOD_XENDIT, TransactionTender::METHOD_QRIS])
-                ->where('payment_status', TransactionTender::STATUS_PENDING)
-                ->get();
-
-            try {
-                foreach ($gatewayTenders as $tender) {
-                    $response = $paymentGatewayManager->createTenderPayment(
-                        $result->transaction,
-                        $tender,
-                        $paymentSetting ?? PaymentSetting::forOutlet($outlet),
-                    );
-
-                    $tender->update([
-                        'payment_reference' => $response['reference'] ?? null,
-                        'payment_url' => $response['payment_url'] ?? null,
-                        'qr_string' => $response['qr_string'] ?? null,
-                    ]);
-                }
-
-                if ($gatewayTenders->count() === 1) {
-                    $result->transaction->update($gatewayTenders->first()->only(['payment_reference', 'payment_url', 'qr_string']));
-                }
-            } catch (PaymentGatewayException $exception) {
-                return redirect()
-                    ->route('transactions.print', $result->transaction->invoice)
-                    ->with('error', $exception->getMessage());
-            }
-        } elseif ($paymentGateway) {
-            try {
-                $paymentResponse = $paymentGateway === 'qris'
-                    ? $paymentGatewayManager->createQrisPayment($result->transaction, $paymentSetting)
-                    : $paymentGatewayManager->createPayment($result->transaction, $paymentGateway, $paymentSetting);
-
-                $result->transaction->update([
-                    'payment_reference' => $paymentResponse['reference'] ?? null,
-                    'payment_url' => $paymentResponse['payment_url'] ?? null,
-                    'qr_string' => $paymentResponse['qr_string'] ?? null,
-                ]);
-            } catch (PaymentGatewayException $exception) {
-                return redirect()
-                    ->route('transactions.print', $result->transaction->invoice)
-                    ->with('error', $exception->getMessage());
-            }
         }
 
         return to_route('transactions.print', $result->transaction->invoice);

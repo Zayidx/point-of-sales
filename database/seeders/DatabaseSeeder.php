@@ -25,6 +25,9 @@ class DatabaseSeeder extends Seeder
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $this->seedDefaultWarehouse();
+
+        $this->call(DimsumWeiguSeeder::class);
+        $this->call(UserSeeder::class);
     }
 
     private function seedDefaultWarehouse(): void

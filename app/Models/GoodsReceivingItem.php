@@ -13,12 +13,20 @@ class GoodsReceivingItem extends Model
         'goods_receiving_id',
         'purchase_order_item_id',
         'product_id',
+        'ingredient_id',
         'qty_received',
+        'qty_sent',
+        'qty_accepted',
         'notes',
+        'qc_status',
+        'condition_notes',
+        'proof_path',
     ];
 
     protected $casts = [
-        'qty_received' => 'integer',
+        'qty_received' => 'decimal:4',
+        'qty_sent' => 'decimal:4',
+        'qty_accepted' => 'decimal:4',
     ];
 
     public function goodsReceiving()
@@ -34,5 +42,10 @@ class GoodsReceivingItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function ingredient()
+    {
+        return $this->belongsTo(Ingredient::class);
     }
 }

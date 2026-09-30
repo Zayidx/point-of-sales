@@ -199,7 +199,7 @@ export default function CustomerSelect({
                                 type="button"
                                 onClick={handleUpgradeMember}
                                 className="inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border border-primary-200 bg-primary-50 px-3 text-primary-600 hover:bg-primary-100 dark:border-primary-800 dark:bg-primary-950/30 dark:text-primary-300"
-                                title="Upgrade pelanggan menjadi member"
+                                title="Jadikan pelanggan sebagai anggota"
                             >
                                 <IconCrown size={16} className="shrink-0" />
                                 <span className="truncate text-sm font-semibold">

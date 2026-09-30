@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\CashierShiftService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
@@ -60,6 +61,44 @@ class WalkInCustomerTest extends TestCase
 
         $this->assertNotNull($transaction);
         $this->assertNull($transaction->customer_id);
+    }
+
+    public function test_manual_gofood_sale_uses_platform_total_without_a_payment_gateway(): void
+    {
+        $cashier = $this->createCashier();
+        $shift = $this->openShiftFor($cashier);
+        $product = $this->createProduct();
+        Cart::create(['cashier_id' => $cashier->id, 'product_id' => $product->id, 'qty' => 1, 'price' => $product->sell_price]);
+
+        $this->actingAs($cashier)
+            ->post(route('transactions.store'), [
+                'customer_id' => null,
+                'payment_gateway' => 'gofood',
+                'manual_online_total' => 8000,
+                'discount' => 0,
+            ])
+            ->assertRedirect();
+
+        $transaction = Transaction::latest('id')->firstOrFail();
+        $this->assertSame('gofood', $transaction->payment_method);
+        $this->assertSame('paid', $transaction->payment_status);
+        $this->assertSame(8000, $transaction->grand_total);
+        $this->assertSame(3000, (int) $transaction->profits()->sum('total'));
+        $this->assertSame(8000, app(CashierShiftService::class)->calculateSummary($shift)['non_cash_sales_total']);
+    }
+
+    public function test_manual_gofood_sale_rejects_zero_platform_total(): void
+    {
+        $cashier = $this->createCashier();
+        $this->openShiftFor($cashier);
+        $product = $this->createProduct();
+        Cart::create(['cashier_id' => $cashier->id, 'product_id' => $product->id, 'qty' => 1, 'price' => $product->sell_price]);
+
+        $this->actingAs($cashier)
+            ->post(route('transactions.store'), ['payment_gateway' => 'gofood', 'manual_online_total' => 0])
+            ->assertSessionHasErrors('manual_online_total');
+
+        $this->assertSame(0, Transaction::count());
     }
 
     public function test_pay_later_without_customer_is_rejected(): void

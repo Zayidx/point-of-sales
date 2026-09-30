@@ -28,9 +28,9 @@ Kembali ke indeks dokumentasi: `docs/README.md`
 
 - **Email verification dinonaktifkan.** `User` tidak lagi mengimplementasikan `MustVerifyEmail`,
   route dashboard tidak memakai middleware `verified`, dan route/controller/halaman verifikasi
-  sudah dihapus. Setup wizard dan registrasi publik langsung mengarahkan user ke dashboard.
+  sudah dihapus. Akun awal dibuat melalui seeder, dan pengguna terautentikasi langsung diarahkan ke dashboard.
 - `AUTH_PUBLIC_REGISTRATION` mengatur apakah registrasi publik diizinkan (default `false`).
-  Saat nonaktif, akun dibuat lewat setup wizard atau menu Users oleh admin.
+  Saat nonaktif, akun dibuat melalui menu Users oleh admin atau `UserSeeder` untuk instalasi awal.
 - `markEmailAsVerified()` tetap tersedia (dipakai seeder dan test).
 
 ## APP_URL

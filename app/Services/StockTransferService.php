@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\InventoryBalance;
 use App\Models\ProductWarehouse;
 use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
@@ -17,7 +18,8 @@ class StockTransferService
     public function __construct(
         private readonly AuditLogService $auditLogService,
         private readonly OutletAccessService $outletAccessService,
-        private readonly StockMutationService $stockMutationService
+        private readonly StockMutationService $stockMutationService,
+        private readonly InventoryLedgerService $inventoryLedgerService,
     ) {}
 
     public function generateDocumentNumber(): string
@@ -116,6 +118,25 @@ class StockTransferService
                 }
 
                 $stockAfter = $available - $item->qty;
+                $this->inventoryLedgerService->ensureProductOpeningBalance($item->product, $transfer->source_warehouse_id, $userId);
+                $ledgerBalance = InventoryBalance::where('balance_key', "warehouse:{$transfer->source_warehouse_id}:product:{$item->product_id}")->first();
+                $item->update(['unit_cost_snapshot' => $ledgerBalance?->average_unit_cost ?? $item->product->buy_price]);
+                if ($item->product->baseUnit()) {
+                    $this->inventoryLedgerService->record([
+                        'idempotency_key' => "stock-transfer:{$transfer->id}:item:{$item->id}:out",
+                        'item_type' => 'product',
+                        'item_id' => $item->product_id,
+                        'location_type' => 'warehouse',
+                        'location_id' => $transfer->source_warehouse_id,
+                        'movement_type' => 'warehouse_to_outlet',
+                        'quantity' => '-'.$item->qty,
+                        'unit_id' => $item->product->baseUnit()->id,
+                        'unit_cost' => (string) $item->unit_cost_snapshot,
+                        'reference_type' => StockTransfer::class,
+                        'reference_id' => $transfer->id,
+                        'created_by' => $userId,
+                    ]);
+                }
                 if ($pw) {
                     $pw->decrement('stock', $item->qty);
                 }
@@ -172,11 +193,30 @@ class StockTransferService
                 $product = $item->product;
                 $stockBefore = (int) $product->stock;
 
+                $this->inventoryLedgerService->ensureProductOpeningBalance($product, $transfer->destination_warehouse_id, $userId);
+
                 // ponytail: firstOrCreate (NOT updateOrCreate with stock=0, which would reset an existing row)
                 ProductWarehouse::firstOrCreate(
                     ['product_id' => $item->product_id, 'warehouse_id' => $transfer->destination_warehouse_id],
                     ['stock' => 0]
                 )->increment('stock', $item->qty);
+
+                if ($product->baseUnit()) {
+                    $this->inventoryLedgerService->record([
+                        'idempotency_key' => "stock-transfer:{$transfer->id}:item:{$item->id}:in",
+                        'item_type' => 'product',
+                        'item_id' => $item->product_id,
+                        'location_type' => 'warehouse',
+                        'location_id' => $transfer->destination_warehouse_id,
+                        'movement_type' => 'warehouse_to_outlet',
+                        'quantity' => (string) $item->qty,
+                        'unit_id' => $product->baseUnit()->id,
+                        'unit_cost' => (string) ($item->unit_cost_snapshot ?? $product->buy_price),
+                        'reference_type' => StockTransfer::class,
+                        'reference_id' => $transfer->id,
+                        'created_by' => $userId,
+                    ]);
+                }
 
                 $product->increment('stock', $item->qty);
 

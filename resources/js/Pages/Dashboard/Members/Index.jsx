@@ -42,7 +42,7 @@ export default function Index({ members, filters, tierOptions, summary }) {
             helper: "Seluruh member yang pernah terdaftar",
         },
         {
-            label: "Member Aktif",
+            label: "Anggota Aktif",
             value: summary?.active_members || 0,
             helper: "Masih menerima benefit member",
         },
@@ -52,7 +52,7 @@ export default function Index({ members, filters, tierOptions, summary }) {
             helper: "Kontribusi transaksi dari member",
         },
         {
-            label: "Repeat Rate",
+            label: "Tingkat Pembelian Ulang",
             value: `${summary?.repeat_rate || 0}%`,
             helper:
                 summary?.top_member?.name
@@ -63,13 +63,13 @@ export default function Index({ members, filters, tierOptions, summary }) {
 
     return (
         <>
-            <Head title="Member" />
+            <Head title="Anggota" />
 
             <div className="w-full">
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                            Member
+                            Anggota
                         </h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
                             Kelola pendaftaran, status, dan performa member tanpa memisahkan data dari customer inti.
@@ -112,7 +112,7 @@ export default function Index({ members, filters, tierOptions, summary }) {
                                 onChange={(event) =>
                                     handleFilterChange("search", event.target.value)
                                 }
-                                placeholder="Cari nama member atau nomor anggota..."
+                                placeholder="Cari nama anggota atau nomor anggota..."
                                 className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 pr-11 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                             />
                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
@@ -142,18 +142,18 @@ export default function Index({ members, filters, tierOptions, summary }) {
                             }
                             className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                         >
-                            <option value="active">Member Aktif</option>
-                            <option value="inactive">Member Nonaktif</option>
+                            <option value="active">Anggota Aktif</option>
+                            <option value="inactive">Anggota Nonaktif</option>
                             <option value="all">Semua Status</option>
                         </select>
                     </div>
                 </div>
 
-                <Table.Card title="Daftar Member">
+                <Table.Card title="Daftar Anggota">
                     <Table>
                         <Table.Thead>
                             <tr>
-                                <Table.Th>Member</Table.Th>
+                                <Table.Th>Anggota</Table.Th>
                                 <Table.Th>Tier</Table.Th>
                                 <Table.Th>Poin</Table.Th>
                                 <Table.Th>Total Belanja</Table.Th>

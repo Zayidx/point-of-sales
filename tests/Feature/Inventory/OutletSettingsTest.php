@@ -36,7 +36,7 @@ class OutletSettingsTest extends TestCase
         $outlet = Outlet::create(['code' => 'MAL', 'name' => 'Malabar']);
         $user = User::factory()->create();
         $user->markEmailAsVerified();
-        $user->givePermissionTo(Permission::firstOrCreate(['name' => 'dashboard-access', 'guard_name' => 'web']));
+        $user->givePermissionTo(Permission::firstOrCreate(['name' => 'store-settings-access', 'guard_name' => 'web']));
         $user->outlets()->attach($outlet->id, ['is_default' => true]);
         Setting::set('store_name', 'Cafe Pusat');
         Setting::setForOutlet('store_name', 'Cafe Malabar', $outlet);
@@ -77,7 +77,7 @@ class OutletSettingsTest extends TestCase
         $outletB = Outlet::create(['code' => 'TKB', 'name' => 'Taman Kencana', 'is_active' => true]);
         $user = User::factory()->create();
         $user->markEmailAsVerified();
-        $user->givePermissionTo(Permission::firstOrCreate(['name' => 'dashboard-access', 'guard_name' => 'web']));
+        $user->givePermissionTo(Permission::firstOrCreate(['name' => 'sales-targets-access', 'guard_name' => 'web']));
         $user->outlets()->attach([$outletA->id => ['is_default' => true], $outletB->id => ['is_default' => false]]);
 
         Setting::set('monthly_sales_target', '100000');

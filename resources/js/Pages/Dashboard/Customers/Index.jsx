@@ -20,6 +20,7 @@ import Table from "@/Components/Dashboard/Table";
 import Pagination from "@/Components/Dashboard/Pagination";
 import { useAuthorization } from "@/Utils/authorization";
 import toast from "react-hot-toast";
+import ImportErrorsNotice from "@/Components/Dashboard/ImportErrorsNotice";
 
 // Customer Card for Grid View
 function CustomerCard({ customer, canUpdate, canDelete }) {
@@ -90,7 +91,7 @@ function CustomerCard({ customer, canUpdate, canDelete }) {
                             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-warning-100 text-warning-600 hover:bg-warning-200 dark:bg-warning-900/50 dark:text-warning-400 text-sm font-medium transition-colors"
                         >
                             <IconPencilCog size={16} />
-                            <span>Edit</span>
+                            <span>Ubah</span>
                         </Link>
                     )}
                     {canDelete && (
@@ -111,6 +112,7 @@ function CustomerCard({ customer, canUpdate, canDelete }) {
 }
 
 export default function Index({ customers }) {
+    const { flash = {} } = usePage().props;
     const { can } = useAuthorization();
     const [viewMode, setViewMode] = useState("grid");
     const canCreateCustomers = can("customers-create");
@@ -120,6 +122,7 @@ export default function Index({ customers }) {
     return (
         <>
             <Head title="Pelanggan" />
+            <ImportErrorsNotice errors={flash.importErrors} />
 
             {/* Header */}
             <div className="mb-6">
@@ -148,7 +151,7 @@ export default function Index({ customers }) {
                                 className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                             >
                                 <IconUpload size={18} />
-                                Import
+                                Impor
                             </button>
                             <input id="import-customers-input" type="file" accept=".xlsx,.xls,.csv" className="hidden"
                                 onChange={function(e) {
@@ -202,7 +205,7 @@ export default function Index({ customers }) {
                                 ? "bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400"
                                 : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                         }`}
-                        title="List View"
+                        title="Tampilan Daftar"
                     >
                         <IconList size={20} />
                     </button>
@@ -224,14 +227,14 @@ export default function Index({ customers }) {
                         ))}
                     </div>
                 ) : (
-                    /* List View */
+                    /* Tampilan Daftar */
                     <Table.Card title={"Data Pelanggan"}>
                         <Table>
                             <Table.Thead>
                                 <tr>
                                     <Table.Th className="w-10">No</Table.Th>
                                     <Table.Th>Pelanggan</Table.Th>
-                                    <Table.Th>Loyalty</Table.Th>
+                                    <Table.Th>Loyalitas</Table.Th>
                                     <Table.Th>No. Telepon</Table.Th>
                                     <Table.Th>Alamat</Table.Th>
                                     <Table.Th></Table.Th>

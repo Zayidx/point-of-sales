@@ -24,6 +24,7 @@ import { getProductImageUrl } from "@/Utils/imageUrl";
 import BarcodePrintModal from "@/Components/Barcode/BarcodePrintModal";
 import { useAuthorization } from "@/Utils/authorization";
 import { router } from "@inertiajs/react";
+import ImportErrorsNotice from "@/Components/Dashboard/ImportErrorsNotice";
 
 const formatCurrency = (value = 0) =>
     new Intl.NumberFormat("id-ID", {
@@ -167,7 +168,7 @@ function ProductCard({
                         <p className="text-xs text-slate-400 dark:text-slate-500">
                             Modal: {formatCurrency(product.buy_price)}
                         </p>
-                        {/* Profit Indicator */}
+                        {/* Laba Indicator */}
                         {product.sell_price > product.buy_price && (
                             <span className="text-xs font-medium text-success-600 dark:text-success-400">
                                 +
@@ -184,6 +185,7 @@ function ProductCard({
 }
 
 export default function Index({ products }) {
+    const { flash = {} } = usePage().props;
     const { can } = useAuthorization();
     const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'list'
     const [showBarcodeModal, setShowBarcodeModal] = useState(false);
@@ -236,6 +238,7 @@ export default function Index({ products }) {
     return (
         <>
             <Head title="Produk" />
+            <ImportErrorsNotice errors={flash.importErrors} />
 
             {/* Header */}
             <div data-tour="products-header" className="mb-6">
@@ -274,7 +277,7 @@ export default function Index({ products }) {
                                     className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full sm:w-auto"
                                 >
                                     <IconUpload size={18} />
-                                    Import
+                                    Impor
                                 </button>
                                 <input
                                     id="import-products-input"
@@ -366,7 +369,7 @@ export default function Index({ products }) {
                                 ? "bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400"
                                 : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                         }`}
-                        title="List View"
+                        title="Tampilan Daftar"
                     >
                         <IconList size={20} />
                     </button>
@@ -394,7 +397,7 @@ export default function Index({ products }) {
                         ))}
                     </div>
                 ) : (
-                    /* List View */
+                    /* Tampilan Daftar */
                     <Table.Card title={"Data Produk"}>
                         <Table>
                             <Table.Thead>

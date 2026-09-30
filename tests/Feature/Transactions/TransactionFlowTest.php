@@ -7,13 +7,11 @@ use App\Models\CashierShift;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Outlet;
-use App\Models\PaymentSetting;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
@@ -188,31 +186,11 @@ class TransactionFlowTest extends TestCase
             });
     }
 
-    public function test_cashier_can_request_midtrans_payment_link(): void
+    public function test_pos_rejects_midtrans_payment_without_gateway_call(): void
     {
         $cashier = $this->createCashier();
-        $shift = $this->openShiftFor($cashier);
-        $customer = Customer::create([
-            'name' => 'Tony Midtrans',
-            'no_telp' => 62899000,
-            'address' => 'Jl. Gateway No. 9',
-        ]);
+        $this->openShiftFor($cashier);
         $product = $this->createProduct();
-
-        PaymentSetting::create([
-            'default_gateway' => 'midtrans',
-            'midtrans_enabled' => true,
-            'midtrans_server_key' => 'server-key',
-            'midtrans_client_key' => 'client-key',
-        ]);
-
-        Http::fake([
-            'https://app.sandbox.midtrans.com/*' => Http::response([
-                'order_id' => 'TRX-MIDTRANS',
-                'redirect_url' => 'https://pay.midtrans.test/invoice',
-                'token' => 'snap-token',
-            ], 200),
-        ]);
 
         $cart = Cart::create([
             'cashier_id' => $cashier->id,
@@ -222,9 +200,9 @@ class TransactionFlowTest extends TestCase
         ]);
 
         $response = $this
+            ->from(route('transactions.index'))
             ->actingAs($cashier)
             ->post(route('transactions.store'), [
-                'customer_id' => $customer->id,
                 'discount' => 0,
                 'grand_total' => $cart->price,
                 'cash' => 0,
@@ -232,18 +210,11 @@ class TransactionFlowTest extends TestCase
                 'payment_gateway' => 'midtrans',
             ]);
 
-        $transaction = Transaction::latest('id')->first();
-
-        $this->assertNotNull($transaction);
-        $response->assertRedirect(route('transactions.print', $transaction->invoice));
-        $this->assertSame($shift->id, $transaction->cashier_shift_id);
-        $this->assertSame('midtrans', $transaction->payment_method);
-        $this->assertSame('pending', $transaction->payment_status);
-        $this->assertSame('https://pay.midtrans.test/invoice', $transaction->payment_url);
-        $this->assertSame('TRX-MIDTRANS', $transaction->payment_reference);
-
-        Http::assertSent(fn ($request) => str_contains($request->url(), 'midtrans.com')
-            && $request['transaction_details']['order_id'] === $transaction->invoice);
+        $response->assertRedirect(route('transactions.index'))
+            ->assertSessionHas('error', 'Metode pembayaran POS tidak tersedia. Gunakan pembayaran manual.');
+        $this->assertDatabaseCount('transactions', 0);
+        $this->assertDatabaseCount('carts', 1);
+        $this->assertSame(25, (int) $product->fresh()->stock);
     }
 
     protected function createCashier(): User

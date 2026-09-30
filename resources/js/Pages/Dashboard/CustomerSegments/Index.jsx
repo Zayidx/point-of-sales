@@ -15,14 +15,14 @@ export default function Index({ segments, filters }) {
 
     return (
         <>
-            <Head title="Customer Segments" />
+            <Head title="Segmen Pelanggan" />
 
             <div className="w-full">
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Customer Segments</h1>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Segmen Pelanggan</h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Kelola tag manual dan auto segment untuk CRM dan automation.
+                            Kelola label manual dan segmen otomatis untuk CRM.
                         </p>
                     </div>
                     {can("customer-segments-create") && (
@@ -31,7 +31,7 @@ export default function Index({ segments, filters }) {
                             href={route("customer-segments.create")}
                             icon={<IconCirclePlus size={18} />}
                             className="bg-primary-500 text-white hover:bg-primary-600 shadow-lg shadow-primary-500/30"
-                            label="Buat Segment"
+                            label="Buat Segmen"
                         />
                     )}
                 </div>
@@ -43,7 +43,7 @@ export default function Index({ segments, filters }) {
                                 type="text"
                                 value={filters.search || ""}
                                 onChange={(event) => handleFilterChange("search", event.target.value)}
-                                placeholder="Cari nama segment..."
+                                placeholder="Cari nama segmen..."
                                 className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 pr-11 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                             />
                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
@@ -57,16 +57,16 @@ export default function Index({ segments, filters }) {
                         >
                             <option value="">Semua Tipe</option>
                             <option value="manual">Manual</option>
-                            <option value="auto">Auto</option>
+                            <option value="auto">Otomatis</option>
                         </select>
                     </div>
                 </div>
 
-                <Table.Card title="Daftar Segment">
+                <Table.Card title="Daftar Segmen">
                     <Table>
                         <Table.Thead>
                             <tr>
-                                <Table.Th>Segment</Table.Th>
+                                <Table.Th>Segmen</Table.Th>
                                 <Table.Th>Tipe</Table.Th>
                                 <Table.Th>Anggota</Table.Th>
                                 <Table.Th>Status</Table.Th>
@@ -90,7 +90,7 @@ export default function Index({ segments, filters }) {
                                         </Table.Td>
                                         <Table.Td>
                                             <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                                {segment.type}
+                                                {segment.type === "auto" ? "Otomatis" : "Manual"}
                                             </span>
                                         </Table.Td>
                                         <Table.Td>{segment.memberships_count}</Table.Td>

@@ -107,7 +107,7 @@ export default function ThermalReceipt({
 
             <pre className="whitespace-pre-wrap">{line}</pre>
 
-            {/* Invoice Info */}
+            {/* Faktur Info */}
             <div className="my-1">
                 <div className="flex justify-between">
                     <span>No:</span>

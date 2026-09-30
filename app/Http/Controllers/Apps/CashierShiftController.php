@@ -69,9 +69,20 @@ class CashierShiftController extends Controller
     public function show(Request $request, CashierShift $cashierShift): Response
     {
         $cashierShift = $this->resolveVisibleShift($request, $cashierShift);
+        $cashierShift->load('stockCounts.product:id,title');
+        $sharedStockWarehouse = $cashierShift->warehouse_id
+            && $cashierShift->warehouse?->outlets()->where('outlets.is_sales_enabled', true)->count() > 1;
 
         return Inertia::render('Dashboard/CashierShifts/Show', [
             'cashierShift' => $this->transformShift($cashierShift),
+            'closingProducts' => $cashierShift->warehouse_id && ! $sharedStockWarehouse
+                ? $cashierShift->warehouse->products()->orderBy('products.title')->get(['products.id', 'products.title', 'products.sku'])->map(fn ($product) => [
+                    'id' => $product->id,
+                    'title' => $product->title,
+                    'sku' => $product->sku,
+                    'expected_stock' => (int) $product->pivot->stock,
+                ])->values()
+                : [],
             'canForceClose' => $request->user()->isSuperAdmin() || $request->user()->can('cashier-shifts-force-close'),
         ]);
     }
@@ -83,6 +94,8 @@ class CashierShiftController extends Controller
             : $this->outletAccessService->salesWarehousesFor($request->user())->first();
 
         abort_unless($this->outletAccessService->canSellAtWarehouse($request->user(), $warehouse), 403);
+        $outlet = $this->outletAccessService->activeOutlet($request);
+        abort_unless(! $outlet || $outlet->is_sales_enabled, 403);
 
         $shift = $this->cashierShiftService->openShift(
             cashier: $request->user(),
@@ -90,6 +103,7 @@ class CashierShiftController extends Controller
             openingCash: (int) $request->validated('opening_cash'),
             notes: $request->validated('notes'),
             warehouseId: $warehouse?->id,
+            outletId: $outlet?->id,
         );
 
         $this->auditLogService->log(
@@ -150,6 +164,7 @@ class CashierShiftController extends Controller
             actualCash: (int) $request->validated('actual_cash'),
             closeNotes: $request->validated('close_notes'),
             forceClose: $forceClose,
+            closingStock: $request->validated('closing_stock'),
         );
 
         $this->auditLogService->log(
@@ -208,7 +223,7 @@ class CashierShiftController extends Controller
     private function resolveVisibleShift(Request $request, CashierShift $cashierShift): CashierShift
     {
         $query = CashierShift::query()
-            ->with(['user:id,name', 'openedBy:id,name', 'closedBy:id,name', 'warehouse:id,code,name'])
+            ->with(['user:id,name', 'openedBy:id,name', 'closedBy:id,name', 'warehouse:id,code,name', 'outlet:id,code,name'])
             ->whereKey($cashierShift->id);
 
         $query = $this->cashierShiftService->visibleToUser($query, $request->user());
@@ -280,6 +295,15 @@ class CashierShiftController extends Controller
                 ])
                 ->values()
                 ->all(),
+            'stock_counts' => $shift->relationLoaded('stockCounts')
+                ? $shift->stockCounts->map(fn ($count) => [
+                    'product_id' => $count->product_id,
+                    'product' => $count->product?->title ?? 'Menu dihapus',
+                    'expected_stock' => $count->expected_stock,
+                    'actual_stock' => $count->actual_stock,
+                    'variance' => $count->variance,
+                ])->values()->all()
+                : [],
             'transactions_count' => $shift->isOpen() ? $summary['transactions_count'] : (int) $shift->transactions_count,
             'sales_returns_count' => $shift->isOpen() ? $summary['sales_returns_count'] : (int) $shift->sales_returns_count,
             'notes' => $shift->notes,
@@ -288,6 +312,11 @@ class CashierShiftController extends Controller
                 'id' => $shift->warehouse->id,
                 'code' => $shift->warehouse->code,
                 'name' => $shift->warehouse->name,
+            ] : null,
+            'outlet' => $shift->outlet ? [
+                'id' => $shift->outlet->id,
+                'code' => $shift->outlet->code,
+                'name' => $shift->outlet->name,
             ] : null,
             'user' => $shift->user ? [
                 'id' => $shift->user->id,

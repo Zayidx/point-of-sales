@@ -42,7 +42,7 @@ export default function Edit({ category }) {
 
     return (
         <>
-            <Head title="Edit Kategori" />
+            <Head title="Ubah Kategori" />
 
             <div className="mb-6">
                 <Link
@@ -54,7 +54,7 @@ export default function Edit({ category }) {
                 </Link>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <IconCategory size={28} className="text-primary-500" />
-                    Edit Kategori
+                    Ubah Kategori
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">{category.name}</p>
             </div>

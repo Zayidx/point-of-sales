@@ -86,6 +86,9 @@ class PermissionSeeder extends Seeder
         $create('payables-access');
         $create('payables-pay');
         $create('suppliers-access');
+        $create('suppliers-create');
+        $create('suppliers-update');
+        $create('suppliers-delete');
 
         // permission reports
         $create('reports-access');
@@ -132,6 +135,33 @@ class PermissionSeeder extends Seeder
 
         // stock transfers
         $create('stock-transfers-access');
+        $create('production-requests-access');
+        $create('production-requests-create');
+        $create('production-requests-approve');
+        $create('production-requests-reject');
+        $create('ingredients-access');
+        $create('ingredients-create');
+        $create('ingredients-update');
+        $create('ingredients-adjust');
+        $create('recipes-access');
+        $create('recipes-create');
+        $create('recipes-import');
+        $create('recipes-export');
+        $create('inventory-opening-stock-import');
+        $create('production-orders-access');
+        $create('production-orders-create');
+        $create('production-orders-complete');
+        $create('outlet-operations-access');
+        $create('outlet-operations-create');
+        $create('cash-handovers-access');
+        $create('cash-handovers-create');
+        $create('cash-handovers-confirm');
+        $create('cash-pickups-access');
+        $create('cash-pickups-create');
+        $create('cash-pickups-confirm');
+        $create('outlet-stock-returns-access');
+        $create('outlet-stock-returns-create');
+        $create('outlet-stock-returns-receive');
         $create('stock-transfers-create');
         $create('stock-transfers-send');
         $create('stock-transfers-receive');
@@ -142,6 +172,10 @@ class PermissionSeeder extends Seeder
         $create('products-export');
         $create('customers-import');
         $create('customers-export');
+        $create('ingredients-import');
+        $create('ingredients-export');
+        $create('suppliers-import');
+        $create('suppliers-export');
 
         // discount approval
         $create('discounts-approve');
@@ -173,6 +207,16 @@ class PermissionSeeder extends Seeder
         // whatsapp
         $create('whatsapp-settings-access');
         $create('whatsapp-settings-update');
+
+        // store configuration
+        $create('store-settings-access');
+        $create('store-settings-update');
+        $create('loyalty-settings-access');
+        $create('loyalty-settings-update');
+        $create('sales-targets-access');
+        $create('sales-targets-update');
+        $create('printer-settings-access');
+        $create('printer-settings-update');
 
         // dine-in
         $create('dine-tables-access');

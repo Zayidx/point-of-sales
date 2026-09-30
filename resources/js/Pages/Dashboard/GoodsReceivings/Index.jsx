@@ -74,8 +74,8 @@ export default function Index({ receivings, filters }) {
                     <Table.Thead>
                         <tr>
                             <Table.Th>Dokumen</Table.Th>
-                            <Table.Th>PO Referensi</Table.Th>
-                            <Table.Th>Supplier</Table.Th>
+                            <Table.Th>Referensi Pesanan Pembelian</Table.Th>
+                            <Table.Th>Pemasok</Table.Th>
                             <Table.Th>Tanggal Terima</Table.Th>
                             <Table.Th>Diterima Oleh</Table.Th>
                             <Table.Th className="w-24 text-center">Aksi</Table.Th>

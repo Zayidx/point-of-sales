@@ -125,7 +125,7 @@ export default function Error({ status, homeUrl, homeLabel }) {
 
                                 <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-primary-50 p-8 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-primary-950/40">
                                     <div className="absolute right-6 top-6 rounded-full border border-primary-200/60 bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.24em] text-primary-600 dark:border-primary-800 dark:bg-slate-900/80 dark:text-primary-400">
-                                        Error State
+                                        Tampilan Kesalahan
                                     </div>
 
                                     <div className="flex min-h-[260px] flex-col justify-between">

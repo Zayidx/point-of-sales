@@ -30,7 +30,7 @@ const statusBadge = (status) => {
         cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400",
     };
     const labels = {
-        draft: "Draft",
+        draft: "Draf",
         ordered: "Dipesan",
         partial_received: "Sebagian Diterima",
         completed: "Selesai",
@@ -52,11 +52,11 @@ export default function Index({ orders, filters, suppliers }) {
 
     return (
         <>
-            <Head title="Purchase Orders" />
+            <Head title="Pesanan Pembelian" />
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                        Purchase Orders
+                        Pesanan Pembelian
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                         Kelola pemesanan pembelian ke supplier.
@@ -92,7 +92,7 @@ export default function Index({ orders, filters, suppliers }) {
                     className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
                     <option value="">Semua Status</option>
-                    <option value="draft">Draft</option>
+                    <option value="draft">Draf</option>
                     <option value="ordered">Dipesan</option>
                     <option value="partial_received">Sebagian Diterima</option>
                     <option value="completed">Selesai</option>
@@ -103,19 +103,19 @@ export default function Index({ orders, filters, suppliers }) {
                     onChange={(e) => handleFilterChange("supplier", e.target.value)}
                     className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
-                    <option value="">Semua Supplier</option>
+                    <option value="">Semua Pemasok</option>
                     {suppliers.map((s) => (
                         <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                 </select>
             </div>
 
-            <Table.Card title="Daftar Purchase Order">
+            <Table.Card title="Daftar Pesanan Pembelian">
                 <Table>
                     <Table.Thead>
                         <tr>
                             <Table.Th>Dokumen</Table.Th>
-                            <Table.Th>Supplier</Table.Th>
+                            <Table.Th>Pemasok</Table.Th>
                             <Table.Th>Status</Table.Th>
                             <Table.Th>Item</Table.Th>
                             <Table.Th>Dibuat Oleh</Table.Th>

@@ -4,12 +4,17 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { IconBuildingStore, IconPencil, IconTrash, IconPlus } from "@tabler/icons-react";
 import toast from "react-hot-toast";
 import { useAuthorization } from "@/Utils/authorization";
+import ImportErrorsNotice from "@/Components/Dashboard/ImportErrorsNotice";
 
 export default function SuppliersIndex({ suppliers = [] }) {
     const { flash } = usePage().props;
     const { can } = useAuthorization();
     const [editing, setEditing] = useState(null);
-    const canManageSuppliers = can("suppliers-access");
+    const canCreateSuppliers = can("suppliers-create");
+    const canUpdateSuppliers = can("suppliers-update");
+    const canDeleteSuppliers = can("suppliers-delete");
+    const canImportSuppliers = can("suppliers-import");
+    const canExportSuppliers = can("suppliers-export");
     const { data, setData, post, put, delete: destroy, processing, reset } = useForm({
         name: "",
         phone: "",
@@ -57,30 +62,31 @@ export default function SuppliersIndex({ suppliers = [] }) {
 
     return (
         <>
-            <Head title="Supplier" />
+            <Head title="Pemasok" />
+            <ImportErrorsNotice errors={flash?.importErrors} />
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <IconBuildingStore size={26} className="text-primary-500" />
-                            Supplier
+                            Pemasok
                         </h1>
                         <p className="text-sm text-slate-500">
-                            Data pemasok untuk pencatatan hutang.
+                            Data supplier untuk pencatatan hutang.
                         </p>
                     </div>
-                    {canManageSuppliers && (
-                        <button
-                            onClick={cancel}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-500 text-white text-sm font-semibold"
-                        >
-                            <IconPlus size={16} />
-                            Tambah Supplier
-                        </button>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                        {canExportSuppliers && <a href={route("export.suppliers")} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold dark:border-slate-700">Ekspor Excel</a>}
+                        {canImportSuppliers && <>
+                            <a href={route("import.template", "suppliers")} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold dark:border-slate-700">Unduh template</a>
+                            <input id="supplier-import-file" type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) router.post(route("import.suppliers"), { file }, { forceFormData: true, onFinish: () => { event.target.value = ""; } }); }} />
+                            <button type="button" onClick={() => document.getElementById("supplier-import-file")?.click()} className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold dark:bg-slate-800">Impor</button>
+                        </>}
+                        {canCreateSuppliers && <button onClick={cancel} className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-3 py-2 text-sm font-semibold text-white"><IconPlus size={16} />Tambah Pemasok</button>}
+                    </div>
                 </div>
 
-                {canManageSuppliers && (
+                {(canCreateSuppliers || canUpdateSuppliers) && (!editing ? canCreateSuppliers : canUpdateSuppliers) && (
                     <form
                         onSubmit={submit}
                         className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-4 gap-3"
@@ -108,7 +114,7 @@ export default function SuppliersIndex({ suppliers = [] }) {
                     </div>
                     <div>
                         <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Email
+                            Alamat Email
                         </label>
                         <input
                             className="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
@@ -134,7 +140,7 @@ export default function SuppliersIndex({ suppliers = [] }) {
                             disabled={processing}
                             className="px-4 py-2 rounded-xl bg-primary-500 text-white text-sm font-semibold"
                         >
-                            {editing ? "Update" : "Simpan"}
+                            {editing ? "Simpan perubahan" : "Simpan"}
                         </button>
                         {editing && (
                             <button
@@ -170,20 +176,20 @@ export default function SuppliersIndex({ suppliers = [] }) {
                                     )}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    {canManageSuppliers && (
+                                    {(canUpdateSuppliers || canDeleteSuppliers) && (
                                         <>
-                                            <button
+                                            {canUpdateSuppliers && <button
                                                 onClick={() => startEdit(sup)}
                                                 className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                                             >
                                                 <IconPencil size={16} />
-                                            </button>
-                                            <button
+                                            </button>}
+                                            {canDeleteSuppliers && <button
                                                 onClick={() => remove(sup.id)}
                                                 className="p-2 rounded-lg text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/30"
                                             >
                                                 <IconTrash size={16} />
-                                            </button>
+                                            </button>}
                                         </>
                                     )}
                                 </div>

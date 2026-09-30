@@ -162,7 +162,7 @@ export default function Form({
 
     return (
         <>
-            <Head title={isEdit ? "Edit Promo Harga" : "Buat Promo Harga"} />
+            <Head title={isEdit ? "Ubah Promo Harga" : "Buat Promo Harga"} />
 
             <div className="w-full">
                 <div className="mb-6">
@@ -174,7 +174,7 @@ export default function Form({
                         label="Kembali ke promo harga"
                     />
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                        {isEdit ? "Edit Promo Harga" : "Buat Promo Harga"}
+                        {isEdit ? "Ubah Promo Harga" : "Buat Promo Harga"}
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                         Kelola promo standar, grosir, bundle, dan buy x get y dalam satu engine.
@@ -521,7 +521,7 @@ export default function Form({
 
                     {data.kind === "bundle_price" && (
                         <CardSection
-                            title="Bundle Price"
+                            title="Harga Paket"
                             description="Pilih kombinasi produk dan harga paket final."
                         >
                             <div className="mb-4">
@@ -750,7 +750,7 @@ export default function Form({
                     </CardSection>
 
                     <CardSection
-                        title="Preview Draft"
+                        title="Pratinjau Draf"
                         description="Simulasikan rule ini terhadap contoh produk sebelum disimpan."
                     >
                         <div className="mb-4 flex flex-wrap gap-3">

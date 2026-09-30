@@ -95,7 +95,7 @@ export default function PayableShow({ payable, bankAccounts = [] }) {
 
     return (
         <>
-            <Head title={`Hutang ${payable.document_number}`} />
+            <Head title={`Utang ${payable.document_number}`} />
             <div className="space-y-6">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-3">
@@ -125,7 +125,7 @@ export default function PayableShow({ payable, bankAccounts = [] }) {
                     >
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                                <p className="text-slate-500">Supplier</p>
+                                <p className="text-slate-500">Pemasok</p>
                                 <p className="font-semibold text-slate-800 dark:text-white">
                                     {payable.supplier?.name || "-"}
                                 </p>
@@ -212,7 +212,7 @@ export default function PayableShow({ payable, bankAccounts = [] }) {
 
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 print:hidden">
                         <p className="text-sm font-semibold text-slate-800 dark:text-white mb-3">
-                            Detail Hutang
+                            Detail Utang
                         </p>
                         <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
                             <div className="flex justify-between">
@@ -350,7 +350,7 @@ export default function PayableShow({ payable, bankAccounts = [] }) {
                     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-3xl relative overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
                             <div>
-                                <p className="text-xs text-slate-500">Preview Hutang</p>
+                                <p className="text-xs text-slate-500">Pratinjau Utang</p>
                                 <p className="text-sm font-semibold text-slate-800 dark:text-white">
                                     {payable.document_number}
                                 </p>
@@ -412,7 +412,7 @@ export default function PayableShow({ payable, bankAccounts = [] }) {
 
                                 <div className="grid grid-cols-2 gap-4 text-sm mt-4">
                                     <div>
-                                        <p className="text-slate-500">Supplier</p>
+                                        <p className="text-slate-500">Pemasok</p>
                                         <p className="font-semibold text-slate-800 dark:text-white">
                                             {payable.supplier?.name || "-"}
                                         </p>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Reports;
 
+use App\Exports\ReportTransactionsExport;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Profit;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Services\OutletAccessService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SalesReportController extends Controller
 {
@@ -19,6 +21,14 @@ class SalesReportController extends Controller
      */
     public function index(Request $request, OutletAccessService $outletAccessService)
     {
+        $validated = $request->validate([
+            'start_date' => ['nullable', 'date_format:Y-m-d'],
+            'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+            'invoice' => ['nullable', 'string', 'max:100'],
+            'cashier_id' => ['nullable', 'integer', 'exists:users,id'],
+            'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
+            'warehouse_id' => ['nullable', 'integer'],
+        ]);
         $warehouseIds = $outletAccessService->warehousesFor($request->user())->pluck('id');
         $activeOutlet = $outletAccessService->activeOutlet($request);
         if ($activeOutlet) {
@@ -27,12 +37,12 @@ class SalesReportController extends Controller
                 ->pluck('id');
         }
         $filters = [
-            'start_date' => $request->input('start_date'),
-            'end_date' => $request->input('end_date'),
-            'invoice' => $request->input('invoice'),
-            'cashier_id' => $request->input('cashier_id'),
-            'customer_id' => $request->input('customer_id'),
-            'warehouse_id' => $warehouseIds->contains((int) $request->input('warehouse_id')) ? $request->input('warehouse_id') : null,
+            'start_date' => $validated['start_date'] ?? null,
+            'end_date' => $validated['end_date'] ?? null,
+            'invoice' => $validated['invoice'] ?? null,
+            'cashier_id' => $validated['cashier_id'] ?? null,
+            'customer_id' => $validated['customer_id'] ?? null,
+            'warehouse_id' => $warehouseIds->contains((int) ($validated['warehouse_id'] ?? 0)) ? $validated['warehouse_id'] : null,
         ];
 
         $baseListQuery = $this->applyFilters(
@@ -43,6 +53,10 @@ class SalesReportController extends Controller
             $filters,
             $warehouseIds
         )->orderByDesc('created_at');
+
+        if ($request->boolean('export')) {
+            return Excel::download(new ReportTransactionsExport(clone $baseListQuery), 'laporan-penjualan.xlsx');
+        }
 
         $transactions = (clone $baseListQuery)
             ->paginate(10)
@@ -58,15 +72,9 @@ class SalesReportController extends Controller
             ')
             ->first();
 
-        $transactionIds = (clone $aggregateQuery)->pluck('id');
-
-        $itemsSold = $transactionIds->isNotEmpty()
-            ? TransactionDetail::whereIn('transaction_id', $transactionIds)->sum('qty')
-            : 0;
-
-        $profitTotal = $transactionIds->isNotEmpty()
-            ? Profit::whereIn('transaction_id', $transactionIds)->sum('total')
-            : 0;
+        $transactionIds = (clone $aggregateQuery)->select('id');
+        $itemsSold = TransactionDetail::whereIn('transaction_id', $transactionIds)->sum('qty');
+        $profitTotal = Profit::whereIn('transaction_id', $transactionIds)->sum('total');
 
         $summary = [
             'orders_count' => (int) ($totals->orders_count ?? 0),

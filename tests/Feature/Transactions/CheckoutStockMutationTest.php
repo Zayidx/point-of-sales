@@ -3,12 +3,15 @@
 namespace Tests\Feature\Transactions;
 
 use App\Models\Category;
+use App\Models\InventoryBalance;
 use App\Models\Product;
+use App\Models\ProductWarehouse;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\CashierShiftService;
 use App\Services\CheckoutService;
+use App\Services\InventoryLedgerService;
 use App\Support\Checkout\CheckoutContext;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -125,6 +128,41 @@ class CheckoutStockMutationTest extends TestCase
         ]);
     }
 
+    public function test_checkout_keeps_finished_goods_ledger_in_sync_with_legacy_pos_stock(): void
+    {
+        $product = $this->makeProduct();
+        $piece = Unit::create(['name' => 'Pcs', 'code' => 'PCS-'.uniqid(), 'symbol' => 'pcs']);
+        $product->units()->attach($piece->id, [
+            'is_base' => true,
+            'conversion_factor' => 1,
+            'buy_price' => 5000,
+            'sell_price' => 10000,
+        ]);
+        $this->warehouse->products()->attach($product->id, ['stock' => 100]);
+
+        $this->post(route('transactions.addToCart'), [
+            'product_id' => $product->id,
+            'sell_price' => 10000,
+            'qty' => 3,
+        ]);
+        $result = app(CheckoutService::class)->execute($this->context());
+
+        $this->assertDatabaseHas('inventory_ledgers', [
+            'idempotency_key' => "legacy-opening:warehouse:{$this->warehouse->id}:product:{$product->id}",
+            'movement_type' => 'opening_stock',
+            'quantity' => '100.0000',
+        ]);
+        $this->assertDatabaseHas('inventory_ledgers', [
+            'idempotency_key' => "sale:{$result->transaction->id}:product:{$product->id}",
+            'movement_type' => 'sale',
+            'quantity' => '-3.0000',
+        ]);
+        $this->assertDatabaseHas('inventory_balances', [
+            'balance_key' => "warehouse:{$this->warehouse->id}:product:{$product->id}",
+            'quantity' => '97.0000',
+        ]);
+    }
+
     public function test_profit_respects_unit_conversion_factor(): void
     {
         $product = $this->makeProduct();
@@ -158,6 +196,31 @@ class CheckoutStockMutationTest extends TestCase
             'stock_before' => 100,
             'stock_after' => 76,
         ]);
+    }
+
+    public function test_pos_hpp_uses_warehouse_weighted_average_cost_instead_of_latest_product_buy_price(): void
+    {
+        $product = $this->makeProduct(['buy_price' => 5000, 'sell_price' => 10000]);
+        $piece = Unit::create(['name' => 'Pcs', 'code' => 'WAC-PCS-'.uniqid(), 'symbol' => 'pcs']);
+        $product->units()->attach($piece->id, ['is_base' => true, 'conversion_factor' => 1, 'buy_price' => 5000, 'sell_price' => 10000]);
+        $this->warehouse->products()->attach($product->id, ['stock' => 100]);
+        $ledger = app(InventoryLedgerService::class);
+        $ledger->ensureProductOpeningBalance($product, $this->warehouse->id, $this->cashier->id);
+        $ledger->record([
+            'idempotency_key' => 'test-wac-receipt-'.$product->id,
+            'item_type' => 'product', 'item_id' => $product->id,
+            'location_type' => 'warehouse', 'location_id' => $this->warehouse->id,
+            'movement_type' => 'purchase_receipt', 'quantity' => 100,
+            'unit_id' => $piece->id, 'unit_cost' => 9000,
+        ]);
+        $product->increment('stock', 100);
+        ProductWarehouse::where('product_id', $product->id)->where('warehouse_id', $this->warehouse->id)->increment('stock', 100);
+
+        $this->post(route('transactions.addToCart'), ['product_id' => $product->id, 'sell_price' => 10000, 'qty' => 1]);
+        $result = app(CheckoutService::class)->execute($this->context());
+
+        $this->assertSame('7000.00', InventoryBalance::where('balance_key', "warehouse:{$this->warehouse->id}:product:{$product->id}")->value('average_unit_cost'));
+        $this->assertSame(3000, (int) $result->transaction->profits()->sum('total'));
     }
 
     public function test_composite_sale_records_mutation_per_component(): void

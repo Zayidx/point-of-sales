@@ -17,9 +17,10 @@ const formatCurrency = (value = 0) =>
         style: "currency",
         currency: "IDR",
         minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
     }).format(value);
 
-export default function Create({ suppliers, products, warehouses = [] }) {
+export default function Create({ suppliers, products, ingredients = [], warehouses = [] }) {
     const { data, setData, post, processing, errors } = useForm({
         supplier_id: "",
         warehouse_id: "",
@@ -29,25 +30,30 @@ export default function Create({ suppliers, products, warehouses = [] }) {
     });
 
     const [searchProduct, setSearchProduct] = useState("");
-    const filteredProducts = products.filter(
-        (p) =>
-            p.title.toLowerCase().includes(searchProduct.toLowerCase()) ||
-            (p.sku && p.sku.toLowerCase().includes(searchProduct.toLowerCase()))
+    const catalog = [
+        ...products.map((product) => ({ item_type: "product", id: product.id, name: product.title, code: product.sku || "-", unit: "unit", unit_price: Number(product.buy_price) || 0, stock: product.stock })),
+        ...ingredients.map((ingredient) => ({ item_type: "ingredient", id: ingredient.id, name: ingredient.name, code: ingredient.code, unit: ingredient.base_unit?.symbol || "satuan dasar", unit_price: Number(ingredient.default_unit_cost) || 0, stock: null })),
+    ];
+    const filteredProducts = catalog.filter((item) =>
+        `${item.name} ${item.code}`.toLowerCase().includes(searchProduct.toLowerCase())
     );
 
-    const addItem = (product) => {
-        if (data.items.some((i) => i.product_id === product.id)) {
-            toast.error("Produk sudah ada di daftar.");
+    const addItem = (entry) => {
+        if (data.items.some((item) => item.item_type === entry.item_type && item.item_id === entry.id)) {
+            toast.error("Item sudah ada di daftar.");
             return;
         }
         setData("items", [
             ...data.items,
             {
-                product_id: product.id,
-                product_title: product.title,
-                product_sku: product.sku || "-",
+                item_type: entry.item_type,
+                item_id: entry.id,
+                product_id: entry.item_type === "product" ? entry.id : null,
+                ingredient_id: entry.item_type === "ingredient" ? entry.id : null,
+                item_name: entry.name,
+                item_code: `${entry.item_type === "ingredient" ? "Bahan" : "Produk"} · ${entry.code} · ${entry.unit}`,
                 qty_ordered: 1,
-                unit_price: Number(product.buy_price) || 0,
+                unit_price: entry.unit_price,
             },
         ]);
     };
@@ -61,7 +67,7 @@ export default function Create({ suppliers, products, warehouses = [] }) {
 
     const updateItem = (index, key, value) => {
         const items = [...data.items];
-        items[index] = { ...items[index], [key]: key === "qty_ordered" ? parseInt(value) || 0 : Number(value) || 0 };
+        items[index] = { ...items[index], [key]: Number(value) || 0 };
         setData("items", items);
     };
 
@@ -80,7 +86,7 @@ export default function Create({ suppliers, products, warehouses = [] }) {
 
     return (
         <>
-            <Head title="Buat Purchase Order" />
+            <Head title="Buat Pesanan Pembelian" />
             <div className="mb-6">
                 <Link
                     href={route("purchase-orders.index")}
@@ -91,7 +97,7 @@ export default function Create({ suppliers, products, warehouses = [] }) {
                 </Link>
                 <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
                     <IconShoppingCart size={28} className="text-primary-500" />
-                    Buat Purchase Order
+                    Buat Pesanan Pembelian
                 </h1>
             </div>
 
@@ -101,13 +107,13 @@ export default function Create({ suppliers, products, warehouses = [] }) {
                         <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Informasi PO</h2>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                             <div>
-                                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">Supplier</label>
+                                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">Pemasok</label>
                                 <select
                                     value={data.supplier_id}
                                     onChange={(e) => setData("supplier_id", e.target.value)}
                                     className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                 >
-                                    <option value="">Pilih Supplier</option>
+                                    <option value="">Pilih Pemasok</option>
                                     {suppliers.map((s) => (
                                         <option key={s.id} value={s.id}>{s.name}</option>
                                     ))}
@@ -171,11 +177,11 @@ export default function Create({ suppliers, products, warehouses = [] }) {
                                         className="flex w-full items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 text-left text-sm transition hover:border-primary-200 hover:bg-primary-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-primary-700 dark:hover:bg-primary-950/20"
                                     >
                                         <div>
-                                            <p className="font-medium text-slate-800 dark:text-slate-200">{product.title}</p>
-                                            <p className="text-xs text-slate-500">{product.sku || "-"} &bull; Stok: {product.stock}</p>
+                                            <p className="font-medium text-slate-800 dark:text-slate-200">{product.name}</p>
+                                            <p className="text-xs text-slate-500">{product.item_type === "ingredient" ? "Bahan baku" : "Produk jadi"} · {product.code}{product.stock !== null ? ` · Stok: ${product.stock}` : ""}</p>
                                         </div>
                                         <span className="text-xs text-slate-500 dark:text-slate-400">
-                                            {formatCurrency(product.buy_price)}
+                                            {formatCurrency(product.unit_price)}
                                         </span>
                                     </button>
                                 ))}
@@ -197,13 +203,14 @@ export default function Create({ suppliers, products, warehouses = [] }) {
                                         {data.items.map((item, index) => (
                                             <tr key={index} className="border-b border-slate-100 dark:border-slate-800">
                                                 <td className="px-3 py-3">
-                                                    <p className="font-medium text-slate-800 dark:text-slate-200">{item.product_title}</p>
-                                                    <p className="text-xs text-slate-500">{item.product_sku}</p>
+                                                    <p className="font-medium text-slate-800 dark:text-slate-200">{item.item_name}</p>
+                                                    <p className="text-xs text-slate-500">{item.item_code}</p>
                                                 </td>
                                                 <td className="px-3 py-3 text-right">
                                                     <input
                                                         type="number"
-                                                        min="1"
+                                                        min={item.item_type === "ingredient" ? "0.0001" : "1"}
+                                                        step={item.item_type === "ingredient" ? "0.0001" : "1"}
                                                         value={item.qty_ordered}
                                                         onChange={(e) => updateItem(index, "qty_ordered", e.target.value)}
                                                         className="h-10 w-20 rounded-lg border border-slate-200 bg-slate-50 px-3 text-right text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
@@ -213,7 +220,7 @@ export default function Create({ suppliers, products, warehouses = [] }) {
                                                     <input
                                                         type="number"
                                                         min="0"
-                                                        step="100"
+                                                        step={item.item_type === "ingredient" ? "0.0001" : "100"}
                                                         value={item.unit_price}
                                                         onChange={(e) => updateItem(index, "unit_price", e.target.value)}
                                                         className="h-10 w-28 rounded-lg border border-slate-200 bg-slate-50 px-3 text-right text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"

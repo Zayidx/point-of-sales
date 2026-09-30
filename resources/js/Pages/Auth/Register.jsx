@@ -146,7 +146,7 @@ export default function Register({ botGuard }) {
                             {/* Email */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Email
+                                    Alamat Email
                                 </label>
                                 <div className="relative">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -221,7 +221,7 @@ export default function Register({ botGuard }) {
                             {/* Confirm Password */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Konfirmasi Password
+                                    Konfirmasi Kata Sandi
                                 </label>
                                 <div className="relative">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -240,7 +240,7 @@ export default function Register({ botGuard }) {
                                                 e.target.value
                                             )
                                         }
-                                        placeholder="Ulangi password"
+                                        placeholder="Ulangi kata sandi"
                                         className={`w-full h-12 pl-12 pr-12 rounded-xl border-2 ${
                                             errors.password_confirmation
                                                 ? "border-danger-500 focus:border-danger-500"

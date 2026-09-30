@@ -27,7 +27,7 @@ const formatDateTime = (value) => {
     }).format(new Date(value));
 };
 
-function MetricCard({ title, value, icon: Icon }) {
+function MetrikCard({ title, value, icon: Icon }) {
     return (
         <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
@@ -41,13 +41,16 @@ function MetricCard({ title, value, icon: Icon }) {
     );
 }
 
-export default function Show({ cashierShift, canForceClose = false }) {
+export default function Show({ cashierShift, closingProducts = [], canForceClose = false }) {
     const { auth, errors } = usePage().props;
     const { can } = useAuthorization();
     const [actualCash, setActualCash] = useState(
         cashierShift.actual_cash !== null ? String(cashierShift.actual_cash) : ""
     );
     const [closeNotes, setCloseNotes] = useState(cashierShift.close_notes || "");
+    const [closingStock, setClosingStock] = useState(() => Object.fromEntries(
+        closingProducts.map((product) => [product.id, cashierShift.stock_counts?.find((count) => count.product_id === product.id)?.actual_stock ?? ""])
+    ));
 
     const canCloseShift = useMemo(() => {
         if (cashierShift.status !== "open") return false;
@@ -75,9 +78,15 @@ export default function Show({ cashierShift, canForceClose = false }) {
     const handleCloseShift = (event) => {
         event.preventDefault();
 
+        if (closingProducts.some((product) => closingStock[product.id] === "")) return;
+
         router.post(route("cashier-shifts.close", cashierShift.id), {
             actual_cash: actualCashNumber,
             close_notes: closeNotes,
+            closing_stock: closingProducts.map((product) => ({
+                product_id: product.id,
+                actual_stock: Number(closingStock[product.id]),
+            })),
         });
     };
 
@@ -132,16 +141,16 @@ export default function Show({ cashierShift, canForceClose = false }) {
                         {cashierShift.status === "open"
                             ? "Shift Aktif"
                             : cashierShift.status === "force_closed"
-                              ? "Force Closed"
-                              : "Shift Closed"}
+                              ? "Ditutup paksa"
+                              : "Shift ditutup"}
                     </span>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <MetricCard title="Modal Awal" value={formatCurrency(cashierShift.opening_cash)} icon={IconWallet} />
-                    <MetricCard title="Expected Cash" value={formatCurrency(cashierShift.expected_cash)} icon={IconCashBanknote} />
-                    <MetricCard title="Penjualan Tunai" value={formatCurrency(cashierShift.cash_sales_total)} icon={IconReceipt} />
-                    <MetricCard title="Refund Tunai" value={formatCurrency(cashierShift.cash_refund_total)} icon={IconRotateClockwise2} />
+                    <MetrikCard title="Modal Awal" value={formatCurrency(cashierShift.opening_cash)} icon={IconWallet} />
+                    <MetrikCard title="Ekspektasi kas" value={formatCurrency(cashierShift.expected_cash)} icon={IconCashBanknote} />
+                    <MetrikCard title="Penjualan Tunai" value={formatCurrency(cashierShift.cash_sales_total)} icon={IconReceipt} />
+                    <MetrikCard title="Refund Tunai" value={formatCurrency(cashierShift.cash_refund_total)} icon={IconRotateClockwise2} />
                 </div>
 
                 <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
@@ -194,7 +203,7 @@ export default function Show({ cashierShift, canForceClose = false }) {
                                 <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{cashierShift.notes || "Tidak ada catatan pembukaan."}</p>
                             </div>
                             <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
-                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Catatan Closing</p>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Catatan Penutupan</p>
                                 <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{cashierShift.close_notes || "Tidak ada catatan penutupan."}</p>
                             </div>
                         </div>
@@ -203,15 +212,15 @@ export default function Show({ cashierShift, canForceClose = false }) {
                     <div className="space-y-6">
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                                Cash Closing
+                                Penutupan kas
                             </h2>
                             <div className="mt-4 space-y-3">
                                 <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
-                                    <span className="text-sm text-slate-500 dark:text-slate-400">Expected Cash</span>
+                                    <span className="text-sm text-slate-500 dark:text-slate-400">Ekspektasi kas</span>
                                     <span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(cashierShift.expected_cash)}</span>
                                 </div>
                                 <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
-                                    <span className="text-sm text-slate-500 dark:text-slate-400">Actual Cash</span>
+                                    <span className="text-sm text-slate-500 dark:text-slate-400">Kas aktual</span>
                                     <span className="font-semibold text-slate-900 dark:text-white">
                                         {cashierShift.actual_cash === null ? "-" : formatCurrency(cashierShift.actual_cash)}
                                     </span>
@@ -225,17 +234,44 @@ export default function Show({ cashierShift, canForceClose = false }) {
                             </div>
                         </div>
 
+                        {cashierShift.stock_counts?.length > 0 && (
+                            <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                                <h2 className="font-semibold text-slate-900 dark:text-white">Rekap stok akhir</h2>
+                                <div className="mt-3 space-y-2 text-sm">
+                                    {cashierShift.stock_counts.map((count) => (
+                                        <div key={count.product_id} className="flex items-center justify-between gap-3 border-b border-slate-100 py-2 dark:border-slate-800">
+                                            <span>{count.product}</span>
+                                            <span className="text-right">Sistem {count.expected_stock} | Aktual {count.actual_stock} | Selisih {count.variance}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {canCloseShift && (
                             <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
                                     Tutup Shift
                                 </h2>
                                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                                    Input kas fisik akhir untuk finalisasi cash closing.
+                                    Masukkan kas fisik dan sisa stok outlet untuk menutup shift. Sisa yang dihitung akan dikembalikan ke gudang PUSAT.
                                 </p>
                                 <form onSubmit={handleCloseShift} className="mt-4 space-y-4">
+                                    {closingProducts.length > 0 && (
+                                        <fieldset className="space-y-3">
+                                            <legend className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">Hitung stok fisik akhir</legend>
+                                            <p className="text-xs text-slate-500">Jumlah sistem saat ini menjadi stok ekspektasi setelah penjualan, penerimaan, dan waste.</p>
+                                            {closingProducts.map((product) => (
+                                                <label key={product.id} className="grid grid-cols-[1fr_6rem] items-center gap-3 text-sm">
+                                                    <span>{product.title}<span className="ml-2 text-xs text-slate-500">Sistem: {product.expected_stock}</span></span>
+                                                    <input type="number" min="0" step="1" required value={closingStock[product.id]} onChange={(event) => setClosingStock((current) => ({ ...current, [product.id]: event.target.value }))} className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 dark:border-slate-700 dark:bg-slate-800" aria-label={`Stok aktual ${product.title}`} />
+                                                </label>
+                                            ))}
+                                            {errors?.closing_stock && <p className="text-xs text-rose-500">{errors.closing_stock}</p>}
+                                        </fieldset>
+                                    )}
                                     <div>
-                                        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Kas Fisik Aktual</label>
+                                        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Kas fisik aktual</label>
                                         <input
                                             type="number"
                                             min="0"
@@ -248,7 +284,7 @@ export default function Show({ cashierShift, canForceClose = false }) {
                                         )}
                                     </div>
                                     <div>
-                                        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Catatan Closing</label>
+                                        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Catatan Penutupan</label>
                                         <textarea
                                             rows={4}
                                             value={closeNotes}
@@ -273,7 +309,7 @@ export default function Show({ cashierShift, canForceClose = false }) {
                                         className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
                                     >
                                         <IconCashBanknote size={18} />
-                                        <span>Finalisasi Closing</span>
+                                        <span>Selesaikan Penutupan Shift</span>
                                     </button>
                                 </form>
                             </div>

@@ -28,7 +28,7 @@ const statusBadge = (status) => {
         cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400",
     };
     const labels = {
-        draft: "Draft",
+        draft: "Draf",
         completed: "Selesai",
         cancelled: "Dibatalkan",
     };
@@ -48,11 +48,11 @@ export default function Index({ returns, filters, suppliers }) {
 
     return (
         <>
-            <Head title="Retur Supplier" />
+            <Head title="Retur Pemasok" />
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                        Retur Supplier
+                        Retur Pemasok
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                         Kelola retur barang ke supplier.
@@ -88,7 +88,7 @@ export default function Index({ returns, filters, suppliers }) {
                     className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
                     <option value="">Semua Status</option>
-                    <option value="draft">Draft</option>
+                    <option value="draft">Draf</option>
                     <option value="completed">Selesai</option>
                     <option value="cancelled">Dibatalkan</option>
                 </select>
@@ -97,19 +97,19 @@ export default function Index({ returns, filters, suppliers }) {
                     onChange={(e) => handleFilterChange("supplier", e.target.value)}
                     className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
-                    <option value="">Semua Supplier</option>
+                    <option value="">Semua Pemasok</option>
                     {suppliers.map((s) => (
                         <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                 </select>
             </div>
 
-            <Table.Card title="Daftar Retur Supplier">
+                    <Table.Card title="Daftar Retur Pemasok">
                 <Table>
                     <Table.Thead>
                         <tr>
                             <Table.Th>Dokumen</Table.Th>
-                            <Table.Th>Supplier</Table.Th>
+                            <Table.Th>Pemasok</Table.Th>
                             <Table.Th>Status</Table.Th>
                             <Table.Th>Item</Table.Th>
                             <Table.Th>Tanggal</Table.Th>

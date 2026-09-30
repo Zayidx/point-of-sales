@@ -37,7 +37,7 @@ export default function ConfirmPassword({ challenge = null }) {
 
     return (
         <>
-            <Head title="Konfirmasi Password" />
+            <Head title="Konfirmasi Kata Sandi" />
 
             <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950">
                 <div className="flex-1 flex items-center justify-center p-8">
@@ -55,7 +55,7 @@ export default function ConfirmPassword({ challenge = null }) {
                                 <IconShieldLock size={28} className="text-primary-600 dark:text-primary-400" />
                             </div>
                             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-                                Konfirmasi Password
+                                Konfirmasi Kata Sandi
                             </h1>
                             <p className="mt-2 text-slate-600 dark:text-slate-400">
                                 Untuk melanjutkan {challengeLabel}, masukkan kembali password akun Anda.
@@ -82,7 +82,7 @@ export default function ConfirmPassword({ challenge = null }) {
                                                 : "border-slate-200 dark:border-slate-700 focus:border-primary-500"
                                         } bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-4 focus:ring-primary-500/20 transition-all`}
                                         autoFocus
-                                        placeholder="Masukkan password Anda"
+                                        placeholder="Masukkan kata sandi Anda"
                                     />
                                     <button
                                         type="button"
@@ -122,7 +122,7 @@ export default function ConfirmPassword({ challenge = null }) {
                         </div>
                         <h2 className="text-3xl font-bold mb-4">Proteksi Aksi Admin</h2>
                         <p className="text-lg opacity-90">
-                            Konfirmasi password ulang membantu menahan aksi sensitif saat sesi admin sudah lama aktif.
+                            Konfirmasi kata sandi ulang membantu menahan aksi sensitif saat sesi admin sudah lama aktif.
                         </p>
                     </div>
                 </div>

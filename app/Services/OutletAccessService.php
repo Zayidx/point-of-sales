@@ -35,22 +35,39 @@ class OutletAccessService
             return $this->legacySingleOutletBypass();
         }
 
-        return (bool) ($warehouse->outlet_id && $outletIds->contains($warehouse->outlet_id));
+        return (bool) ($warehouse->outlet_id && $outletIds->contains($warehouse->outlet_id))
+            || $warehouse->outlets()->whereIn('outlets.id', $outletIds)->exists();
     }
 
     public function canSellAtWarehouse(User $user, ?Warehouse $warehouse): bool
     {
-        return $this->canUseWarehouse($user, $warehouse)
-            && (! $warehouse?->outlet_id && $this->legacySingleOutletBypass()
-                || (bool) ($warehouse?->outlet ?? Outlet::find($warehouse?->outlet_id))?->is_sales_enabled);
+        if (! $warehouse) {
+            return $this->legacySingleOutletBypass();
+        }
+
+        if (! $this->canUseWarehouse($user, $warehouse)) {
+            return false;
+        }
+
+        if (! $warehouse->outlet_id && $warehouse->outlets()->doesntExist()) {
+            return $this->legacySingleOutletBypass();
+        }
+
+        if ($warehouse?->outlet?->is_sales_enabled) {
+            return true;
+        }
+
+        return $warehouse?->outlets()
+            ->whereIn('outlets.id', $user->outlets()->pluck('outlets.id'))
+            ->where('outlets.is_sales_enabled', true)
+            ->exists() ?? false;
     }
 
     public function salesWarehousesFor(User $user): Collection
     {
         return $this->warehousesFor($user)
-            ->filter(fn (Warehouse $warehouse) => ! $warehouse->outlet_id
-                ? $this->legacySingleOutletBypass()
-                : (bool) $warehouse->outlet?->is_sales_enabled)
+            ->filter(fn (Warehouse $warehouse) => (bool) $warehouse->outlet?->is_sales_enabled
+                || $warehouse->outlets->contains(fn (Outlet $outlet) => $outlet->is_sales_enabled))
             ->values();
     }
 
@@ -60,11 +77,15 @@ class OutletAccessService
         if (! $user->isSuperAdmin()) {
             $outletIds = $user->outlets()->pluck('outlets.id');
             if ($outletIds->isNotEmpty()) {
-                $query->whereIn('outlet_id', $outletIds);
+                $query->where(function ($warehouseQuery) use ($outletIds) {
+                    $warehouseQuery->whereIn('outlet_id', $outletIds)
+                        ->orWhereHas('outlets', fn ($outletQuery) => $outletQuery->whereIn('outlets.id', $outletIds));
+                });
             }
         }
 
-        return $query->with('outlet:id,is_sales_enabled')->get(['id', 'code', 'name', 'outlet_id', 'is_active']);
+        return $query->with(['outlet:id,name,is_sales_enabled', 'outlets:id,code,name,is_sales_enabled'])
+            ->get(['id', 'code', 'name', 'outlet_id', 'is_active']);
     }
 
     public function defaultOutlet(User $user): ?Outlet
@@ -101,11 +122,11 @@ class OutletAccessService
         }
 
         $shiftOutlet = CashierShift::query()
-            ->with('warehouse.outlet')
+            ->with(['warehouse.outlet', 'outlet'])
             ->open()
             ->where('user_id', $user->id)
             ->latest('opened_at')
-            ->first()?->warehouse?->outlet;
+            ->first()?->outlet;
 
         if ($shiftOutlet) {
             return $shiftOutlet;
@@ -122,7 +143,13 @@ class OutletAccessService
         return (bool) CashierShift::query()
             ->where('user_id', $user->id)
             ->open()
-            ->whereHas('warehouse', fn ($query) => $query->where('outlet_id', '!=', $outlet->id))
+            ->where(function ($query) use ($outlet) {
+                $query->where('outlet_id', '!=', $outlet->id)
+                    ->orWhere(function ($legacy) use ($outlet) {
+                        $legacy->whereNull('outlet_id')
+                            ->whereHas('warehouse', fn ($warehouse) => $warehouse->where('outlet_id', '!=', $outlet->id));
+                    });
+            })
             ->exists();
     }
 
@@ -140,6 +167,8 @@ class OutletAccessService
             'supplier_returns',
             'stock_opnames',
             'product_batches',
+            'inventory_balances',
+            'inventory_ledgers',
         ] as $table) {
             if (Schema::hasTable($table)
                 && Schema::hasColumn($table, 'warehouse_id')

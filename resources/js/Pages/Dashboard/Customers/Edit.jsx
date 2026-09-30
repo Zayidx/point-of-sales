@@ -131,7 +131,7 @@ export default function Edit({ customer }) {
 
     return (
         <>
-            <Head title="Edit Pelanggan" />
+            <Head title="Ubah Pelanggan" />
 
             <div className="mb-6">
                 <Link
@@ -143,7 +143,7 @@ export default function Edit({ customer }) {
                 </Link>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <IconUsers size={28} className="text-primary-500" />
-                    Edit Pelanggan
+                    Ubah Pelanggan
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">{customer.name}</p>
             </div>
@@ -192,7 +192,7 @@ export default function Edit({ customer }) {
                                         }
                                         className="h-4 w-4 rounded border-slate-300 text-primary-500"
                                     />
-                                    Member
+                                    Anggota
                                 </label>
                             </div>
 
@@ -330,7 +330,7 @@ export default function Edit({ customer }) {
                             </div>
                         </div>
                         <Textarea
-                            label="Alamat Detail"
+                            label="Detail Alamat"
                             placeholder="Alamat lengkap"
                             errors={errors.address}
                             onChange={(e) => setData("address", e.target.value)}

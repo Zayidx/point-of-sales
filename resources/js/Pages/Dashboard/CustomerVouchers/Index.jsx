@@ -52,7 +52,7 @@ const statusBadge = (voucher) => {
 
     if (expiresAt && expiresAt < now) {
         return {
-            label: "Expired",
+            label: "Kedaluwarsa",
             className:
                 "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
         };
@@ -79,13 +79,13 @@ export default function Index({ vouchers, filters = {} }) {
 
     return (
         <>
-            <Head title="Voucher Customer" />
+            <Head title="Voucher Pelanggan" />
 
             <div className="w-full">
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                            Voucher Customer
+                            Voucher Pelanggan
                         </h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
                             Voucher personal untuk promosi retensi dan reward pelanggan.
@@ -119,7 +119,7 @@ export default function Index({ vouchers, filters = {} }) {
                             <option value="">Semua Status</option>
                             <option value="active">Aktif</option>
                             <option value="scheduled">Terjadwal</option>
-                            <option value="expired">Expired</option>
+                            <option value="expired">Kedaluwarsa</option>
                             <option value="used">Sudah Dipakai</option>
                             <option value="inactive">Nonaktif</option>
                         </select>

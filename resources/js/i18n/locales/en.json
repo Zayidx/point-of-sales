@@ -262,6 +262,8 @@
             "dashboard": "Dashboard",
             "categories": "Categories",
             "products": "Products",
+            "ingredients": "Ingredients",
+            "recipes": "Recipes & Cost",
             "customers": "Customers",
             "suppliers": "Suppliers",
             "transactions": "Transactions",
@@ -274,6 +276,7 @@
             "stockMutations": "Stock Mutations",
             "stockTransfers": "Stock Transfers",
             "purchaseOrders": "Purchase Orders",
+            "productionRequests": "Production Requests",
             "goodsReceiving": "Goods Receiving",
             "supplierReturns": "Supplier Returns",
             "supplierPayables": "Supplier Payables",
@@ -1005,17 +1008,6 @@
                 "title": "Report Data",
                 "desc": "Per-transaction details/breakdown. Page navigation below."
             }
-        }
-    },
-    "setupChecklist": {
-        "title": "Store Setup Checklist",
-        "subtitle": ":done of :total steps complete — finish them to start selling.",
-        "items": {
-            "store_profile": "Complete your store profile",
-            "category": "Create your first category",
-            "product": "Add your first product",
-            "customer": "Register your first customer",
-            "transaction": "Complete your first transaction"
         }
     }
 }

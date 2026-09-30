@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Cart;
+use App\Models\InventoryBalance;
 use App\Models\Product;
 use App\Models\ProductBatch;
 use App\Models\ProductWarehouse;
@@ -26,6 +27,7 @@ class CheckoutService
         private readonly BatchService $batchService,
         private readonly TransactionTenderService $tenderService,
         private readonly StockMutationService $stockMutationService,
+        private readonly InventoryLedgerService $inventoryLedgerService,
     ) {}
 
     public function execute(CheckoutContext $ctx): CheckoutResult
@@ -60,7 +62,11 @@ class CheckoutService
                 $ctx->outlet,
             );
 
-            $grandTotal = (int) data_get($checkoutPreview, 'summary.grand_total', 0);
+            $calculatedGrandTotal = (int) data_get($checkoutPreview, 'summary.grand_total', 0);
+            $grandTotal = $ctx->manualOnlineTotal ?? $calculatedGrandTotal;
+            if ($ctx->paymentGateway === 'gofood' && ($ctx->manualOnlineTotal ?? 0) < 1) {
+                throw ValidationException::withMessages(['manual_online_total' => 'Total penjualan GoFood harus lebih besar dari nol.']);
+            }
             $appliedManualDiscount = (int) data_get($checkoutPreview, 'summary.manual_discount_total', 0);
             $loyaltyDiscount = (int) data_get($checkoutPreview, 'summary.loyalty_discount_total', 0);
             $voucherDiscount = (int) data_get($checkoutPreview, 'summary.voucher_discount_total', 0);
@@ -81,9 +87,12 @@ class CheckoutService
             $paymentMethod = $ctx->useTenders
                 ? (count($tenders) > 1 ? 'split' : $tenders[0]['method'])
                 : ($ctx->isPayLater ? 'pay_later' : ($ctx->paymentGateway ?: 'cash'));
+            $manualNonCashMethods = ['bank_transfer', 'qris_1', 'qris_2', 'qris_3'];
             $paymentStatus = $ctx->useTenders
                 ? $this->tenderService->aggregateStatus($tenders)
-                : ($ctx->isCashPayment ? 'paid' : ($ctx->isPayLater ? 'unpaid' : 'pending'));
+                : ($ctx->isCashPayment || $ctx->paymentGateway === 'gofood' || in_array($ctx->paymentGateway, $manualNonCashMethods, true)
+                    ? 'paid'
+                    : ($ctx->isPayLater ? 'unpaid' : 'pending'));
             $tenderBankAccountId = $ctx->useTenders
                 ? (collect($tenders)->firstWhere('bank_account_id', '!==', null)['bank_account_id'] ?? null)
                 : ($ctx->paymentGateway === 'bank_transfer' ? $ctx->bankAccountId : null);
@@ -92,6 +101,7 @@ class CheckoutService
                 'cashier_id' => $ctx->userId,
                 'cashier_shift_id' => $activeShift->id,
                 'warehouse_id' => $activeShift->warehouse_id,
+                'outlet_id' => $activeShift->outlet_id,
                 'customer_id' => $ctx->customer?->id,
                 'invoice' => 'TRX-'.strtoupper(Str::random(10)),
                 'cash' => $ctx->useTenders ? $tenderCash : $ctx->cashAmount,
@@ -122,6 +132,13 @@ class CheckoutService
             }
 
             $this->processCartItems($transaction, $carts, $pricingPreview, $ctx->outlet, $subtotalAfterPromo, $appliedManualDiscount, $activeShift->warehouse_id, $ctx->userId);
+
+            if ($ctx->manualOnlineTotal !== null) {
+                $firstProfit = $transaction->profits()->orderBy('id')->first();
+                if ($firstProfit) {
+                    $firstProfit->increment('total', $grandTotal - $calculatedGrandTotal);
+                }
+            }
 
             Cart::where('cashier_id', $ctx->userId)
                 ->active()
@@ -199,10 +216,10 @@ class CheckoutService
             // HPP follows base-unit cost: cart qty is in the selling unit, buy_price is per base unit.
             if ($product->is_composite) {
                 $totalBuyPrice = $product->components->sum(
-                    fn ($component) => $component->buy_price * (float) $component->pivot->qty
+                    fn ($component) => $this->baseUnitCost($component, $warehouseId, $userId) * (float) $component->pivot->qty
                 ) * $cart->qty;
             } else {
-                $totalBuyPrice = $product->buy_price * $cart->qty * (float) ($cart->conversion_factor ?? 1);
+                $totalBuyPrice = $this->baseUnitCost($product, $warehouseId, $userId) * $cart->qty * (float) ($cart->conversion_factor ?? 1);
             }
             $lineShare = $subtotalAfterPromo > 0 ? $lineTotal / $subtotalAfterPromo : 0;
             $allocatedManualDiscount = (int) round($appliedManualDiscount * $lineShare);
@@ -224,17 +241,21 @@ class CheckoutService
                             'warehouse_id' => $warehouseId,
                         ])->lockForUpdate()->first()
                         : null;
-                    $available = $pw ? (int) $pw->stock : (int) $component->stock;
+                    $available = $warehouseId ? (int) ($pw?->stock ?? 0) : (int) $component->stock;
                     if ($available < $componentQty) {
                         throw ValidationException::withMessages([
                             'stock' => "Stok komponen {$component->title} tidak mencukupi. Tersedia: {$available}.",
                         ]);
                     }
                     $stockBefore = $available;
+                    if ($warehouseId) {
+                        $this->inventoryLedgerService->ensureProductOpeningBalance($component, $warehouseId, $userId);
+                    }
                     if ($pw) {
                         $pw->decrement('stock', $componentQty);
                     }
                     $component->decrement('stock', $componentQty);
+                    $this->recordProductSaleInLedger($component, $warehouseId, $componentQty, $transaction, $userId);
 
                     $this->stockMutationService->recordMutation(
                         product: $component,
@@ -258,17 +279,21 @@ class CheckoutService
                         'warehouse_id' => $warehouseId,
                     ])->lockForUpdate()->first()
                     : null;
-                $available = $pw ? (int) $pw->stock : (int) $product->stock;
+                $available = $warehouseId ? (int) ($pw?->stock ?? 0) : (int) $product->stock;
                 if ($available < $baseQty) {
                     throw ValidationException::withMessages([
                         'stock' => "Stok {$product->title} tidak mencukupi. Tersedia: {$available}.",
                     ]);
                 }
                 $stockBefore = $available;
+                if ($warehouseId) {
+                    $this->inventoryLedgerService->ensureProductOpeningBalance($product, $warehouseId, $userId);
+                }
                 if ($pw) {
                     $pw->decrement('stock', $baseQty);
                 }
                 $product->decrement('stock', $baseQty);
+                $this->recordProductSaleInLedger($product, $warehouseId, $baseQty, $transaction, $userId);
 
                 $this->stockMutationService->recordMutation(
                     product: $product,
@@ -322,5 +347,41 @@ class CheckoutService
                 }
             }
         }
+    }
+
+    private function recordProductSaleInLedger(Product $product, ?int $warehouseId, int $baseQty, Transaction $transaction, int $userId): void
+    {
+        if (! $warehouseId || ! $product->baseUnit()) {
+            return;
+        }
+
+        $this->inventoryLedgerService->record([
+            'idempotency_key' => "sale:{$transaction->id}:product:{$product->id}",
+            'item_type' => 'product',
+            'item_id' => $product->id,
+            'location_type' => 'warehouse',
+            'location_id' => $warehouseId,
+            'movement_type' => 'sale',
+            'quantity' => '-'.$baseQty,
+            'unit_id' => $product->baseUnit()->id,
+            'reference_type' => Transaction::class,
+            'reference_id' => $transaction->id,
+            'notes' => "Penjualan {$transaction->invoice}",
+            'created_by' => $userId,
+        ]);
+    }
+
+    /** Use the warehouse's historical weighted-average cost when it has inventory ledger data. */
+    private function baseUnitCost(Product $product, ?int $warehouseId, int $userId): float
+    {
+        if ($warehouseId && $product->baseUnit()) {
+            $this->inventoryLedgerService->ensureProductOpeningBalance($product, $warehouseId, $userId);
+            $balance = InventoryBalance::where('balance_key', "warehouse:{$warehouseId}:product:{$product->id}")->first();
+            if ($balance) {
+                return (float) $balance->average_unit_cost;
+            }
+        }
+
+        return (float) $product->buy_price;
     }
 }

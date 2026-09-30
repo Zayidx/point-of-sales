@@ -1,34 +1,37 @@
 # Multi-Outlet
 
-The POS supports multiple branches (outlets) from a single shared database. Each outlet owns one or more warehouses; the cashier shift picks the warehouse the POS will sell from. This page documents the model and how to use it day-to-day. For staging/production rollout of an existing single-outlet install see the **Rollout** section below.
+The POS supports multiple branches (outlets) from a single shared database. A sales outlet can use its own warehouse or a warehouse shared through `outlet_warehouse_access`. The shift records both its outlet and stock warehouse. For staging/production rollout of an existing single-outlet install see the **Rollout** section below.
 
 ## Model
 
 - `outlets` is the business boundary above `warehouses`.
-- `warehouses.outlet_id` ties every warehouse to its outlet.
+- `warehouses.outlet_id` identifies the owning outlet; `outlet_warehouse_access` grants sales outlets access to shared stock warehouses.
 - `PUSAT` is the central warehouse/outlet for stock distribution and is **not sales-enabled**.
-- Sales outlets (branches) each have a `branch`-type warehouse and can open cashier shifts.
+- Dimsum Weigu uses `PUSAT` as its central stock warehouse plus one active stock warehouse per sales outlet.
+- Warehouse transfers reduce PUSAT stock when sent and add the received quantity to the destination outlet. Checkout consumes that outlet's stock.
+- Cashier shift closing records counted menu stock and returns the counted remainder from the outlet warehouse to PUSAT.
 - Cashier assignments are stored in `user_outlets` (one default per user).
-- Active outlet context is session-based; the active shift warehouse/outlet is the source of truth and locks outlet switching while a shift is open.
+- Active outlet context is session-based; the active shift's `outlet_id` identifies the branch while `warehouse_id` identifies shared stock. Outlet switching is locked while a shift is open.
 - Global fallback remains for legacy single-outlet installations.
 
 ## Scope Policy
 
 - Customers, loyalty, suppliers, receivables, and payables remain global.
-- Transactions, stock, shifts, purchasing, returns, reports, settings, pricing, and dine-in data use outlet context.
+- Transactions and shifts store outlet context separately from warehouse stock. Product inventory follows each warehouse balance.
 - `PUSAT` is the central warehouse and is not sales-enabled.
-- A cashier uses one active shift and one outlet warehouse at a time.
+- A cashier uses one active shift, one sales outlet, and that outlet's stock warehouse. Warehouse transfers, checkout, and shift-close returns lock inventory rows and run atomically.
 - Global configuration remains a fallback for legacy single-outlet installations.
 
 ## Day-to-Day Operations
 
-After the first install the active outlet is set in the navbar selector (`OutletSwitcher`). While a shift is open the selector is locked to the shift's warehouse/outlet.
+After the first install the active outlet is set in the navbar selector (`OutletSwitcher`). While a shift is open the selector is locked to the shift's outlet.
 
-- **Opening a shift** — pick the branch warehouse from the cashiers' assigned active warehouses only.
+- **Opening a shift** ? select the assigned outlet stock warehouse.
 - **Switching outlets** — close all open shifts first; the selector allows switching between assigned active outlets.
-- **Stock transfers** — `PUSAT → branch` is the typical replenishment path; cross-outlet transfers require both endpoints to be assigned to the operator.
+- **Stock transfers** ? warehouse staff draft, send, and receive transfers from `PUSAT` to outlet warehouses. The send step decreases PUSAT immediately; the receive step records stock at the outlet.
+- **Shift closing** ? cashier enters the counted remaining menu stock. The system returns that quantity to PUSAT and clears the outlet balance.
 - **Per-outlet settings** — store profile, printer, payment settings, bank accounts, pricing, vouchers, dine-in, WhatsApp, and sales target each have an outlet override and a global fallback.
-- **Reports** — sales, profit, and dashboard reflect the operator's accessible outlets. Use the warehouse filter for finer selection.
+- **Reports** ? sales and dashboards group by transaction outlet; inventory and stock movements group by warehouse.
 - **Receivables and payables** — remain in a global ledger; visibility and payment authorization derive from the source transaction/purchase-order outlet.
 
 ## Rollout (existing single-outlet installs)
@@ -69,7 +72,8 @@ Run the following with a test user assigned to one outlet:
 
 - Switch only between assigned active outlets.
 - Confirm outlet switching is blocked while a shift is open.
-- Confirm PUSAT cannot open a sales shift.
+- Confirm the non-sales `PUSAT` outlet itself cannot be selected as a sales outlet and each cashier opens a shift against their assigned outlet warehouse.
+- Transfer stock from `PUSAT`, sell from the outlet balance, then close the shift and confirm the counted remainder returns to `PUSAT`.
 - Open and close a shift with cash movement.
 - Complete cash, bank transfer, QRIS, and split-payment sales.
 - Confirm transaction, stock, receipt, and payment webhook outlet context.

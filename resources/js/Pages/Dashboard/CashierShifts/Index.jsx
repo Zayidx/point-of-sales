@@ -233,7 +233,7 @@ export default function Index({
                         </div>
                         <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                Expected Cash
+                                Kas Seharusnya
                             </p>
                             <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
                                 {formatCurrency(activeShift.expected_cash)}
@@ -383,9 +383,9 @@ export default function Index({
                         className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                     >
                         <option value="">Semua Status</option>
-                        <option value="open">Open</option>
-                        <option value="closed">Closed</option>
-                        <option value="force_closed">Force Closed</option>
+                        <option value="open">Terbuka</option>
+                        <option value="closed">Ditutup</option>
+                        <option value="force_closed">Ditutup paksa</option>
                     </select>
                     <input
                         type="date"
@@ -410,7 +410,7 @@ export default function Index({
                                 <Table.Th>Status</Table.Th>
                                 <Table.Th>Buka</Table.Th>
                                 <Table.Th>Tutup</Table.Th>
-                                <Table.Th>Expected Cash</Table.Th>
+                                <Table.Th>Kas Seharusnya</Table.Th>
                                 <Table.Th>Selisih</Table.Th>
                                 <Table.Th className="w-24 text-center">Aksi</Table.Th>
                             </tr>
@@ -440,10 +440,10 @@ export default function Index({
                                                 }`}
                                             >
                                                 {shift.status === "open"
-                                                    ? "Open"
+                                                    ? "Terbuka"
                                                     : shift.status === "force_closed"
-                                                      ? "Force Closed"
-                                                      : "Closed"}
+                                                      ? "Ditutup paksa"
+                                                      : "Ditutup"}
                                             </span>
                                         </Table.Td>
                                         <Table.Td>{formatDateTime(shift.opened_at)}</Table.Td>

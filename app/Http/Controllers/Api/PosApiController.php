@@ -8,20 +8,19 @@ use App\Http\Resources\CashierShiftResource;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\TransactionResource;
 use App\Http\Traits\ApiResponder;
+use App\Models\BankAccount;
 use App\Models\Cart;
 use App\Models\Customer;
 use App\Models\CustomerVoucher;
 use App\Models\DiscountApprovalLog;
-use App\Models\PaymentSetting;
+use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Transaction;
-use App\Models\TransactionTender;
 use App\Models\Warehouse;
 use App\Services\CashierShiftService;
 use App\Services\CheckoutService;
 use App\Services\LoyaltyService;
 use App\Services\OutletAccessService;
-use App\Services\Payments\PaymentGatewayManager;
 use App\Services\PriceListService;
 use App\Services\PricingService;
 use App\Services\TransactionTenderService;
@@ -112,16 +111,19 @@ class PosApiController extends Controller
      */
     public function closeShift(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'closing_cash' => ['required', 'numeric', 'min:0'],
-            'notes' => ['nullable', 'string', 'max:255'],
-        ]);
-
         $shift = $this->cashierShiftService->getActiveShiftForUser($request->user()->id);
-
         if (! $shift) {
             return $this->error('Tidak ada shift aktif.', 422);
         }
+
+        $stockCountRule = $shift->warehouse_id ? 'required' : 'sometimes';
+        $validated = $request->validate([
+            'closing_cash' => ['required', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:255'],
+            'closing_stock' => [$stockCountRule, 'array'],
+            'closing_stock.*.product_id' => ['required_with:closing_stock', 'integer', 'exists:products,id'],
+            'closing_stock.*.actual_stock' => ['required_with:closing_stock', 'integer', 'min:0'],
+        ]);
 
         try {
             $closed = $this->cashierShiftService->closeShift(
@@ -129,13 +131,14 @@ class PosApiController extends Controller
                 actor: $request->user(),
                 actualCash: (int) $validated['closing_cash'],
                 closeNotes: $validated['notes'] ?? null,
+                closingStock: $validated['closing_stock'] ?? null,
             );
         } catch (\Throwable $e) {
             return $this->error($e->getMessage(), 422);
         }
 
         return $this->ok(
-            new CashierShiftResource($closed->load('warehouse')),
+            new CashierShiftResource($closed->load('warehouse', 'stockCounts.product')),
             'Shift kasir berhasil ditutup'
         );
     }
@@ -234,8 +237,8 @@ class PosApiController extends Controller
             : null;
 
         $activeShift = $this->cashierShiftService->getActiveShiftForUser($request->user()->id);
-        $activeShift?->loadMissing('warehouse.outlet');
-        $outlet = $activeShift?->warehouse?->outlet;
+        $activeShift?->loadMissing(['warehouse.outlet', 'outlet']);
+        $outlet = $activeShift?->outlet ?? $activeShift?->warehouse?->outlet;
         $preview = $this->pricingService->previewCart($carts, $customer, null, $outlet);
         $checkout = $this->loyaltyService->previewCheckout($preview, $customer, [
             'manual_discount' => (int) $request->integer('discount', 0),
@@ -520,9 +523,9 @@ class PosApiController extends Controller
 
     /**
      * POST /api/v1/pos/checkout
-     * Complete a transaction. Supports cash, pay_later, and payment gateways.
+     * Complete a transaction using manual payment methods only.
      */
-    public function checkout(Request $request, PaymentGatewayManager $paymentGatewayManager): JsonResponse
+    public function checkout(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'customer_id' => [
@@ -536,14 +539,14 @@ class PosApiController extends Controller
             'shipping_cost' => ['nullable', 'integer', 'min:0'],
             'redeem_points' => ['nullable', 'integer', 'min:0'],
             'cash' => ['nullable', 'numeric', 'min:0'],
-            'payment_method' => ['nullable', 'in:cash,bank_transfer,midtrans,xendit,qris,pay_later'],
+            'payment_method' => ['nullable', 'in:cash,bank_transfer,qris_1,qris_2,qris_3,pay_later'],
             'bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
             'due_date' => ['nullable', 'date', 'required_if:payment_method,pay_later'],
             'customer_npwp' => ['nullable', 'string', 'max:50'],
             'order_type' => ['nullable', 'in:in_store,takeaway,delivery'],
             'note' => ['nullable', 'string', 'max:1000'],
             'tenders' => ['nullable', 'array', 'max:2'],
-            'tenders.*.method' => ['required', 'string'],
+            'tenders.*.method' => ['required', 'in:cash,bank_transfer,qris_1,qris_2,qris_3'],
             'tenders.*.amount' => ['required', 'integer', 'min:1'],
             'tenders.*.cash_received' => ['nullable', 'integer', 'min:0'],
             'tenders.*.bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
@@ -555,30 +558,36 @@ class PosApiController extends Controller
         $isPayLater = $paymentMethod === 'pay_later';
         $tenderInput = $validated['tenders'] ?? [];
         $useTenders = ! $isPayLater && $tenderInput !== [];
-        $paymentGateway = ! $isPayLater && $paymentMethod !== 'cash'
+        $manualPaymentMethod = ! $isPayLater && $paymentMethod !== 'cash'
             ? $paymentMethod
             : null;
         $activeShift = $this->cashierShiftService->getActiveShiftForUser($request->user()->id);
-        $activeShift?->load('warehouse.outlet');
-        $outlet = $activeShift?->warehouse?->outlet;
+        $activeShift?->load(['warehouse.outlet', 'outlet']);
+        $outlet = $activeShift?->outlet ?? $activeShift?->warehouse?->outlet;
 
         if ($isPayLater && ! $request->filled('due_date')) {
             return $this->error('Tanggal jatuh tempo wajib diisi untuk nota barang.', 422);
         }
 
-        if ($paymentGateway) {
-            $paymentSetting = PaymentSetting::forOutlet($outlet);
-            $gatewayReady = $paymentSetting && ($paymentGateway === 'qris'
-                ? $paymentSetting->isGatewayReady(PaymentSetting::GATEWAY_MIDTRANS)
-                    || $paymentSetting->isGatewayReady(PaymentSetting::GATEWAY_XENDIT)
-                : $paymentSetting->isGatewayReady($paymentGateway));
-
-            if (! $gatewayReady) {
-                return $this->error('Gateway pembayaran belum dikonfigurasi.', 422);
-            }
+        if (in_array($manualPaymentMethod, ['qris_1', 'qris_2', 'qris_3'], true)
+            && ! PaymentMethod::query()
+                ->where('code', strtoupper(str_replace('_', '-', $manualPaymentMethod)))
+                ->where('is_active', true)
+                ->exists()) {
+            return $this->error('Metode QRIS yang dipilih sedang tidak aktif.', 422);
         }
 
-        $isCashPayment = ! $paymentGateway && ! $isPayLater && ! $useTenders;
+        if ($manualPaymentMethod === 'bank_transfer'
+            && empty($validated['bank_account_id'])) {
+            return $this->error('Rekening bank wajib dipilih untuk transfer manual.', 422);
+        }
+
+        if ($manualPaymentMethod === 'bank_transfer'
+            && ! BankAccount::active()->forOutlet($outlet)->whereKey($validated['bank_account_id'])->exists()) {
+            return $this->error('Rekening transfer yang dipilih tidak aktif untuk cabang ini.', 422);
+        }
+
+        $isCashPayment = ! $manualPaymentMethod && ! $isPayLater && ! $useTenders;
         $cashAmount = $isCashPayment ? max(0, (int) $validated['cash'] ?? 0) : 0;
         $customer = isset($validated['customer_id']) ? Customer::find($validated['customer_id']) : null;
         $voucher = isset($validated['customer_voucher_id']) ? CustomerVoucher::find($validated['customer_voucher_id']) : null;
@@ -598,7 +607,7 @@ class PosApiController extends Controller
             customerNpwp: $validated['customer_npwp'] ?? null,
             isCashPayment: $isCashPayment,
             cashAmount: $cashAmount,
-            paymentGateway: $paymentGateway,
+            paymentGateway: $manualPaymentMethod,
             useTenders: $useTenders,
             tenderInput: $tenderInput,
             outlet: $outlet,
@@ -644,59 +653,7 @@ class PosApiController extends Controller
             );
         }
 
-        // Payment gateway
-        if ($useTenders) {
-            $gatewayTenders = $transaction->tenders()
-                ->whereIn('method', [TransactionTender::METHOD_MIDTRANS, TransactionTender::METHOD_XENDIT, TransactionTender::METHOD_QRIS])
-                ->where('payment_status', TransactionTender::STATUS_PENDING)
-                ->get();
-
-            try {
-                $paymentSetting ??= PaymentSetting::forOutlet($outlet);
-                foreach ($gatewayTenders as $tender) {
-                    $paymentResponse = $paymentGatewayManager->createTenderPayment($transaction, $tender, $paymentSetting);
-                    $tender->update([
-                        'payment_reference' => $paymentResponse['reference'] ?? null,
-                        'payment_url' => $paymentResponse['payment_url'] ?? null,
-                        'qr_string' => $paymentResponse['qr_string'] ?? null,
-                    ]);
-                }
-
-                if ($gatewayTenders->count() === 1) {
-                    $transaction->update($gatewayTenders->first()->only(['payment_reference', 'payment_url', 'qr_string']));
-                }
-            } catch (\Throwable $e) {
-                // Gateway failure — transaction still valid, just no payment URL
-                $transaction->update(['payment_status' => 'pending']);
-            }
-        } elseif ($paymentGateway) {
-            try {
-                $paymentResponse = $paymentGateway === 'qris'
-                    ? $paymentGatewayManager->createQrisPayment($transaction, $paymentSetting)
-                    : $paymentGatewayManager->createPayment($transaction, $paymentGateway, $paymentSetting);
-
-                $transaction->update([
-                    'payment_method' => $paymentGateway === 'qris'
-                        ? ($paymentResponse['raw']['payment_type'] ?? 'qris')
-                        : $paymentGateway,
-                    'payment_reference' => $paymentResponse['reference'] ?? null,
-                    'payment_url' => $paymentResponse['payment_url'] ?? null,
-                    'qr_string' => $paymentResponse['qr_string'] ?? null,
-                ]);
-            } catch (\Throwable $e) {
-                // Gateway failure — transaction still valid, just no payment URL
-                $transaction->update(['payment_status' => 'pending']);
-            }
-        }
-
         $resource = new TransactionResource($transaction->load('details.product', 'customer', 'cashier', 'warehouse', 'tenders'));
-
-        if ($paymentGateway === 'qris') {
-            $data = $resource->toArray(request());
-            $data['payment_method'] = $transaction->payment_method;
-
-            return $this->created($data, 'Transaksi berhasil — scan QR untuk membayar');
-        }
 
         return $this->created(
             $resource,
@@ -721,7 +678,7 @@ class PosApiController extends Controller
             'transactions.*.shipping_cost' => ['nullable', 'integer', 'min:0'],
             'transactions.*.redeem_points' => ['nullable', 'integer', 'min:0'],
             'transactions.*.cash' => ['nullable', 'numeric', 'min:0'],
-            'transactions.*.payment_method' => ['nullable', 'in:cash,pay_later,bank_transfer'],
+            'transactions.*.payment_method' => ['nullable', 'in:cash,pay_later,bank_transfer,qris_1,qris_2,qris_3'],
             'transactions.*.bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
             'transactions.*.pay_later' => ['nullable', 'boolean'],
             'transactions.*.due_date' => ['nullable', 'date'],
@@ -844,11 +801,11 @@ class PosApiController extends Controller
                 $createdCartIds[] = $cart->id;
             }
 
-            // Reuse checkout() with a synthesized request. Offline supports
-            // cash, bank_transfer, and pay_later; interactive gateways
-            // (midtrans/xendit/qris) are validated against payment_method.
+            // Reuse checkout() with a synthesized request. Offline payments
+            // stay limited to cash, manual QRIS/bank transfer, and pay_later.
             $isBankTransfer = ! $isPayLater
                 && ($payload['payment_method'] ?? 'cash') === 'bank_transfer';
+            $manualPaymentMethod = ! $isPayLater ? ($payload['payment_method'] ?? 'cash') : 'pay_later';
 
             $checkoutRequest = new Request(array_filter([
                 'customer_id' => $payload['customer_id'] ?? null,
@@ -857,7 +814,7 @@ class PosApiController extends Controller
                 'shipping_cost' => $payload['shipping_cost'] ?? 0,
                 'redeem_points' => $payload['redeem_points'] ?? 0,
                 'cash' => $payload['cash'] ?? null,
-                'payment_method' => $isPayLater ? 'pay_later' : ($isBankTransfer ? 'bank_transfer' : 'cash'),
+                'payment_method' => $isPayLater ? 'pay_later' : ($isBankTransfer ? 'bank_transfer' : $manualPaymentMethod),
                 'bank_account_id' => $payload['bank_account_id'] ?? null,
                 'due_date' => $isPayLater ? ($payload['due_date'] ?? null) : null,
                 'order_type' => $payload['order_type'] ?? null,
@@ -870,7 +827,7 @@ class PosApiController extends Controller
             $checkoutRequest->setUserResolver(fn () => $user);
 
             try {
-                $response = $this->checkout($checkoutRequest, app(PaymentGatewayManager::class));
+                $response = $this->checkout($checkoutRequest);
             } catch (UniqueConstraintViolationException $e) {
                 // Lost a race: another worker committed the same client_uuid
                 // between our pre-check and this checkout. Nothing was

@@ -45,7 +45,7 @@ composer install && PUPPETEER_SKIP_DOWNLOAD=true npm install
 php artisan key:generate
 php artisan migrate --seed
 php artisan storage:link
-# After the server starts, open the root URL; first install automatically redirects to /setup.
+# `php artisan migrate --seed` creates the Dimsum Weigu profile and initial accounts; open the root URL to use the public homepage.
 
 # Dev — runs server, queue, logs (pail), and vite in one command
 composer run dev     # equivalent to `php artisan dev` (Laravel 13 DevCommand)
@@ -111,11 +111,12 @@ Production must trigger `php artisan schedule:run` every minute for the schedule
 
 ```
 PermissionSeeder → RoleSeeder → PaymentSettingSeeder → DineInSettingsSeeder
+→ PUSAT warehouse/outlet + stock-pivot migration → DimsumWeiguSeeder → UserSeeder
 ```
 
-After seeding, a default `PUSAT` warehouse is created and existing product stock is migrated to the `product_warehouse` pivot.
+The business seeder creates ingredient units/conversions, branch map and hours, payment methods, expense categories, and initial accounts. The setup wizard has been removed; configure the super-admin credentials through `SUPER_ADMIN_EMAIL` and `SUPER_ADMIN_PASSWORD` before production seeding.
 
-**No default users.** Admin account, store profile, business type, categories, and main warehouse are created via the first-install setup wizard at `/setup`. Open the root URL after migration; it automatically redirects to `/setup` while `Setting::app_setup_completed` is false. The `setup.notinstalled` middleware redirects to login once setup is done.
+**Initial install uses seeders; the setup wizard has been removed.** `DatabaseSeeder` creates the Dimsum Weigu profile, four sales outlets and branch warehouses, categories, permissions, roles, and initial accounts. Default credentials: `manager@gmail.com` / `manager123`, `finance@gmail.com` / `finance123`, `cashier@gmail.com` / `cashier123`, `warehouse@gmail.com` / `warehouse123`; super-admin defaults to `arya@gmail.com` / `password`. Set `SUPER_ADMIN_EMAIL` and `SUPER_ADMIN_PASSWORD` before seeding any shared environment. `app_setup_completed` remains true for dashboard compatibility.
 
 **Demo data is opt-in, not part of `DatabaseSeeder`:** run `php artisan db:seed --class=DemoSeeder --force` (or `php artisan seed:demo --force`) for the complete demo dataset. It creates demo outlets `MAL`, `TKB`, and `PUT`; `PUSAT` remains a central non-sales warehouse. Demo accounts (password `password`): `arya@gmail.com` (super-admin, all outlets), `manager@gmail.com` (manager role, MAL+TKB), `cashier@gmail.com` (cashier, MAL). Never run the demo seeder on production. Full dataset details: `docs/demo-data.md`.
 

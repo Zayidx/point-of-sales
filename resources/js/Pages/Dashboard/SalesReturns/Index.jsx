@@ -85,7 +85,7 @@ export default function Index({ salesReturns, filters }) {
                                 invoice: event.target.value,
                             }))
                         }
-                        placeholder="Invoice transaksi"
+                        placeholder="Faktur transaksi"
                         className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800"
                     />
                     <input
@@ -129,7 +129,7 @@ export default function Index({ salesReturns, filters }) {
                             type="submit"
                             className="inline-flex h-11 items-center justify-center rounded-xl bg-primary-500 px-4 text-sm font-medium text-white hover:bg-primary-600"
                         >
-                            Filter
+                            Saring
                         </button>
                     </div>
                 </form>
@@ -139,7 +139,7 @@ export default function Index({ salesReturns, filters }) {
                         <thead className="border-b border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-950">
                             <tr>
                                 <th className="px-4 py-3 text-left">Kode</th>
-                                <th className="px-4 py-3 text-left">Invoice</th>
+                                <th className="px-4 py-3 text-left">Faktur</th>
                                 <th className="px-4 py-3 text-left">Tanggal</th>
                                 <th className="px-4 py-3 text-left">Pelanggan</th>
                                 <th className="px-4 py-3 text-left">Metode</th>
@@ -183,8 +183,8 @@ export default function Index({ salesReturns, filters }) {
                                                 }`}
                                             >
                                                 {item.status === "completed"
-                                                    ? "Completed"
-                                                    : "Draft"}
+                                                    ? "Selesai"
+                                                    : "Draf"}
                                             </span>
                                         </td>
                                         <td className="px-4 py-4 text-center">

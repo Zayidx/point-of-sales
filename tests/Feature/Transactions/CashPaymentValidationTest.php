@@ -4,7 +4,6 @@ namespace Tests\Feature\Transactions;
 
 use App\Models\Cart;
 use App\Models\Category;
-use App\Models\PaymentSetting;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\User;
@@ -14,7 +13,6 @@ use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class CashPaymentValidationTest extends TestCase
@@ -130,32 +128,15 @@ class CashPaymentValidationTest extends TestCase
         $this->assertEquals(99, $this->stock());
     }
 
-    public function test_gateway_payment_with_zero_cash_still_succeeds(): void
+    public function test_gateway_payment_is_rejected_without_creating_a_transaction(): void
     {
-        PaymentSetting::create([
-            'default_gateway' => 'xendit',
-            'xendit_enabled' => true,
-            'xendit_secret_key' => 'secret-key',
-            'xendit_public_key' => 'public-key',
-        ]);
-
-        Http::fake([
-            'https://api.xendit.co/*' => Http::response([
-                'id' => 'xendit-inv-123',
-                'invoice_url' => 'https://checkout.xendit.co/web/123',
-            ], 200),
-        ]);
-
         $this->post(route('transactions.store'), [
             'payment_gateway' => 'xendit',
             'cash' => 0,
-        ])->assertSessionHasNoErrors();
+        ])->assertSessionHas('error', 'Metode pembayaran POS tidak tersedia. Gunakan pembayaran manual.');
 
-        $transaction = Transaction::latest('id')->first();
-        $this->assertNotNull($transaction);
-        $this->assertEquals('xendit', $transaction->payment_method);
-        $this->assertEquals('pending', $transaction->payment_status);
-        $this->assertEquals('https://checkout.xendit.co/web/123', $transaction->payment_url);
-        $this->assertEquals(99, $this->stock());
+        $this->assertDatabaseCount('transactions', 0);
+        $this->assertDatabaseCount('carts', 1);
+        $this->assertSame(100, $this->stock());
     }
 }

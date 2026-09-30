@@ -31,6 +31,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class FeatureCoverageSeeder extends Seeder
 {
@@ -363,17 +364,24 @@ class FeatureCoverageSeeder extends Seeder
             [
                 [
                     'purchase_order_item_id' => $partialOrder->items[0]->id,
+                    'qty_sent' => 30,
                     'qty_received' => 30,
+                    'qty_accepted' => 30,
+                    'qc_status' => 'good',
                     'notes' => 'Sebagian aqua diterima lebih awal.',
                 ],
                 [
                     'purchase_order_item_id' => $partialOrder->items[1]->id,
+                    'qty_sent' => 10,
                     'qty_received' => 10,
+                    'qty_accepted' => 10,
+                    'qc_status' => 'good',
                     'notes' => 'Sebagian snack diterima sesuai surat jalan pertama.',
                 ],
             ],
             'Penerimaan pertama untuk PO restock mingguan.',
             $cashier->id,
+            (string) Str::uuid(),
         );
 
         $partialReceiving->update([
@@ -424,11 +432,15 @@ class FeatureCoverageSeeder extends Seeder
             $completedOrder->fresh('items'),
             $completedOrder->items->map(fn (PurchaseOrderItem $item) => [
                 'purchase_order_item_id' => $item->id,
+                'qty_sent' => $item->qty_ordered,
                 'qty_received' => $item->qty_ordered,
+                'qty_accepted' => $item->qty_ordered,
+                'qc_status' => 'good',
                 'notes' => 'Diterima penuh dari supplier.',
             ])->all(),
             'Seluruh item diterima lengkap dan langsung masuk gudang.',
             $cashier->id,
+            (string) Str::uuid(),
         );
 
         $completedReceiving->update([

@@ -21,13 +21,13 @@ export default function PriceListItems({ priceList, products }) {
     };
 
     const removeItem = (item) => {
-        if (!confirm(`Hapus ${item.product?.title} dari price list?`)) return;
+        if (!confirm(`Hapus ${item.product?.title} dari daftar harga?`)) return;
         router.delete(route("price-lists.items.destroy", [priceList.id, item.product_id]));
     };
 
     return (
         <>
-            <Head title={`Price List: ${priceList.name}`} />
+            <Head title={`Daftar Harga: ${priceList.name}`} />
             <div className="space-y-6">
                 <div className="flex items-center gap-4">
                     <Link href={route("price-lists.index")} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100"><IconArrowLeft size={20} /></Link>

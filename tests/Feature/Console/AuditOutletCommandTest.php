@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Console;
 
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\StockMutation;
 use App\Models\StockOpname;
 use App\Models\Warehouse;
@@ -21,7 +21,7 @@ class AuditOutletCommandTest extends TestCase
 
         $this->artisan('outlet:audit')
             ->expectsOutputToContain('Outlet data audit (read-only)')
-            ->expectsOutputToContain('Outlets: 1')
+            ->expectsOutputToContain('Outlets: 5')
             ->assertSuccessful();
     }
 
