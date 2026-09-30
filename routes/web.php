@@ -56,6 +56,7 @@ use App\Http\Controllers\Reports\AdvancedSalesInsightsController;
 use App\Http\Controllers\Reports\OperationsReportController;
 use App\Http\Controllers\Reports\ProfitReportController;
 use App\Http\Controllers\Reports\SalesReportController;
+use App\Http\Controllers\Reports\SalesByMenuReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\UserController;
@@ -428,6 +429,7 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth']], function () {
 
     // reports
     Route::get('/reports/sales', [SalesReportController::class, 'index'])->middleware('permission:reports-access')->name('reports.sales.index');
+    Route::get('/reports/menu-sales', SalesByMenuReportController::class)->middleware('permission:sales-analysis-access')->name('reports.menu-sales.index');
     Route::get('/reports/profits', [ProfitReportController::class, 'index'])->middleware('permission:profits-access')->name('reports.profits.index');
     Route::get('/reports/insights', [AdvancedSalesInsightsController::class, 'index'])->middleware('permission:reports-access')->name('reports.insights.index');
     Route::get('/reports/operations', [OperationsReportController::class, 'index'])->middleware('permission:reports-access')->name('reports.operations.index');

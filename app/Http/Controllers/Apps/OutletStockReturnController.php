@@ -30,7 +30,6 @@ class OutletStockReturnController extends Controller
             ->whereHas('outlet', fn ($query) => $query->where('is_sales_enabled', true))
             ->orderBy('name')
             ->get(['id', 'code', 'name', 'outlet_id']);
-        $branchIds = $branches->pluck('id');
 
         return Inertia::render('Dashboard/OutletStockReturns/Index', [
             'returns' => OutletStockReturn::query()

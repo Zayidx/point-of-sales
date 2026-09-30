@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Cart;
 use App\Models\InventoryBalance;
+use App\Models\OutletStockReturnItem;
 use App\Models\Product;
 use App\Models\ProductBatch;
 use App\Models\ProductWarehouse;
@@ -241,13 +242,13 @@ class CheckoutService
                             'warehouse_id' => $warehouseId,
                         ])->lockForUpdate()->first()
                         : null;
-                    $available = $warehouseId ? (int) ($pw?->stock ?? 0) : (int) $component->stock;
+                    $stockBefore = $warehouseId ? (int) ($pw?->stock ?? 0) : (int) $component->stock;
+                    $available = $stockBefore - ($warehouseId ? $this->pendingReturnQuantity($warehouseId, $component->id) : 0);
                     if ($available < $componentQty) {
                         throw ValidationException::withMessages([
                             'stock' => "Stok komponen {$component->title} tidak mencukupi. Tersedia: {$available}.",
                         ]);
                     }
-                    $stockBefore = $available;
                     if ($warehouseId) {
                         $this->inventoryLedgerService->ensureProductOpeningBalance($component, $warehouseId, $userId);
                     }
@@ -279,13 +280,13 @@ class CheckoutService
                         'warehouse_id' => $warehouseId,
                     ])->lockForUpdate()->first()
                     : null;
-                $available = $warehouseId ? (int) ($pw?->stock ?? 0) : (int) $product->stock;
+                $stockBefore = $warehouseId ? (int) ($pw?->stock ?? 0) : (int) $product->stock;
+                $available = $stockBefore - ($warehouseId ? $this->pendingReturnQuantity($warehouseId, $product->id) : 0);
                 if ($available < $baseQty) {
                     throw ValidationException::withMessages([
                         'stock' => "Stok {$product->title} tidak mencukupi. Tersedia: {$available}.",
                     ]);
                 }
-                $stockBefore = $available;
                 if ($warehouseId) {
                     $this->inventoryLedgerService->ensureProductOpeningBalance($product, $warehouseId, $userId);
                 }
@@ -369,6 +370,16 @@ class CheckoutService
             'notes' => "Penjualan {$transaction->invoice}",
             'created_by' => $userId,
         ]);
+    }
+
+    private function pendingReturnQuantity(int $warehouseId, int $productId): int
+    {
+        return (int) OutletStockReturnItem::query()
+            ->where('product_id', $productId)
+            ->whereHas('stockReturn', fn (Builder $query) => $query
+                ->where('source_warehouse_id', $warehouseId)
+                ->where('status', 'pending'))
+            ->sum('quantity_requested');
     }
 
     /** Use the warehouse's historical weighted-average cost when it has inventory ledger data. */

@@ -5,6 +5,7 @@ namespace Tests\Feature\Inventory;
 use App\Models\Category;
 use App\Models\InventoryBalance;
 use App\Models\InventoryLedger;
+use App\Models\OutletStockReturn;
 use App\Models\Product;
 use App\Models\ProductWarehouse;
 use App\Models\Unit;
@@ -71,5 +72,37 @@ class OutletStockReturnTest extends TestCase
             ->get(route('outlet-stock-returns.index'))
             ->assertOk()
             ->assertInertia(fn ($page) => $page->where('canCreate', false)->where('canReceive', false));
+    }
+
+    public function test_cashier_can_submit_return_and_warehouse_can_confirm_it_through_the_ui_routes(): void
+    {
+        $this->seed();
+        $cashier = User::where('email', 'cashier@gmail.com')->firstOrFail();
+        $warehouseUser = User::where('email', 'warehouse@gmail.com')->firstOrFail();
+        $source = Warehouse::where('code', 'WH-GAL-BP')->firstOrFail();
+        $product = Product::create([
+            'title' => 'Produk return route', 'sku' => 'RET-ROUTE-1', 'barcode' => 'RET-ROUTE-1',
+            'buy_price' => 1000, 'sell_price' => 3000, 'stock' => 5, 'image' => '',
+            'description' => '', 'category_id' => Category::firstOrFail()->id, 'tax_rate' => 0,
+        ]);
+        $unit = Unit::firstOrCreate(['code' => 'RETROUTEPC'], ['name' => 'Pcs Return Route', 'symbol' => 'pcs']);
+        $product->units()->attach($unit->id, ['is_base' => true, 'conversion_factor' => 1, 'buy_price' => 1000, 'sell_price' => 3000]);
+        ProductWarehouse::create(['product_id' => $product->id, 'warehouse_id' => $source->id, 'stock' => 5]);
+
+        $this->actingAs($cashier)->post(route('outlet-stock-returns.store'), [
+            'request_key' => 'return-route-1',
+            'source_warehouse_id' => $source->id,
+            'items' => [['product_id' => $product->id, 'quantity' => 3]],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $stockReturn = OutletStockReturn::where('request_key', 'return-route-1')->firstOrFail();
+        $item = $stockReturn->items()->firstOrFail();
+
+        $this->actingAs($warehouseUser)->post(route('outlet-stock-returns.receive', $stockReturn), [
+            'items' => [$item->id => 2],
+            'notes' => 'Dua unit diterima',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertSame(3, (int) ProductWarehouse::where('product_id', $product->id)->where('warehouse_id', $source->id)->value('stock'));
+        $this->assertSame(2, (int) ProductWarehouse::where('product_id', $product->id)->where('warehouse_id', Warehouse::where('code', 'PUSAT')->value('id'))->value('stock'));
     }
 }

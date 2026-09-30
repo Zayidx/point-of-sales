@@ -104,6 +104,12 @@ class OutletStockReturnService
             $locked->load(['items.product.units', 'sourceWarehouse', 'destinationWarehouse']);
             $source = $locked->sourceWarehouse;
             $destination = $locked->destinationWarehouse;
+            $expectedItemIds = $locked->items->pluck('id')->map(fn ($id) => (string) $id)->sort()->values()->all();
+            $providedItemIds = collect($receivedItems)->keys()->map(fn ($id) => (string) $id)->sort()->values()->all();
+            if ($expectedItemIds !== $providedItemIds) {
+                throw ValidationException::withMessages(['items' => 'Masukkan jumlah diterima untuk setiap barang yang diajukan.']);
+            }
+
             foreach ($locked->items as $item) {
                 $received = (int) ($receivedItems[$item->id] ?? 0);
                 if ($received < 0 || $received > $item->quantity_requested) {

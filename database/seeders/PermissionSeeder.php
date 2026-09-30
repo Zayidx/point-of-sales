@@ -93,6 +93,7 @@ class PermissionSeeder extends Seeder
         // permission reports
         $create('reports-access');
         $create('profits-access');
+        $create('sales-analysis-access');
 
         // payment settings
         $create('payment-settings-access');

@@ -5,12 +5,15 @@ namespace Tests\Feature\Transactions;
 use App\Models\Cart;
 use App\Models\CashierShift;
 use App\Models\Category;
+use App\Models\Outlet;
 use App\Models\Product;
 use App\Models\ProductBatch;
 use App\Models\Transaction;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\CashierShiftService;
+use App\Services\OutletStockReturnService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\UserSeeder;
@@ -107,6 +110,42 @@ class CheckoutStockIntegrityTest extends TestCase
         $this->assertSame(5, $product->fresh()->stock);
         $this->assertSame(5, (int) $product->fresh()->warehouses()->where('warehouse_id', $this->pusat->id)->first()->pivot->stock);
         $this->assertSame(1, Cart::count());
+    }
+
+    public function test_pending_outlet_return_reserves_stock_from_checkout(): void
+    {
+        $outlet = Outlet::create(['code' => 'RET-OUT', 'name' => 'Outlet Return', 'is_active' => true, 'is_sales_enabled' => true]);
+        $branch = Warehouse::create(['outlet_id' => $outlet->id, 'code' => 'WH-RET-OUT', 'name' => 'Gudang Outlet Return', 'type' => 'branch', 'is_active' => true]);
+        $this->cashier->outlets()->sync([$outlet->id => ['is_default' => true]]);
+        $this->cashier->cashierShifts()->where('status', 'open')->update(['warehouse_id' => $branch->id, 'outlet_id' => $outlet->id]);
+
+        $product = $this->createProduct(5);
+        $product->warehouses()->detach($this->pusat->id);
+        $product->warehouses()->attach($branch->id, ['stock' => 5]);
+        $unit = Unit::firstOrCreate(['code' => 'RETRESERVE'], ['name' => 'Pcs Reservasi', 'symbol' => 'pcs']);
+        $product->units()->attach($unit->id, ['is_base' => true, 'conversion_factor' => 1, 'buy_price' => 1000, 'sell_price' => 2000]);
+        app(OutletStockReturnService::class)->create(
+            'return-reservation-1',
+            $branch,
+            [['product_id' => $product->id, 'quantity' => 2]],
+            $this->cashier,
+        );
+
+        Cart::create([
+            'cashier_id' => $this->cashier->id,
+            'warehouse_id' => $branch->id,
+            'product_id' => $product->id,
+            'qty' => 4,
+            'price' => 8000,
+            'conversion_factor' => 1,
+        ]);
+
+        $this->actingAs($this->cashier)
+            ->post(route('transactions.store'), ['payment_method' => 'cash', 'cash' => 50000])
+            ->assertSessionHasErrors('stock');
+
+        $this->assertSame(0, Transaction::count());
+        $this->assertSame(5, (int) $product->fresh()->warehouses()->where('warehouse_id', $branch->id)->first()->pivot->stock);
     }
 
     public function test_global_product_total_cannot_be_sold_from_a_warehouse_without_its_own_stock(): void

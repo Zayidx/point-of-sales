@@ -179,7 +179,7 @@ export default function Menu() {
                     permissions: hasAnyPermission(["stock-mutations-access"]),
                 },
                 {
-                    title: t("sidebar.items.stockTransfers"),
+                    title: "Pengambilan Stok Outlet",
                     href: route("stock-transfers.index"),
                     active: url.startsWith("/dashboard/stock-transfers"),
                     icon: <IconArrowsLeftRight size={20} strokeWidth={1.5} />,
@@ -323,6 +323,13 @@ export default function Menu() {
                     active: url.startsWith("/dashboard/reports/sales"),
                     icon: <IconChartArrowsVertical size={20} strokeWidth={1.5} />,
                     permissions: hasAnyPermission(["reports-access"]),
+                },
+                {
+                    title: "Penjualan per Menu",
+                    href: route("reports.menu-sales.index"),
+                    active: url.startsWith("/dashboard/reports/menu-sales"),
+                    icon: <IconChartBar size={20} strokeWidth={1.5} />,
+                    permissions: hasAnyPermission(["sales-analysis-access"]),
                 },
                 {
                     title: t("sidebar.items.profitReport"),
