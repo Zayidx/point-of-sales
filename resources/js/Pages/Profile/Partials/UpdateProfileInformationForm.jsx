@@ -42,7 +42,7 @@ export default function UpdateProfileInformation({ className = '' }) {
                 <h2 className="text-lg font-medium text-gray-900">Informasi Profil</h2>
 
                 <p className="mt-1 text-sm text-gray-600">
-                    Update informasi profil dan alamat email akun Anda.
+                    Perbarui informasi profil dan alamat email akun Anda.
                 </p>
             </header>
 

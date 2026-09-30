@@ -18,6 +18,8 @@ const formatCurrency = (value = 0) =>
         minimumFractionDigits: 0,
     }).format(value);
 
+const formatQuantity = (value) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: 4 }).format(Number(value || 0));
+
 const formatDateTime = (value) => {
     if (!value) return "-";
 
@@ -41,13 +43,16 @@ function MetrikCard({ title, value, icon: Icon }) {
     );
 }
 
-export default function Show({ cashierShift, closingProducts = [], canForceClose = false }) {
+export default function Show({ cashierShift, closingProducts = [], closingIngredients = [], consumptionAnalysis = [], canForceClose = false }) {
     const { auth, errors } = usePage().props;
     const { can } = useAuthorization();
     const [actualCash, setActualCash] = useState(
         cashierShift.actual_cash !== null ? String(cashierShift.actual_cash) : ""
     );
     const [closeNotes, setCloseNotes] = useState(cashierShift.close_notes || "");
+    const [closingIngredientStock, setClosingIngredientStock] = useState(() => Object.fromEntries(
+        closingIngredients.map((item) => [item.id, item.closing_quantity ?? ""])
+    ));
     const [closingStock, setClosingStock] = useState(() => Object.fromEntries(
         closingProducts.map((product) => [product.id, cashierShift.stock_counts?.find((count) => count.product_id === product.id)?.actual_stock ?? ""])
     ));
@@ -79,6 +84,7 @@ export default function Show({ cashierShift, closingProducts = [], canForceClose
         event.preventDefault();
 
         if (closingProducts.some((product) => closingStock[product.id] === "")) return;
+        if (closingIngredients.some((item) => closingIngredientStock[item.id] === "")) return;
 
         router.post(route("cashier-shifts.close", cashierShift.id), {
             actual_cash: actualCashNumber,
@@ -86,6 +92,10 @@ export default function Show({ cashierShift, closingProducts = [], canForceClose
             closing_stock: closingProducts.map((product) => ({
                 product_id: product.id,
                 actual_stock: Number(closingStock[product.id]),
+            })),
+            closing_ingredients: closingIngredients.map((item) => ({
+                opening_item_id: item.id,
+                actual_quantity: Number(closingIngredientStock[item.id]),
             })),
         });
     };
@@ -234,6 +244,37 @@ export default function Show({ cashierShift, closingProducts = [], canForceClose
                             </div>
                         </div>
 
+                        {cashierShift.opening_items?.length > 0 && (
+                            <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                                <h2 className="font-semibold text-slate-900 dark:text-white">Barang bawaan dari Gudang Pusat</h2>
+                                <div className="mt-3 space-y-2 text-sm">
+                                    {cashierShift.opening_items.map((item, index) => (
+                                        <div key={`${item.item_type}-${index}`} className="flex items-center justify-between gap-3 border-b border-slate-100 py-2 last:border-0 dark:border-slate-800">
+                                            <span>{item.name}</span>
+                                            <span className="text-right">Dibawa {item.quantity} {item.unit}{item.closing_quantity !== null ? ` · Dikembalikan ${item.closing_quantity} ${item.unit}` : ""}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {consumptionAnalysis.length > 0 && (
+                            <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 dark:border-indigo-900 dark:bg-indigo-950/20">
+                                <h2 className="font-semibold text-slate-900 dark:text-white">Analisis pemakaian per porsi</h2>
+                                <p className="mt-1 text-xs text-slate-500">Pemakaian aktual dihitung dari jumlah dibawa dikurangi sisa, lalu dibagi jumlah unit menu/porsi yang resepnya memakai barang tersebut.</p>
+                                <div className="mt-3 space-y-2 text-sm">
+                                    {consumptionAnalysis.map((item) => (
+                                        <div key={item.name} className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 py-2 last:border-0 dark:border-indigo-900/60">
+                                            <span className="font-medium">{item.name}</span>
+                                            <span className="text-right text-slate-600 dark:text-slate-300">
+                                                Terpakai {formatQuantity(item.consumed_quantity)} {item.unit} · terjual {formatQuantity(item.sold_quantity)} · rata-rata {item.average_per_sold === null ? "-" : `${formatQuantity(item.average_per_sold)} ${item.unit}/unit`}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {cashierShift.stock_counts?.length > 0 && (
                             <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                                 <h2 className="font-semibold text-slate-900 dark:text-white">Rekap stok akhir</h2>
@@ -268,6 +309,19 @@ export default function Show({ cashierShift, closingProducts = [], canForceClose
                                                 </label>
                                             ))}
                                             {errors?.closing_stock && <p className="text-xs text-rose-500">{errors.closing_stock}</p>}
+                                        </fieldset>
+                                    )}
+                                    {closingIngredients.length > 0 && (
+                                        <fieldset className="space-y-3 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                                            <legend className="px-1 text-sm font-medium text-slate-700 dark:text-slate-300">Timbang sisa bahan</legend>
+                                            <p className="text-xs text-slate-500">Sisa bahan yang dicatat akan dikembalikan ke Gudang Pusat.</p>
+                                            {closingIngredients.map((item) => (
+                                                <label key={item.id} className="grid grid-cols-[1fr_7rem] items-center gap-3 text-sm">
+                                                    <span>{item.name}<span className="ml-2 text-xs text-slate-500">Dibawa: {item.issued_quantity} {item.unit}</span></span>
+                                                    <span className="flex items-center gap-1"><input type="number" min="0" max={item.issued_quantity} step="0.0001" required value={closingIngredientStock[item.id]} onChange={(event) => setClosingIngredientStock((current) => ({ ...current, [item.id]: event.target.value }))} className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-2 text-right dark:border-slate-700 dark:bg-slate-800" aria-label={`Sisa ${item.name}`} /><span className="text-xs text-slate-500">{item.unit}</span></span>
+                                                </label>
+                                            ))}
+                                            {errors?.closing_ingredients && <p className="text-xs text-rose-500">{errors.closing_ingredients}</p>}
                                         </fieldset>
                                     )}
                                     <div>

@@ -8,16 +8,20 @@ use App\Http\Requests\ConfirmPasswordForForceCloseRequest;
 use App\Http\Requests\StoreCashierShiftRequest;
 use App\Models\CashierShift;
 use App\Models\Outlet;
+use App\Models\RecipeVersion;
 use App\Models\ShiftCashMovement;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\AuditLogService;
+use App\Services\CashierShiftOpeningStockService;
 use App\Services\CashierShiftService;
 use App\Services\OutletAccessService;
 use App\Services\ThermalPrintService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,7 +30,8 @@ class CashierShiftController extends Controller
     public function __construct(
         private readonly CashierShiftService $cashierShiftService,
         private readonly AuditLogService $auditLogService,
-        private readonly OutletAccessService $outletAccessService
+        private readonly OutletAccessService $outletAccessService,
+        private readonly CashierShiftOpeningStockService $openingStockService,
     ) {}
 
     public function index(Request $request): Response
@@ -69,12 +74,22 @@ class CashierShiftController extends Controller
     public function show(Request $request, CashierShift $cashierShift): Response
     {
         $cashierShift = $this->resolveVisibleShift($request, $cashierShift);
-        $cashierShift->load('stockCounts.product:id,title');
+        $cashierShift->load('stockCounts.product:id,title', 'openingItems.product:id,title', 'openingItems.ingredient:id,name', 'openingItems.unit:id,name,symbol');
+        $consumptionAnalysis = $this->ingredientConsumptionAnalysis($cashierShift);
         $sharedStockWarehouse = $cashierShift->warehouse_id
             && $cashierShift->warehouse?->outlets()->where('outlets.is_sales_enabled', true)->count() > 1;
 
         return Inertia::render('Dashboard/CashierShifts/Show', [
             'cashierShift' => $this->transformShift($cashierShift),
+            'closingIngredients' => $cashierShift->isOpen()
+                ? $cashierShift->openingItems->where('item_type', 'ingredient')->map(fn ($item) => [
+                    'id' => $item->id,
+                    'ingredient_id' => $item->ingredient_id,
+                    'name' => $item->ingredient?->name ?? 'Bahan',
+                    'unit' => $item->unit?->name ?? $item->unit?->symbol ?? 'satuan',
+                    'issued_quantity' => $item->quantity,
+                ])->values()
+                : [],
             'closingProducts' => $cashierShift->warehouse_id && ! $sharedStockWarehouse
                 ? $cashierShift->warehouse->products()->orderBy('products.title')->get(['products.id', 'products.title', 'products.sku'])->map(fn ($product) => [
                     'id' => $product->id,
@@ -83,8 +98,64 @@ class CashierShiftController extends Controller
                     'expected_stock' => (int) $product->pivot->stock,
                 ])->values()
                 : [],
+            'consumptionAnalysis' => $consumptionAnalysis,
             'canForceClose' => $request->user()->isSuperAdmin() || $request->user()->can('cashier-shifts-force-close'),
         ]);
+    }
+
+    private function ingredientConsumptionAnalysis(CashierShift $shift): array
+    {
+        if ($shift->isOpen()) {
+            return [];
+        }
+
+        $recipes = [];
+        $soldUnits = [];
+        foreach ($shift->transactions()->with('details')->get()->flatMap->details as $detail) {
+            $baseKey = $detail->product_id.':base';
+            $recipes[$baseKey] ??= RecipeVersion::query()->with('items.ingredient.baseUnit')
+                ->where('product_id', $detail->product_id)->whereNull('unit_id')->orderByDesc('version_number')->first();
+            $baseRecipe = $recipes[$baseKey];
+            if ($baseRecipe) {
+                $yield = max(0.0001, (float) $baseRecipe->yield_quantity);
+                $output = (float) $detail->qty * (float) ($detail->conversion_factor ?? 1) / $yield;
+                foreach ($baseRecipe->items as $item) {
+                    $soldUnits[$item->ingredient_id] = ($soldUnits[$item->ingredient_id] ?? 0) + $output;
+                }
+            }
+
+            if ($detail->unit_id) {
+                $portionKey = $detail->product_id.':unit:'.$detail->unit_id;
+                $recipes[$portionKey] ??= RecipeVersion::query()->with('items.ingredient.baseUnit')
+                    ->where('product_id', $detail->product_id)->where('unit_id', $detail->unit_id)->orderByDesc('version_number')->first();
+                $portionRecipe = $recipes[$portionKey];
+                if ($portionRecipe) {
+                    $yield = max(0.0001, (float) $portionRecipe->yield_quantity);
+                    $output = (float) $detail->qty / $yield;
+                    foreach ($portionRecipe->items as $item) {
+                        $soldUnits[$item->ingredient_id] = ($soldUnits[$item->ingredient_id] ?? 0) + $output;
+                    }
+                }
+            }
+        }
+
+        return $shift->openingItems
+            ->where('item_type', 'ingredient')
+            ->filter(fn ($item) => $item->closing_quantity !== null)
+            ->map(function ($item) use ($soldUnits) {
+                $consumed = max(0, (float) $item->quantity - (float) $item->closing_quantity);
+                $sold = (float) ($soldUnits[$item->ingredient_id] ?? 0);
+
+                return [
+                    'name' => $item->ingredient?->name ?? 'Barang persediaan',
+                    'unit' => $item->unit?->symbol ?? $item->unit?->name ?? '',
+                    'consumed_quantity' => $consumed,
+                    'sold_quantity' => $sold,
+                    'average_per_sold' => $sold > 0 ? $consumed / $sold : null,
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     public function store(StoreCashierShiftRequest $request): RedirectResponse
@@ -96,15 +167,29 @@ class CashierShiftController extends Controller
         abort_unless($this->outletAccessService->canSellAtWarehouse($request->user(), $warehouse), 403);
         $outlet = $this->outletAccessService->activeOutlet($request);
         abort_unless(! $outlet || $outlet->is_sales_enabled, 403);
+        $openingItems = $request->validated('opening_items', []);
+        $openingCatalog = $this->openingStockService->catalog();
+        if ($openingCatalog['warehouse'] && ($openingCatalog['products']->isNotEmpty() || $openingCatalog['ingredients']->isNotEmpty()) && $openingItems === []) {
+            throw ValidationException::withMessages([
+                'opening_items' => 'Catat barang yang dibawa dari Gudang Pusat sebelum membuka shift.',
+            ]);
+        }
 
-        $shift = $this->cashierShiftService->openShift(
-            cashier: $request->user(),
-            actor: $request->user(),
-            openingCash: (int) $request->validated('opening_cash'),
-            notes: $request->validated('notes'),
-            warehouseId: $warehouse?->id,
-            outletId: $outlet?->id,
-        );
+        $shift = DB::transaction(function () use ($request, $warehouse, $outlet, $openingItems) {
+            $shift = $this->cashierShiftService->openShift(
+                cashier: $request->user(),
+                actor: $request->user(),
+                openingCash: (int) $request->validated('opening_cash'),
+                notes: $request->validated('notes'),
+                warehouseId: $warehouse?->id,
+                outletId: $outlet?->id,
+            );
+            if ($openingItems !== []) {
+                $this->openingStockService->issueToShift($shift, $openingItems, $request->user()->id);
+            }
+
+            return $shift;
+        }, attempts: 3);
 
         $this->auditLogService->log(
             event: 'cashier_shift.opened',
@@ -165,6 +250,7 @@ class CashierShiftController extends Controller
             closeNotes: $request->validated('close_notes'),
             forceClose: $forceClose,
             closingStock: $request->validated('closing_stock'),
+            closingIngredients: $request->validated('closing_ingredients'),
         );
 
         $this->auditLogService->log(
@@ -302,6 +388,15 @@ class CashierShiftController extends Controller
                     'expected_stock' => $count->expected_stock,
                     'actual_stock' => $count->actual_stock,
                     'variance' => $count->variance,
+                ])->values()->all()
+                : [],
+            'opening_items' => $shift->relationLoaded('openingItems')
+                ? $shift->openingItems->map(fn ($item) => [
+                    'item_type' => $item->item_type,
+                    'name' => $item->item_type === 'product' ? $item->product?->title : $item->ingredient?->name,
+                    'quantity' => $item->quantity,
+                    'closing_quantity' => $item->closing_quantity,
+                    'unit' => $item->unit?->name ?? $item->unit?->symbol,
                 ])->values()->all()
                 : [],
             'transactions_count' => $shift->isOpen() ? $summary['transactions_count'] : (int) $shift->transactions_count,

@@ -93,7 +93,7 @@ export default function POSLayout({ children }) {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
+        <div className="flex h-screen h-[100dvh] flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
             {/* Top Navigation Bar */}
             <header className="sticky top-0 z-50 h-16 flex items-center justify-between px-4 lg:px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
                 {/* Left Section - Logo & Time */}
@@ -173,8 +173,8 @@ export default function POSLayout({ children }) {
                     {/* Divider */}
                     <div className="hidden lg:block w-px h-8 bg-slate-200 dark:bg-slate-700" />
 
-                    {/* Notifications (desktop) */}
-                    <div className="hidden md:flex">
+                    {/* Render once: Notification has its own state and event handlers. */}
+                    <div className="flex shrink-0">
                         <Notification />
                     </div>
 
@@ -187,7 +187,7 @@ export default function POSLayout({ children }) {
                     <button
                         onClick={startTour}
                         disabled={tourActive}
-                        className="p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-w-touch min-h-touch flex items-center justify-center disabled:opacity-50"
+                        className="hidden min-w-touch min-h-touch items-center justify-center rounded-lg p-2.5 transition-colors hover:bg-slate-100 disabled:opacity-50 dark:hover:bg-slate-800 sm:flex"
                         title={i18n.t("tour.button")}
                     >
                         <IconQuestionMark size={20} className="text-slate-500" />
@@ -196,7 +196,7 @@ export default function POSLayout({ children }) {
                     {/* Fullscreen Toggle */}
                     <button
                         onClick={toggleFullscreen}
-                        className="p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-w-touch min-h-touch flex items-center justify-center"
+                        className="hidden min-w-touch min-h-touch items-center justify-center rounded-lg p-2.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 md:flex"
                         title={isFullscreen ? "Keluar Fullscreen" : "Fullscreen"}
                     >
                         {isFullscreen ? (
@@ -209,7 +209,7 @@ export default function POSLayout({ children }) {
                     {/* Theme Toggle */}
                     <button
                         onClick={themeSwitcher}
-                        className="p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-w-touch min-h-touch flex items-center justify-center"
+                        className="hidden min-w-touch min-h-touch items-center justify-center rounded-lg p-2.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 sm:flex"
                         title={darkMode ? "Light Mode" : "Dark Mode"}
                     >
                         {darkMode ? (
@@ -218,11 +218,6 @@ export default function POSLayout({ children }) {
                             <IconMoon size={20} className="text-slate-500" />
                         )}
                     </button>
-
-                    {/* Notifications (mobile) */}
-                    <div className="flex md:hidden">
-                        <Notification />
-                    </div>
 
                     {/* User Info - Simplified */}
                     <div className="flex items-center gap-2 pl-2 lg:pl-3 border-l border-slate-200 dark:border-slate-700">
@@ -240,7 +235,7 @@ export default function POSLayout({ children }) {
                                 </span>
                             </Link>
                         )}
-                        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                        <p className="hidden text-sm font-medium text-slate-700 dark:text-slate-200 sm:block">
                             {auth.user.name}
                         </p>
                     </div>
@@ -251,7 +246,7 @@ export default function POSLayout({ children }) {
                         method="post"
                         as="button"
                         className="hidden lg:flex p-2.5 rounded-lg text-slate-500 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/50 transition-colors min-w-touch min-h-touch items-center justify-center"
-                        title="Logout"
+                        title="Keluar"
                     >
                         <IconLogout size={20} />
                     </Link>
@@ -320,7 +315,7 @@ export default function POSLayout({ children }) {
             )}
 
             {/* Main Content - Full Height */}
-            <main className="flex-1 overflow-hidden">
+            <main className="min-h-0 flex-1 overflow-hidden">
                 <Toaster
                     position="top-right"
                     toastOptions={{

@@ -8,6 +8,7 @@ use App\Models\ProductionRequest;
 use App\Models\Warehouse;
 use App\Services\OutletAccessService;
 use App\Services\ProductionRequestService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -24,7 +25,11 @@ class ProductionRequestController extends Controller
 
     public function index(Request $request): Response
     {
-        $warehouses = $this->outletAccessService->warehousesFor($request->user());
+        $accessibleWarehouses = $this->outletAccessService->warehousesFor($request->user());
+        $warehouses = $accessibleWarehouses->where('code', 'PUSAT')->values();
+        if ($warehouses->isEmpty()) {
+            $warehouses = $accessibleWarehouses;
+        }
         $warehouseIds = $warehouses->pluck('id');
         $requests = ProductionRequest::query()
             ->whereIn('warehouse_id', $warehouseIds)
@@ -45,7 +50,7 @@ class ProductionRequestController extends Controller
     {
         $validated = $request->validate([
             'request_key' => ['required', 'string', 'max:120'],
-            'warehouse_id' => ['required', 'integer', Rule::in($this->outletAccessService->warehousesFor($request->user())->pluck('id'))],
+            'warehouse_id' => ['required', 'integer', Rule::in($this->productionWarehouses($request)->pluck('id'))],
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'target_output' => ['required', 'numeric', 'gt:0', 'max:1000000'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -60,6 +65,14 @@ class ProductionRequestController extends Controller
         );
 
         return back()->with('success', 'Permintaan produksi berhasil dikirim.');
+    }
+
+    private function productionWarehouses(Request $request): Collection
+    {
+        $warehouses = $this->outletAccessService->warehousesFor($request->user());
+        $central = $warehouses->where('code', 'PUSAT')->values();
+
+        return $central->isNotEmpty() ? $central : $warehouses;
     }
 
     public function review(Request $request, ProductionRequest $productionRequest): RedirectResponse

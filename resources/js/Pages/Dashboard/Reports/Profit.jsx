@@ -342,7 +342,7 @@ const ProfitReport = ({
                                             Pelanggan
                                         </th>
                                         <th className="px-4 py-4 text-center text-xs font-semibold text-slate-500 uppercase">
-                                            Item
+                                            Barang
                                         </th>
                                         <th className="px-4 py-4 text-right text-xs font-semibold text-slate-500 uppercase">
                                             Penjualan
@@ -439,7 +439,7 @@ const ProfitReport = ({
                                         </div>
                                         <div>
                                             <p className="text-xs text-slate-500 dark:text-slate-400">
-                                                Item
+                                                Barang
                                             </p>
                                             <p className="font-medium">
                                                 {trx.total_items ?? 0}

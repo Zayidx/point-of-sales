@@ -128,7 +128,7 @@ export default function Index({ stockOpnames, filters, warehouses = [] }) {
                         <tr>
                             <Table.Th>Kode</Table.Th>
                             <Table.Th>Status</Table.Th>
-                            <Table.Th>Jumlah Item</Table.Th>
+                            <Table.Th>Jumlah Barang</Table.Th>
                             <Table.Th>Dibuat Oleh</Table.Th>
                             <Table.Th>Waktu Finalisasi</Table.Th>
                             <Table.Th className="w-24 text-center">Aksi</Table.Th>

@@ -199,7 +199,7 @@ export default function Edit({ customer }) {
                             {data.is_loyalty_member && (
                                 <div className="mt-4">
                                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                        Tier Member
+                                        Tingkat Keanggotaan
                                     </label>
                                     <select
                                         value={data.loyalty_tier}

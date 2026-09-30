@@ -31,7 +31,7 @@ export default function Create({ orders }) {
                 .map((item) => ({
                     purchase_order_item_id: item.id,
                     qty_sent: item.qty_ordered - (item.qty_received || 0),
-                    product_title: item.product?.title || item.ingredient?.name || "Item PO",
+                    product_title: item.product?.title || item.ingredient?.name || "Barang pesanan pembelian",
                     product_sku: item.product?.sku || item.ingredient?.code || item.ingredient?.base_unit?.symbol || "-",
                     item_type: item.ingredient_id ? "ingredient" : "product",
                     qty_accepted: item.qty_ordered - (item.qty_received || 0),
@@ -138,7 +138,7 @@ export default function Create({ orders }) {
                     {selectedOrder && data.items.length > 0 && (
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                             <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-                                Item Diterima
+                                Barang Diterima
                             </h2>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">

@@ -243,7 +243,7 @@ export default function AddCustomerModal({
                         {form.is_loyalty_member ? (
                             <div className="mt-4">
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                                    Tier Awal
+                                    Tingkat Awal
                                 </label>
                                 <select
                                     value={form.loyalty_tier}

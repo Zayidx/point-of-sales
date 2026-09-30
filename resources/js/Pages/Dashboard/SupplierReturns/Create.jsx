@@ -59,7 +59,7 @@ export default function Create({ suppliers, goodsReceivings, products }) {
 
     const addItemFromGr = (grItem) => {
         if (data.items.some((i) => i.goods_receiving_item_id === grItem.id)) {
-            toast.error("Item sudah ada di daftar.");
+            toast.error("Barang sudah ada di daftar.");
             return;
         }
         setData("items", [
@@ -183,12 +183,12 @@ export default function Create({ suppliers, goodsReceivings, products }) {
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Item Retur</h2>
+                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Barang Retur</h2>
 
                         {selectedGr && (
                             <div className="mb-4">
                                 <p className="mb-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                                    Item dari GR {selectedGr.document_number}
+                                    Barang dari penerimaan {selectedGr.document_number}
                                 </p>
                                 <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-slate-100 p-3 dark:border-slate-700">
                                     {selectedGr.items?.map((grItem) => {
@@ -250,7 +250,7 @@ export default function Create({ suppliers, goodsReceivings, products }) {
                                     <thead>
                                         <tr className="border-b border-slate-200 dark:border-slate-700">
                                             <th className="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-200">Produk</th>
-                                            <th className="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">Qty</th>
+                                            <th className="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">Jumlah</th>
                                             <th className="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">Harga</th>
                                             <th className="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">Subtotal</th>
                                             <th className="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-200">Alasan</th>

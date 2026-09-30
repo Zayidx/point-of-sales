@@ -264,6 +264,7 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth']], function () {
 
     // route transaction destroyCart
     Route::delete('/transactions/{cart_id}/destroyCart', [TransactionController::class, 'destroyCart'])->middleware(['permission:transactions-access', 'active_shift'])->name('transactions.destroyCart');
+    Route::delete('/transactions/cart/clear', [TransactionController::class, 'clearCart'])->middleware(['permission:transactions-access', 'active_shift'])->name('transactions.clearCart');
 
     // route transaction updateCart
     Route::patch('/transactions/{cart_id}/updateCart', [TransactionController::class, 'updateCart'])->middleware(['permission:transactions-access', 'active_shift'])->name('transactions.updateCart');

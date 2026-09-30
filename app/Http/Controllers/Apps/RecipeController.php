@@ -19,7 +19,7 @@ class RecipeController extends Controller
     public function index(): Response
     {
         return Inertia::render('Dashboard/Recipes/Index', [
-            'menus' => Product::query()->with(['recipeVersions.items.ingredient:id,name', 'recipeVersions.items.unit:id,symbol'])->orderBy('title')->paginate(20)->withQueryString(),
+            'menus' => Product::query()->with(['units:id,code,name,symbol', 'recipeVersions.unit:id,code,name,symbol', 'recipeVersions.items.ingredient:id,name', 'recipeVersions.items.unit:id,symbol'])->orderBy('title')->paginate(20)->withQueryString(),
             'ingredients' => Ingredient::where('is_active', true)->with('baseUnit:id,symbol')->orderBy('name')->get(['id', 'name', 'base_unit_id']),
             'units' => Unit::orderBy('name')->get(['id', 'name', 'symbol']),
         ]);
@@ -29,6 +29,7 @@ class RecipeController extends Controller
     {
         $validated = $request->validate([
             'product_id' => ['required', 'integer', 'exists:products,id'],
+            'unit_id' => ['nullable', 'integer', 'exists:units,id'],
             'yield_quantity' => ['required', 'numeric', 'gt:0', 'max:1000000'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'items' => ['required', 'array', 'min:1'],
@@ -43,6 +44,7 @@ class RecipeController extends Controller
             $validated['yield_quantity'],
             $validated['notes'] ?? null,
             $request->user()->id,
+            $validated['unit_id'] ?? null,
         );
 
         return back()->with('success', 'Versi resep baru berhasil disimpan.');

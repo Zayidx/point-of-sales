@@ -425,7 +425,7 @@ export default function ReceivableShow({ receivable, bankAccounts = [] }) {
                                     className="w-full h-11 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold flex items-center justify-center gap-2"
                                 >
                                     <IconPrinter size={18} />
-                                    Preview / PDF
+                                    Pratinjau / PDF
                                 </button>
                             </div>
                         </div>

@@ -28,6 +28,11 @@ class DatabaseSeeder extends Seeder
 
         $this->call(DimsumWeiguSeeder::class);
         $this->call(UserSeeder::class);
+
+        // Keep realistic test inventory out of automated tests and shared/production environments.
+        if (app()->environment('local')) {
+            $this->call(TestDataSeeder::class);
+        }
     }
 
     private function seedDefaultWarehouse(): void

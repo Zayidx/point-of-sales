@@ -17,6 +17,7 @@ use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\Warehouse;
+use App\Services\CashierShiftOpeningStockService;
 use App\Services\CashierShiftService;
 use App\Services\CheckoutService;
 use App\Services\LoyaltyService;
@@ -30,6 +31,7 @@ use App\Support\Checkout\CheckoutFingerprint;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -47,6 +49,7 @@ class PosApiController extends Controller
         private readonly TransactionTenderService $tenderService,
         private readonly OutletAccessService $outletAccessService,
         private readonly CheckoutService $checkoutService,
+        private readonly CashierShiftOpeningStockService $openingStockService,
     ) {}
 
     /**
@@ -72,6 +75,10 @@ class PosApiController extends Controller
             'opening_cash' => ['required', 'numeric', 'min:0'],
             'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
             'notes' => ['nullable', 'string', 'max:255'],
+            'opening_items' => ['sometimes', 'array', 'min:1'],
+            'opening_items.*.item_type' => ['required', 'in:product,ingredient'],
+            'opening_items.*.item_id' => ['required', 'integer', 'min:1'],
+            'opening_items.*.quantity' => ['required', 'numeric', 'decimal:0,4', 'gt:0'],
         ]);
 
         $warehouseId = $validated['warehouse_id'] ?? null;
@@ -87,14 +94,27 @@ class PosApiController extends Controller
             return $this->forbidden('Outlet tidak dapat digunakan oleh pengguna ini.');
         }
 
+        $openingItems = $validated['opening_items'] ?? [];
+        $openingCatalog = $this->openingStockService->catalog();
+        if ($openingCatalog['warehouse'] && ($openingCatalog['products']->isNotEmpty() || $openingCatalog['ingredients']->isNotEmpty()) && $openingItems === []) {
+            return $this->validationError(['opening_items' => ['Catat barang yang dibawa dari Gudang Pusat sebelum membuka shift.']]);
+        }
+
         try {
-            $shift = $this->cashierShiftService->openShift(
-                cashier: $request->user(),
-                actor: $request->user(),
-                openingCash: (int) $validated['opening_cash'],
-                notes: $validated['notes'] ?? null,
-                warehouseId: $warehouseId,
-            );
+            $shift = DB::transaction(function () use ($request, $validated, $warehouseId, $openingItems) {
+                $shift = $this->cashierShiftService->openShift(
+                    cashier: $request->user(),
+                    actor: $request->user(),
+                    openingCash: (int) $validated['opening_cash'],
+                    notes: $validated['notes'] ?? null,
+                    warehouseId: $warehouseId,
+                );
+                if ($openingItems !== []) {
+                    $this->openingStockService->issueToShift($shift, $openingItems, $request->user()->id);
+                }
+
+                return $shift;
+            }, attempts: 3);
         } catch (ValidationException $e) {
             return $this->validationError($e->errors(), $e->getMessage());
         }
@@ -117,12 +137,16 @@ class PosApiController extends Controller
         }
 
         $stockCountRule = $shift->warehouse_id ? 'required' : 'sometimes';
+        $ingredientCountRule = $shift->openingItems()->where('item_type', 'ingredient')->exists() ? 'required' : 'sometimes';
         $validated = $request->validate([
             'closing_cash' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:255'],
             'closing_stock' => [$stockCountRule, 'array'],
             'closing_stock.*.product_id' => ['required_with:closing_stock', 'integer', 'exists:products,id'],
             'closing_stock.*.actual_stock' => ['required_with:closing_stock', 'integer', 'min:0'],
+            'closing_ingredients' => [$ingredientCountRule, 'array'],
+            'closing_ingredients.*.opening_item_id' => ['required_with:closing_ingredients', 'integer', 'exists:cashier_shift_opening_items,id'],
+            'closing_ingredients.*.actual_quantity' => ['required_with:closing_ingredients', 'numeric', 'decimal:0,4', 'min:0'],
         ]);
 
         try {
@@ -132,6 +156,7 @@ class PosApiController extends Controller
                 actualCash: (int) $validated['closing_cash'],
                 closeNotes: $validated['notes'] ?? null,
                 closingStock: $validated['closing_stock'] ?? null,
+                closingIngredients: $validated['closing_ingredients'] ?? null,
             );
         } catch (\Throwable $e) {
             return $this->error($e->getMessage(), 422);

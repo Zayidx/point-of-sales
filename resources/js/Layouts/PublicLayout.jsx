@@ -55,7 +55,7 @@ export default function PublicLayout({ children, active = "" }) {
                             className="hidden sm:flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-primary-300 dark:hover:border-primary-700 transition-colors"
                         >
                             <IconStar size={15} className="text-amber-400" />
-                            Star
+                            Beri Bintang
                         </a>
                         <Link
                             href="/login"
@@ -69,7 +69,7 @@ export default function PublicLayout({ children, active = "" }) {
                             rel="noopener noreferrer"
                             className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl hover:from-primary-600 hover:to-primary-700 shadow-lg shadow-primary-500/25 transition-all"
                         >
-                            Get Source
+                            Lihat Kode Sumber
                         </a>
                     </div>
                 </div>

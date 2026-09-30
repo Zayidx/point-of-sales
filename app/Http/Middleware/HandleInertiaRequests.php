@@ -48,11 +48,16 @@ class HandleInertiaRequests extends Middleware
         $activeShift = null;
         $activeOutlet = null;
         $availableOutlets = collect();
+        $centralWarehouse = null;
+        $isFinance = false;
 
         if ($request->user()) {
             $userId = $request->user()->id;
             $outletAccess = app(OutletAccessService::class);
-            $warehouseIds = $outletAccess->warehousesFor($request->user())->pluck('id');
+            $accessibleWarehouses = $outletAccess->warehousesFor($request->user());
+            $warehouseIds = $accessibleWarehouses->pluck('id');
+            $centralWarehouse = $accessibleWarehouses->firstWhere('code', 'PUSAT')?->only(['id', 'code', 'name']);
+            $isFinance = $request->user()->hasRole('finance');
             $outletIds = $outletAccess->accessibleOutlets($request->user())->pluck('id');
             $includeLegacy = Outlet::active()->count() <= 1;
 
@@ -286,6 +291,8 @@ class HandleInertiaRequests extends Middleware
                 'currentOutlet' => $activeOutlet?->only(['id', 'code', 'name']),
                 'outlets' => $availableOutlets->map(fn (Outlet $outlet) => $outlet->only(['id', 'code', 'name']))->values(),
                 'outletLocked' => (bool) $activeShift,
+                'isFinance' => $isFinance,
+                'centralWarehouse' => $centralWarehouse,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

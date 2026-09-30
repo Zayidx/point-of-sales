@@ -14,11 +14,13 @@ class RecipesExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapp
     public function query(): Builder
     {
         $latestVersions = DB::table('recipe_versions')
+            ->whereNull('unit_id')
             ->selectRaw('product_id, MAX(version_number) as version_number')
             ->groupBy('product_id');
 
         return DB::table('recipe_items')
             ->join('recipe_versions', 'recipe_versions.id', '=', 'recipe_items.recipe_version_id')
+            ->whereNull('recipe_versions.unit_id')
             ->joinSub($latestVersions, 'latest_versions', fn ($join) => $join
                 ->on('latest_versions.product_id', '=', 'recipe_versions.product_id')
                 ->on('latest_versions.version_number', '=', 'recipe_versions.version_number'))

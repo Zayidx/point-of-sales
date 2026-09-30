@@ -736,7 +736,7 @@ export default function Edit({ categories, product, products = [], units = [] })
                                                                     `components.${index}.qty`
                                                                 ]
                                                             }
-                                                            placeholder="Qty"
+                                                            placeholder="Jumlah"
                                                         />
                                                     </div>
                                                     <button

@@ -63,7 +63,7 @@ export default function Index({ transfers }) {
                                 <Table.Th>Asal</Table.Th>
                                 <Table.Th>Tujuan</Table.Th>
                                 <Table.Th>Status</Table.Th>
-                                <Table.Th>Item</Table.Th>
+                                <Table.Th>Barang</Table.Th>
                                 <Table.Th>Dibuat</Table.Th>
                                 <Table.Th className="w-24 text-center">Aksi</Table.Th>
                             </tr>

@@ -36,6 +36,7 @@ class ProductionRequestService
             }
 
             $recipe = RecipeVersion::where('product_id', $menu->id)
+                ->whereNull('unit_id')
                 ->orderByDesc('version_number')
                 ->with('items.ingredient')
                 ->first();

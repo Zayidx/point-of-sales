@@ -78,13 +78,13 @@ export default function Show({ transfer }) {
                             </div>
                         </div>
 
-                        <h3 className="mt-6 text-base font-semibold text-slate-900 dark:text-white">Item Transfer</h3>
+                        <h3 className="mt-6 text-base font-semibold text-slate-900 dark:text-white">Barang yang Dipindahkan</h3>
                         <div className="mt-3 overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b border-slate-200 dark:border-slate-700">
                                         <th className="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-200">Produk</th>
-                                        <th className="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">Qty</th>
+                                        <th className="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">Jumlah</th>
                                     </tr>
                                 </thead>
                                 <tbody>

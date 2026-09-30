@@ -52,7 +52,7 @@ export default function AppLayout({ children }) {
         auth?.super === true && securityWarnings.length > 0;
 
     return (
-        <div className="flex h-screen overflow-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-200">
+        <div className="flex h-screen h-[100dvh] overflow-hidden bg-slate-100 transition-colors duration-200 dark:bg-slate-950">
             <Sidebar sidebarOpen={sidebarOpen} />
             {/* Mobile overlay */}
             <div
@@ -67,12 +67,12 @@ export default function AppLayout({ children }) {
                     themeSwitcher={themeSwitcher}
                     darkMode={darkMode}
                 />
-                <main className="dashboard-scrollbar flex-1 overflow-y-auto">
-                    <div className="w-full py-6 px-4 md:px-6 lg:px-8 pb-20 md:pb-6">
+                <main className="dashboard-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                    <div className="w-full px-3 py-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-4 md:px-6 md:py-6 md:pb-6 lg:px-8">
                         {showSecurityWarnings && (
                             <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
                                 <p className="text-sm font-semibold">
-                                    Production security baseline warning
+                                    Peringatan dasar keamanan produksi
                                 </p>
                                 <ul className="mt-2 space-y-1 text-sm">
                                     {securityWarnings.map((warning) => (

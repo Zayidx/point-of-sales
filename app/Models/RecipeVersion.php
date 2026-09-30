@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RecipeVersion extends Model
 {
-    protected $fillable = ['product_id', 'version_number', 'yield_quantity', 'notes', 'created_by'];
+    protected $fillable = ['product_id', 'unit_id', 'version_number', 'yield_quantity', 'notes', 'created_by'];
 
     protected function casts(): array
     {
@@ -23,5 +23,10 @@ class RecipeVersion extends Model
     public function items(): HasMany
     {
         return $this->hasMany(RecipeItem::class);
+    }
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class);
     }
 }

@@ -61,4 +61,39 @@ class CoreReportsTest extends TestCase
             ->get(route('reports.profits.index', ['start_date' => '2026-01-01', 'end_date' => '2026-01-31', 'export' => 1]))
             ->assertDownload('laporan-keuntungan.xlsx');
     }
+
+    public function test_sales_report_lists_only_users_with_the_cashier_role(): void
+    {
+        $this->seed();
+        $manager = User::where('email', 'manager@gmail.com')->firstOrFail();
+
+        $this->actingAs($manager)
+            ->get(route('reports.sales.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('cashiers', 4));
+    }
+
+    public function test_finance_sees_central_warehouse_instead_of_an_outlet_switcher(): void
+    {
+        $this->seed();
+        $finance = User::where('email', 'finance@gmail.com')->firstOrFail();
+
+        $this->actingAs($finance)
+            ->get(route('reports.sales.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('auth.isFinance', true)
+                ->where('auth.centralWarehouse.code', 'PUSAT')
+                ->has('warehouses', 5));
+
+        $warehouse = User::where('email', 'warehouse@gmail.com')->firstOrFail();
+        $this->assertFalse($warehouse->can('purchase-orders-create'));
+        $this->assertFalse($warehouse->can('purchase-orders-update'));
+        $this->assertFalse($warehouse->can('suppliers-access'));
+        $this->assertFalse($warehouse->can('warehouses-create'));
+        $this->assertFalse($warehouse->can('warehouses-update'));
+        $this->assertTrue($finance->can('purchase-orders-create'));
+        $this->assertTrue($finance->can('purchase-orders-update'));
+        $this->assertFalse($finance->can('outlet-operations-access'));
+        $this->assertFalse($finance->can('cash-handovers-access'));
+    }
 }

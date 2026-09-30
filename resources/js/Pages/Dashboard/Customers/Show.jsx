@@ -77,7 +77,7 @@ export default function Show({
                                     <IconCrown size={14} />
                                     {customer.is_loyalty_member
                                         ? customer.loyalty_tier
-                                        : "non-member"}
+                                        : "bukan anggota"}
                                 </span>
                             </div>
                             <p className="text-sm text-slate-500 dark:text-slate-400">

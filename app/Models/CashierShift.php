@@ -108,6 +108,11 @@ class CashierShift extends Model
         return $this->hasMany(CashierShiftStockCount::class);
     }
 
+    public function openingItems()
+    {
+        return $this->hasMany(CashierShiftOpeningItem::class);
+    }
+
     public function scopeOpen($query)
     {
         return $query->where('status', self::STATUS_OPEN);

@@ -30,7 +30,7 @@ export default function TransactionDetail({ transaction, token }) {
                         </div>
 
                         <div className="border-t border-slate-100 pt-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Item</p>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Barang</p>
                             {transaction.details.map((item, i) => (
                                 <div key={i} className="flex justify-between py-1.5 text-sm">
                                     <span className="text-slate-700">{item.product_title} x{item.qty}</span>

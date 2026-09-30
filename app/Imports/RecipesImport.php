@@ -136,6 +136,7 @@ class RecipesImport implements ToCollection, WithHeadingRow, WithLimit
                     $latest = RecipeVersion::query()
                         ->with('items')
                         ->where('product_id', $group['product']->id)
+                        ->whereNull('unit_id')
                         ->orderByDesc('version_number')
                         ->first();
 

@@ -110,11 +110,11 @@ export default function ThermalReceipt({
             {/* Faktur Info */}
             <div className="my-1">
                 <div className="flex justify-between">
-                    <span>No:</span>
+                    <span>Nomor:</span>
                     <span>{transaction?.invoice}</span>
                 </div>
                 <div className="flex justify-between">
-                    <span>Tgl:</span>
+                    <span>Tanggal:</span>
                     <span>{formatDate(transaction?.created_at)}</span>
                 </div>
                 <div className="flex justify-between">
@@ -195,7 +195,7 @@ export default function ThermalReceipt({
                 )}
                 {loyaltyDiscount > 0 && (
                     <div className="flex justify-between">
-                        <span>Redeem Poin</span>
+                        <span>Tukar Poin</span>
                         <span>-{formatPrice(loyaltyDiscount)}</span>
                     </div>
                 )}
@@ -395,7 +395,7 @@ export function ThermalReceipt58mm({
             )}
             {Number(transaction?.discount || 0) > 0 && (
                 <div className="flex justify-between">
-                    <span>Disc</span>
+                    <span>Diskon</span>
                     <span>-{formatPrice(transaction?.discount)}</span>
                 </div>
             )}

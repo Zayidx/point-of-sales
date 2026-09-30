@@ -198,7 +198,7 @@ export default function PaymentPanel({
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="text-slate-500 dark:text-slate-400">
-                            Redeem Poin
+                            Tukar Poin
                         </span>
                         <span className="font-medium text-danger-500">
                             - {formatPrice(loyaltyDiscount)}
@@ -237,7 +237,7 @@ export default function PaymentPanel({
                     <>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Redeem Poin
+                                Tukar Poin
                             </label>
                             <input
                                 type="text"

@@ -185,7 +185,7 @@ export default function Print({ transaction }) {
                 orderTypeLabels[transaction.order_type] ?? transaction.order_type,
             items: items.map((item) => ({
                 qty: Number(item.qty),
-                name: item.product?.title ?? item.product?.name ?? "Item",
+                name: item.product?.title ?? item.product?.name ?? "Barang",
                 price: Number(item.price),
             })),
             money: formatPrice,
@@ -702,7 +702,7 @@ export default function Print({ transaction }) {
                                                     Harga
                                                 </th>
                                                 <th className="pb-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                                                    Qty
+                                                    Jumlah
                                                 </th>
                                                 <th className="pb-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                                                     Subtotal

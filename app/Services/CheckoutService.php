@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Models\Cart;
+use App\Models\Ingredient;
 use App\Models\InventoryBalance;
 use App\Models\OutletStockReturnItem;
 use App\Models\Product;
 use App\Models\ProductBatch;
 use App\Models\ProductWarehouse;
 use App\Models\Receivable;
+use App\Models\RecipeVersion;
 use App\Models\Transaction;
 use App\Models\TransactionTender;
 use App\Support\Checkout\CheckoutContext;
@@ -213,12 +215,39 @@ class CheckoutService
             ]);
 
             $product = Product::find($cart->product_id);
+            $baseRecipe = RecipeVersion::query()
+                ->with('items.ingredient')
+                ->where('product_id', $product->id)
+                ->whereNull('unit_id')
+                ->orderByDesc('version_number')
+                ->first();
+            $portionRecipe = $cart->unit_id
+                ? RecipeVersion::query()
+                    ->with('items.ingredient')
+                    ->where('product_id', $product->id)
+                    ->where('unit_id', $cart->unit_id)
+                    ->orderByDesc('version_number')
+                    ->first()
+                : null;
 
             // HPP follows base-unit cost: cart qty is in the selling unit, buy_price is per base unit.
             if ($product->is_composite) {
                 $totalBuyPrice = $product->components->sum(
                     fn ($component) => $this->baseUnitCost($component, $warehouseId, $userId) * (float) $component->pivot->qty
                 ) * $cart->qty;
+            } elseif ($baseRecipe || $portionRecipe) {
+                $baseQty = (float) $cart->qty * (float) ($cart->conversion_factor ?? 1);
+                $totalBuyPrice = 0;
+                foreach ([[$baseRecipe, $baseQty], [$portionRecipe, (float) $cart->qty]] as [$selectedRecipe, $recipeOutput]) {
+                    if (! $selectedRecipe) {
+                        continue;
+                    }
+                    $totalBuyPrice += $selectedRecipe->items->sum(
+                        fn ($item) => (float) $item->ingredient->default_unit_cost
+                            * (float) $item->base_quantity
+                            * $recipeOutput / (float) $selectedRecipe->yield_quantity
+                    );
+                }
             } else {
                 $totalBuyPrice = $this->baseUnitCost($product, $warehouseId, $userId) * $cart->qty * (float) ($cart->conversion_factor ?? 1);
             }
@@ -270,6 +299,13 @@ class CheckoutService
                         notes: "Penjualan {$transaction->invoice} (komponen komposit {$product->title})",
                         userId: $userId,
                     );
+                }
+            } elseif ($baseRecipe || $portionRecipe) {
+                if ($baseRecipe) {
+                    $this->consumeRecipeIngredients($baseRecipe, $detail, $cart, $transaction, $warehouseId, $userId, false);
+                }
+                if ($portionRecipe) {
+                    $this->consumeRecipeIngredients($portionRecipe, $detail, $cart, $transaction, $warehouseId, $userId, true);
                 }
             } else {
                 $baseQty = (int) round($cart->qty * (float) ($cart->conversion_factor ?? 1));
@@ -347,6 +383,54 @@ class CheckoutService
                     }
                 }
             }
+        }
+    }
+
+    private function consumeRecipeIngredients(
+        RecipeVersion $recipe,
+        $detail,
+        Cart $cart,
+        Transaction $transaction,
+        ?int $warehouseId,
+        int $userId,
+        bool $perPortion,
+    ): void {
+        if (! $warehouseId || (float) $recipe->yield_quantity <= 0) {
+            return;
+        }
+
+        $outputQuantity = $perPortion
+            ? (float) $cart->qty
+            : (float) $cart->qty * (float) ($cart->conversion_factor ?? 1);
+        foreach ($recipe->items as $item) {
+            $ingredient = Ingredient::query()->whereKey($item->ingredient_id)->lockForUpdate()->firstOrFail();
+            $quantity = (float) $item->base_quantity * $outputQuantity / (float) $recipe->yield_quantity;
+            $balanceKey = "warehouse:{$warehouseId}:ingredient:{$ingredient->id}";
+            $balance = InventoryBalance::query()->where('balance_key', $balanceKey)->lockForUpdate()->first();
+            $available = (float) ($balance?->quantity ?? 0);
+
+            if ($quantity > $available) {
+                throw ValidationException::withMessages([
+                    'stock' => "Stok {$ingredient->name} tidak mencukupi. Tersedia: {$available}.",
+                ]);
+            }
+
+            $this->inventoryLedgerService->record([
+                'idempotency_key' => "sale:{$transaction->id}:detail:{$detail->id}:recipe:{$recipe->id}:ingredient:{$ingredient->id}",
+                'item_type' => 'ingredient',
+                'item_id' => $ingredient->id,
+                'location_type' => 'warehouse',
+                'location_id' => $warehouseId,
+                'movement_type' => 'sale',
+                'quantity' => '-'.number_format($quantity, 4, '.', ''),
+                'unit_id' => $ingredient->base_unit_id,
+                'unit_cost' => (string) ($balance?->average_unit_cost ?? $ingredient->default_unit_cost),
+                'reference_type' => Transaction::class,
+                'reference_id' => $transaction->id,
+                'reference_number' => $transaction->invoice,
+                'notes' => "Konsumsi resep {$recipe->id} untuk penjualan {$transaction->invoice}",
+                'created_by' => $userId,
+            ]);
         }
     }
 

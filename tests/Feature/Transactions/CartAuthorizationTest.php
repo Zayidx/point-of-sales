@@ -109,4 +109,55 @@ class CartAuthorizationTest extends TestCase
 
         $this->assertDatabaseMissing('carts', ['id' => $ownCart->id]);
     }
+
+    public function test_adding_to_cart_returns_json_for_pos_without_redirecting(): void
+    {
+        $this->openShiftFor($this->cashierA);
+        $product = $this->makeProduct();
+
+        $response = $this->postJson(route('transactions.addToCart'), [
+            'product_id' => $product->id,
+            'qty' => 1,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('carts.0.product_id', $product->id)
+            ->assertJsonPath('carts_total', $product->sell_price);
+    }
+
+    public function test_cashier_can_cancel_active_order_without_deleting_held_or_other_carts(): void
+    {
+        $this->openShiftFor($this->cashierA);
+
+        $product = $this->makeProduct();
+        $activeCart = Cart::create([
+            'cashier_id' => $this->cashierA->id,
+            'product_id' => $product->id,
+            'qty' => 2,
+            'price' => $product->sell_price * 2,
+        ]);
+        $heldCart = Cart::create([
+            'cashier_id' => $this->cashierA->id,
+            'product_id' => $product->id,
+            'qty' => 1,
+            'price' => $product->sell_price,
+            'hold_id' => 'HOLD-KEEP',
+            'hold_label' => 'Pesanan ditahan',
+            'held_at' => now(),
+        ]);
+        $otherCashierCart = Cart::create([
+            'cashier_id' => $this->cashierB->id,
+            'product_id' => $product->id,
+            'qty' => 1,
+            'price' => $product->sell_price,
+        ]);
+
+        $this->delete(route('transactions.clearCart'))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('carts', ['id' => $activeCart->id]);
+        $this->assertDatabaseHas('carts', ['id' => $heldCart->id]);
+        $this->assertDatabaseHas('carts', ['id' => $otherCashierCart->id]);
+    }
 }

@@ -80,7 +80,7 @@ class IngredientController extends Controller
             'created_by' => $request->user()->id,
         ]);
 
-        return back()->with('success', 'Penyesuaian stok bahan baku berhasil dicatat.');
+        return back()->with('success', 'Penyesuaian stok persediaan berhasil dicatat.');
     }
 
     public function store(Request $request): RedirectResponse

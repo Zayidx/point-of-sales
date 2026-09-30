@@ -154,7 +154,7 @@ export default function Index({ members, filters, tierOptions, summary }) {
                         <Table.Thead>
                             <tr>
                                 <Table.Th>Anggota</Table.Th>
-                                <Table.Th>Tier</Table.Th>
+                                <Table.Th>Tingkat Keanggotaan</Table.Th>
                                 <Table.Th>Poin</Table.Th>
                                 <Table.Th>Total Belanja</Table.Th>
                                 <Table.Th>Transaksi</Table.Th>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { IconShoppingBag, IconMinus, IconPlus } from "@tabler/icons-react";
 import { getProductImageUrl } from "@/Utils/imageUrl";
 
@@ -10,8 +10,8 @@ const formatPrice = (value = 0) =>
     });
 
 // Single Product Card
-function ProductCard({ product, onAddToCart, isAdding }) {
-    const hasStock = product.stock > 0;
+function ProductCard({ product, onAddToCart, queuedProductAdds = {} }) {
+    const hasStock = product.stock > 0 || product.is_recipe_menu;
     const lowStock = product.stock > 0 && product.stock <= 5;
     const promoBadge = product.pricing_badge;
     const promoPrice = Number(promoBadge?.promo_price || 0);
@@ -24,6 +24,9 @@ function ProductCard({ product, onAddToCart, isAdding }) {
     const [selectedUnitId, setSelectedUnitId] = React.useState(null);
     const selectedUnit =
         multiUnits.find((u) => u.unit_id === selectedUnitId) || null;
+    const baseUnit = (product.units || []).find((unit) => unit.is_base);
+    const pendingAddCount =
+        queuedProductAdds[`${product.id}:${selectedUnit?.unit_id ?? "base"}`] || 0;
     const displayPrice = selectedUnit
         ? selectedUnit.sell_price
         : showPromo
@@ -47,7 +50,7 @@ function ProductCard({ product, onAddToCart, isAdding }) {
             <button
                 type="button"
                 onClick={() => hasStock && onAddToCart(product, selectedUnit)}
-                disabled={!hasStock || isAdding}
+                disabled={!hasStock}
                 className={`block text-left ${
                     hasStock ? "cursor-pointer" : "cursor-not-allowed"
                 }`}
@@ -66,7 +69,7 @@ function ProductCard({ product, onAddToCart, isAdding }) {
                 />
 
                 {/* Stock Badge */}
-                {lowStock && (
+                {lowStock && !product.is_recipe_menu && (
                     <span className="absolute top-2 right-2 px-2 py-0.5 text-xs font-medium bg-warning-100 text-warning-700 dark:bg-warning-900/50 dark:text-warning-400 rounded-full">
                         Sisa {product.stock}
                     </span>
@@ -75,6 +78,12 @@ function ProductCard({ product, onAddToCart, isAdding }) {
                 {showBadge && (
                     <span className="absolute left-2 top-2 max-w-[70%] truncate rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow-lg">
                         {promoBadge.label}
+                    </span>
+                )}
+
+                {pendingAddCount > 0 && (
+                    <span className="absolute bottom-2 left-2 rounded-full bg-primary-600 px-2 py-1 text-[11px] font-semibold text-white shadow">
+                        +{pendingAddCount} masuk keranjang
                     </span>
                 )}
 
@@ -103,6 +112,11 @@ function ProductCard({ product, onAddToCart, isAdding }) {
                 <h3 className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-2 leading-tight">
                     {product.title}
                 </h3>
+                {product.is_recipe_menu && (
+                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                        Dibuat saat dipesan · memakai stok persediaan
+                    </p>
+                )}
                 <div className="mt-2">
                     {showPromo && !selectedUnit && (
                         <p className="text-xs text-slate-400 line-through">
@@ -133,7 +147,7 @@ function ProductCard({ product, onAddToCart, isAdding }) {
                                         : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                                 }`}
                             >
-                                Dasar
+                                {baseUnit?.code || "PCS"}
                             </button>
                             {multiUnits.map((u) => (
                                 <button
@@ -228,30 +242,32 @@ export default function ProductGrid({
     onSearch,
     isSearching,
     onAddToCart,
-    addingProductId,
+    queuedProductAdds = {},
     searchInputRef,
+    cartCount = 0,
+    cartTotal = 0,
+    onOpenCart,
 }) {
     const normalizedSelectedCategory =
         selectedCategory === null ? null : Number(selectedCategory);
+    const normalizedSearch = searchQuery?.trim().toLocaleLowerCase("id-ID") || "";
 
     // Filter products by category and search
-    const filteredProducts = products.filter((product) => {
-        const matchesCategory =
-            normalizedSelectedCategory === null ||
+    const filteredProducts = useMemo(() => products.filter((product) => {
+        const matchesCategory = normalizedSelectedCategory === null ||
             Number(product.category_id) === normalizedSelectedCategory;
-        const matchesSearch =
-            !searchQuery ||
-            product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.barcode?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = !normalizedSearch ||
+            product.title.toLocaleLowerCase("id-ID").includes(normalizedSearch) ||
+            product.barcode?.toLocaleLowerCase("id-ID").includes(normalizedSearch);
         return matchesCategory && matchesSearch;
-    });
+    }), [products, normalizedSelectedCategory, normalizedSearch]);
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="relative flex h-full min-h-0 flex-col">
             {/* Search Bar */}
             <div
                 data-tour="pos-search"
-                className="p-4 border-b border-slate-200 dark:border-slate-800"
+                className="border-b border-slate-200 p-3 dark:border-slate-800 sm:p-4"
             >
                 <SearchInput
                     value={searchQuery}
@@ -264,7 +280,7 @@ export default function ProductGrid({
             </div>
 
             {/* Category Tabs */}
-            <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-hide">
+            <div className="overflow-x-auto border-b border-slate-200 px-3 py-2.5 dark:border-slate-800 scrollbar-hide sm:px-4">
                 <div className="flex gap-2">
                     <CategoryTab
                         category={{ id: null, name: "Semua" }}
@@ -286,15 +302,15 @@ export default function ProductGrid({
             </div>
 
             {/* Products Grid */}
-            <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
+            <div className="min-h-0 flex-1 overflow-y-auto p-3 pb-24 scrollbar-thin sm:p-4 sm:pb-4">
                 {filteredProducts.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
                         {filteredProducts.map((product) => (
                             <ProductCard
                                 key={product.id}
                                 product={product}
                                 onAddToCart={onAddToCart}
-                                isAdding={addingProductId === product.id}
+                                queuedProductAdds={queuedProductAdds}
                             />
                         ))}
                     </div>
@@ -313,6 +329,24 @@ export default function ProductGrid({
                     </div>
                 )}
             </div>
+
+            {cartCount > 0 && onOpenCart && (
+                <div className="absolute inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 lg:hidden">
+                    <button
+                        type="button"
+                        onClick={onOpenCart}
+                        className="flex min-h-12 w-full items-center justify-between rounded-xl bg-primary-600 px-4 py-3 text-left text-white shadow-lg shadow-primary-600/20 active:scale-[0.99]"
+                    >
+                        <span className="flex items-center gap-2 text-sm font-semibold">
+                            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-white/20 px-1.5 text-xs">{cartCount}</span>
+                            Lihat keranjang
+                        </span>
+                        <span className="text-sm font-bold tabular-nums">
+                            {Number(cartTotal || 0).toLocaleString("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 })}
+                        </span>
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

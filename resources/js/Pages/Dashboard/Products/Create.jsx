@@ -711,7 +711,7 @@ export default function Create({ categories, products, units = [] }) {
                                                             `components.${index}.qty`
                                                         ]
                                                     }
-                                                    placeholder="Qty"
+                                                            placeholder="Jumlah"
                                                 />
                                             </div>
                                             <button

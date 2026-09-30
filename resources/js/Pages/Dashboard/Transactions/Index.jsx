@@ -62,6 +62,7 @@ export default function Index({
     defaultPaymentGateway = "cash",
     bankAccounts = [],
     warehouses = [],
+    openingInventory = { warehouse: null, products: [], ingredients: [] },
     loyaltyTierOptions = [],
 }) {
     const {
@@ -76,11 +77,14 @@ export default function Index({
     const canOpenShift = can("cashier-shifts-open");
 
     // State
+    const [cartItems, setCartItems] = useState(carts);
+    const [cartTotal, setCartTotal] = useState(carts_total);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
-    const [addingProductId, setAddingProductId] = useState(null);
+    const [queuedProductAdds, setQueuedProductAdds] = useState({});
     const [removingItemId, setRemovingItemId] = useState(null);
+    const [isCancellingCart, setIsCancellingCart] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [pricingPreview, setPricingPreview] = useState(initialPricingPreview);
     const [isLoadingPricing, setIsLoadingPricing] = useState(false);
@@ -110,8 +114,15 @@ export default function Index({
     const [shiftWarehouseId, setShiftWarehouseId] = useState(
         warehouses.length > 0 ? warehouses[0].id : ""
     );
+    const [openingItems, setOpeningItems] = useState([]);
+    const [openingItemSearch, setOpeningItemSearch] = useState("");
+    const [openingItemType, setOpeningItemType] = useState("ingredient");
+    const [isOpeningShift, setIsOpeningShift] = useState(false);
     const [pendingSyncCount, setPendingSyncCount] = useState(0);
     const flushPromiseRef = useRef(null);
+    const productAddQueueRef = useRef(new Map());
+    const productAddTimerRef = useRef(null);
+    const productAddInFlightRef = useRef(false);
     const normalizedSelectedCategory =
         selectedCategory === null ? null : Number(selectedCategory);
     const pricingItemsByCartId = useMemo(() => {
@@ -123,6 +134,12 @@ export default function Index({
             return accumulator;
         }, {});
     }, [pricingPreview]);
+    const hasPendingProductAdds = Object.values(queuedProductAdds).some(
+        (count) => count > 0
+    );
+    const openingStockRequired = Boolean(
+        (openingInventory?.products?.length || 0) + (openingInventory?.ingredients?.length || 0)
+    );
 
     // Ref for search input to enable keyboard focus
     const searchInputRef = useRef(null);
@@ -131,6 +148,11 @@ export default function Index({
     useEffect(() => {
         setPaymentMethod(defaultPaymentGateway ?? "cash");
     }, [defaultPaymentGateway]);
+
+    useEffect(() => {
+        setCartItems(carts);
+        setCartTotal(carts_total);
+    }, [carts, carts_total]);
 
     useEffect(() => {
         setPricingPreview(initialPricingPreview);
@@ -150,7 +172,7 @@ export default function Index({
             );
 
             if (product) {
-                if (product.stock > 0) {
+                if (product.stock > 0 || product.is_recipe_menu) {
                     handleAddToCart(product);
                     toast.success(`${product.title} ditambahkan (barcode)`);
                 } else {
@@ -180,8 +202,8 @@ export default function Index({
         [shippingInput]
     );
     const baseSubtotal = useMemo(
-        () => Number(pricingPreview?.summary?.base_subtotal ?? carts_total ?? 0),
-        [pricingPreview, carts_total]
+        () => Number(pricingPreview?.summary?.base_subtotal ?? cartTotal ?? 0),
+        [pricingPreview, cartTotal]
     );
     const promoDiscount = useMemo(
         () => Number(pricingPreview?.summary?.promo_discount_total ?? 0),
@@ -226,16 +248,16 @@ export default function Index({
         [cashInput, isCashPayment, payable]
     );
     const cartCount = useMemo(
-        () => carts.reduce((total, item) => total + Number(item.qty), 0),
-        [carts]
+        () => cartItems.reduce((total, item) => total + Number(item.qty), 0),
+        [cartItems]
     );
     const pricingDependency = useMemo(
-        () => carts.map((item) => `${item.id}:${item.qty}`).join("|"),
-        [carts]
+        () => cartItems.map((item) => `${item.id}:${item.qty}`).join("|"),
+        [cartItems]
     );
 
     useEffect(() => {
-        if (carts.length === 0) {
+        if (cartItems.length === 0) {
             setPricingPreview({
                 items: [],
                 summary: {
@@ -365,36 +387,103 @@ export default function Index({
             opening_cash: Number(openingCashInput || 0),
             notes: shiftNotesInput,
             warehouse_id: shiftWarehouseId || undefined,
+            opening_items: openingItems.map(({ item_type, item_id, quantity }) => ({
+                item_type,
+                item_id,
+                quantity: Number(quantity),
+            })),
             redirect_to: "transactions",
+        }, {
+            onStart: () => setIsOpeningShift(true),
+            onFinish: () => setIsOpeningShift(false),
         });
     };
 
-    // Handle add product to cart
-    const handleAddToCart = async (product, unit = null) => {
-        if (!product?.id) return;
+    const addOpeningItem = (item) => {
+        const key = `${item.item_type}:${item.id}`;
+        setOpeningItems((current) => current.some((row) => `${row.item_type}:${row.item_id}` === key)
+            ? current
+            : [...current, { item_type: item.item_type, item_id: item.id, name: item.name, unit: item.unit, available: item.available, quantity: "" }]);
+    };
 
-        setAddingProductId(product.id);
+    const updateOpeningItem = (key, quantity) => setOpeningItems((current) => current.map((item) =>
+        `${item.item_type}:${item.item_id}` === key ? { ...item, quantity } : item
+    ));
 
-        router.post(
+    const removeOpeningItem = (key) => setOpeningItems((current) => current.filter((item) =>
+        `${item.item_type}:${item.item_id}` !== key
+    ));
+
+    // Batch rapid taps and serialize cart writes so cashiers can keep selecting
+    // products without waiting for each individual request to finish.
+    const flushProductAddQueue = useCallback(() => {
+        clearTimeout(productAddTimerRef.current);
+        if (productAddInFlightRef.current || productAddQueueRef.current.size === 0) {
+            return;
+        }
+
+        const [queueKey, entry] = productAddQueueRef.current.entries().next().value;
+        productAddQueueRef.current.delete(queueKey);
+        productAddInFlightRef.current = true;
+
+        axios.post(
             route("transactions.addToCart"),
             {
-                product_id: product.id,
-                sell_price: unit ? unit.sell_price : product.sell_price,
-                qty: 1,
-                unit_id: unit ? unit.unit_id : undefined,
+                product_id: entry.product.id,
+                sell_price: entry.unit ? entry.unit.sell_price : entry.product.sell_price,
+                qty: entry.quantity,
+                unit_id: entry.unit ? entry.unit.unit_id : undefined,
             },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success(`${product.title}${unit ? ` (${unit.code})` : ""} ditambahkan`);
-                    setAddingProductId(null);
-                },
-                onError: () => {
-                    toast.error("Gagal menambahkan produk");
-                    setAddingProductId(null);
-                },
-            }
-        );
+            { headers: { Accept: "application/json" } }
+        )
+            .then(({ data }) => {
+                if (!data?.success) throw new Error("Respons keranjang tidak valid");
+                setCartItems(data.carts ?? []);
+                setCartTotal(Number(data.carts_total ?? 0));
+                toast.success(
+                    `${entry.product.title}${entry.unit ? ` (${entry.unit.code})` : ""} × ${entry.quantity} ditambahkan`
+                );
+            })
+            .catch((error) => {
+                toast.error(error.response?.data?.message || `Gagal menambahkan ${entry.product.title}`);
+            })
+            .finally(() => {
+                productAddInFlightRef.current = false;
+                setQueuedProductAdds((current) => {
+                    const remaining = (current[queueKey] || 0) - entry.quantity;
+                    if (remaining <= 0) {
+                        const next = { ...current };
+                        delete next[queueKey];
+                        return next;
+                    }
+
+                    return { ...current, [queueKey]: remaining };
+                });
+
+                if (productAddQueueRef.current.size > 0) {
+                    productAddTimerRef.current = setTimeout(flushProductAddQueue, 0);
+                }
+            });
+    }, []);
+
+    const handleAddToCart = (product, unit = null) => {
+        if (!product?.id) return;
+
+        const queueKey = `${product.id}:${unit?.unit_id ?? "base"}`;
+        const queued = productAddQueueRef.current.get(queueKey);
+        if (queued) {
+            queued.quantity += 1;
+        } else {
+            productAddQueueRef.current.set(queueKey, { product, unit, quantity: 1 });
+        }
+
+        setQueuedProductAdds((current) => ({
+            ...current,
+            [queueKey]: (current[queueKey] || 0) + 1,
+        }));
+
+        clearTimeout(productAddTimerRef.current);
+        productAddTimerRef.current = setTimeout(flushProductAddQueue, 70);
     };
 
     // Handle update cart quantity
@@ -408,6 +497,7 @@ export default function Index({
             route("transactions.updateCart", cartId),
             { qty: newQty },
             {
+                only: ["carts", "carts_total"],
                 preserveScroll: true,
                 onSuccess: () => {
                     setUpdatingCartId(null);
@@ -437,7 +527,7 @@ export default function Index({
     const [isHolding, setIsHolding] = useState(false);
 
     const handleHoldCart = async (label = null) => {
-        if (carts.length === 0) {
+        if (cartItems.length === 0) {
             toast.error("Keranjang kosong");
             return;
         }
@@ -448,6 +538,7 @@ export default function Index({
             route("transactions.hold"),
             { label },
             {
+                only: ["carts", "carts_total", "heldCarts"],
                 preserveScroll: true,
                 onSuccess: () => {
                     toast.success("Transaksi ditahan");
@@ -621,7 +712,7 @@ export default function Index({
                     break;
                 case "F2":
                     e.preventDefault();
-                    if (carts.length > 0 && selectedCustomer)
+                    if (cartItems.length > 0 && selectedCustomer)
                         handleSubmitTransaction();
                     break;
                 case "F3":
@@ -644,16 +735,17 @@ export default function Index({
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [carts, selectedCustomer, mobileView, showShortcuts]);
+    }, [cartItems, selectedCustomer, mobileView, showShortcuts]);
 
     // Handle remove from cart
     const handleRemoveFromCart = (cartId) => {
         setRemovingItemId(cartId);
 
         router.delete(route("transactions.destroyCart", cartId), {
+            only: ["carts", "carts_total"],
             preserveScroll: true,
             onSuccess: () => {
-                toast.success("Item dihapus dari keranjang");
+                toast.success("Barang dihapus dari keranjang");
                 setRemovingItemId(null);
             },
             onError: () => {
@@ -663,9 +755,24 @@ export default function Index({
         });
     };
 
+    const handleCancelOrder = () => {
+        if (hasPendingProductAdds || !cartItems.length || isCancellingCart) return;
+        if (!window.confirm(`Batalkan pesanan ini? ${cartCount} item di keranjang akan dihapus.`)) return;
+
+        setIsCancellingCart(true);
+        router.delete(route("transactions.clearCart"), {
+            only: ["carts", "carts_total"],
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => toast.success("Pesanan dibatalkan dan keranjang dikosongkan."),
+            onError: () => toast.error("Pesanan gagal dibatalkan."),
+            onFinish: () => setIsCancellingCart(false),
+        });
+    };
+
     // Handle submit transaction
     const handleSubmitTransaction = () => {
-        if (carts.length === 0) {
+        if (cartItems.length === 0) {
             toast.error("Keranjang masih kosong");
             return;
         }
@@ -773,7 +880,7 @@ export default function Index({
                 bank_account_id: isBankTransfer ? selectedBankAccount?.id : null,
                 order_type: orderType,
                 note: orderNote || null,
-                items: carts.map((item) => ({
+                items: cartItems.map((item) => ({
                     product_id: item.product_id,
                     unit_id: item.unit?.id ?? item.unit_id ?? null,
                     qty: Number(item.qty),
@@ -860,30 +967,12 @@ export default function Index({
         );
     };
 
-    // Filter products including out of stock
-    const allProducts = useMemo(() => {
-        return products.filter((product) => {
-            const matchesCategory =
-                normalizedSelectedCategory === null ||
-                Number(product.category_id) === normalizedSelectedCategory;
-            const matchesSearch =
-                !searchQuery ||
-                product.title
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                product.barcode
-                    ?.toLowerCase()
-                    .includes(searchQuery.toLowerCase());
-            return matchesCategory && matchesSearch;
-        });
-    }, [products, normalizedSelectedCategory, searchQuery]);
-
     if (!activeCashierShift) {
         return (
             <>
                 <Head title="Buka Shift Kasir" />
 
-                <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-3xl items-center justify-center px-4 py-10">
+                <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-6xl items-center justify-center px-4 py-10">
                     <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
                         <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                             <IconWallet size={28} />
@@ -892,8 +981,67 @@ export default function Index({
                             Shift kasir belum dibuka
                         </h1>
                         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                            Buka shift terlebih dulu untuk mengaktifkan transaksi, keranjang, dan cash closing.
+                            Catat semua barang yang dibawa dari Gudang Pusat. Stok baru dipindahkan ke outlet dan shift dibuka setelah seluruh data tervalidasi.
                         </p>
+
+                        <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+                            <section className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h2 className="font-semibold text-slate-900 dark:text-white">Barang bawaan</h2>
+                                        <p className="text-xs text-slate-500">{openingInventory?.warehouse?.name || "Gudang Pusat"} · frozen, saus siap pakai, dan perlengkapan operasional.</p>
+                                    </div>
+                                    <input
+                                        value={openingItemSearch}
+                                        onChange={(event) => setOpeningItemSearch(event.target.value)}
+                                        placeholder="Cari barang persediaan…"
+                                        className="h-10 w-full rounded-xl border-slate-200 text-sm dark:border-slate-700 dark:bg-slate-800 sm:max-w-60"
+                                    />
+                                </div>
+                                <p className="mb-3 text-xs text-slate-500">Barang custom perlu didaftarkan dan diberi saldo oleh petugas gudang sebelum bisa dibawa. {can("ingredients-create") && <a href={route("ingredients.index")} className="font-semibold text-primary-600 hover:underline">Tambah barang persediaan</a>}</p>
+                                <div className="mb-3 flex gap-2">
+                                    {[{ value: "ingredient", label: "Frozen, saus & operasional" }, { value: "product", label: "Produk satuan" }].map((tab) => (
+                                        <button key={tab.value} type="button" onClick={() => setOpeningItemType(tab.value)} className={`rounded-xl px-3 py-2 text-xs font-semibold ${openingItemType === tab.value ? "bg-primary-600 text-white" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
+                                            {tab.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="grid max-h-72 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3 lg:grid-cols-4">
+                                    {(openingItemType === "product" ? openingInventory?.products || [] : openingInventory?.ingredients || [])
+                                        .filter((item) => item.name.toLowerCase().includes(openingItemSearch.trim().toLowerCase()))
+                                        .map((item) => {
+                                            const key = `${item.item_type}:${item.id}`;
+                                            const added = openingItems.some((row) => `${row.item_type}:${row.item_id}` === key);
+                                            return (
+                                                <button key={key} type="button" disabled={added} onClick={() => addOpeningItem(item)} className="rounded-xl border border-slate-200 p-3 text-left transition hover:border-primary-400 disabled:border-primary-300 disabled:bg-primary-50 disabled:text-primary-700 dark:border-slate-700 dark:bg-slate-800 dark:disabled:bg-primary-900/20">
+                                                    <span className="block truncate text-sm font-semibold">{item.name}</span>
+                                                    <span className="mt-1 block text-xs text-slate-500">Stok {item.available} {item.unit}</span>
+                                                    {added && <span className="mt-2 block text-[11px] font-semibold text-primary-600">Sudah ditambahkan</span>}
+                                                </button>
+                                            );
+                                        })}
+                                    {(openingItemType === "product" ? openingInventory?.products || [] : openingInventory?.ingredients || []).filter((item) => item.name.toLowerCase().includes(openingItemSearch.trim().toLowerCase())).length === 0 && (
+                                        <p className="col-span-full rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">Tidak ada barang tersedia di Gudang Pusat.</p>
+                                    )}
+                                </div>
+                            </section>
+
+                            <aside className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                                <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold text-slate-900 dark:text-white">Daftar bawaan</h2><span className="rounded-full bg-slate-100 px-2 py-1 text-xs dark:bg-slate-800">{openingItems.length}</span></div>
+                                <div className="max-h-64 space-y-2 overflow-y-auto">
+                                    {openingItems.length === 0 && <p className="rounded-xl border border-dashed p-5 text-center text-xs text-slate-500">Pilih menu atau bahan yang dibawa ke outlet.</p>}
+                                    {openingItems.map((item) => {
+                                        const key = `${item.item_type}:${item.item_id}`;
+                                        return <div key={key} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
+                                            <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-sm font-semibold">{item.name}</p><p className="text-[11px] text-slate-500">Tersedia {item.available} {item.unit}</p></div><button type="button" onClick={() => removeOpeningItem(key)} className="text-xs text-rose-600">Hapus</button></div>
+                                            <label className="mt-2 flex items-center gap-2 text-xs text-slate-500"><span>Jumlah dibawa</span><input type="number" min="0.0001" max={item.available} step={item.item_type === "product" ? 1 : 0.0001} value={item.quantity} onChange={(event) => updateOpeningItem(key, event.target.value)} className="h-9 min-w-0 flex-1 rounded-lg border-slate-200 text-right text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /><span>{item.unit}</span></label>
+                                        </div>;
+                                    })}
+                                </div>
+                                {errors?.opening_items && <p className="mt-2 text-xs text-rose-600">{errors.opening_items}</p>}
+                                {Object.entries(errors || {}).filter(([key]) => key.startsWith("opening_items.")).map(([key, message]) => <p key={key} className="mt-1 text-xs text-rose-600">{message}</p>)}
+                            </aside>
+                        </div>
 
                         <div className="mt-6 grid gap-4 md:grid-cols-2">
                             <div>
@@ -957,10 +1105,11 @@ export default function Index({
                                 <button
                                     type="button"
                                     onClick={handleOpenShift}
-                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-500 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+                                    disabled={isOpeningShift || (openingStockRequired && openingItems.length === 0) || openingItems.some((item) => !item.quantity || Number(item.quantity) > Number(item.available) || (item.item_type === "product" && !Number.isInteger(Number(item.quantity))))}
+                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-500 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <IconWallet size={18} />
-                                    <span>Buka Shift Sekarang</span>
+                                    <span>{isOpeningShift ? "Memproses stok…" : "Simpan Stok & Buka Shift"}</span>
                                 </button>
                             )}
                             <button
@@ -981,7 +1130,7 @@ export default function Index({
         <>
             <Head title="Transaksi" />
 
-            <div className="h-[calc(100vh-4rem)] flex flex-col lg:flex-row">
+            <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col lg:flex-row">
                 {/* Mobile Tab Switcher */}
                 <div className="lg:hidden flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                     <button
@@ -1018,14 +1167,14 @@ export default function Index({
                 {/* Left Panel - Products */}
                 <div
                     data-tour="pos-products"
-                    className={`flex-1 bg-slate-100 dark:bg-slate-950 overflow-hidden ${
+                    className={`min-h-0 flex-1 bg-slate-100 dark:bg-slate-950 overflow-hidden ${
                         mobileView !== "products"
                             ? "hidden lg:flex lg:flex-col"
                             : "flex flex-col"
                     }`}
                 >
                     <ProductGrid
-                        products={allProducts}
+                        products={products}
                         categories={categories}
                         selectedCategory={selectedCategory}
                         onCategoryChange={(categoryId) =>
@@ -1037,17 +1186,19 @@ export default function Index({
                         onSearchChange={setSearchQuery}
                         isSearching={isSearching}
                         onAddToCart={handleAddToCart}
-                        addingProductId={addingProductId}
+                        queuedProductAdds={queuedProductAdds}
                         searchInputRef={searchInputRef}
+                        cartCount={cartCount}
+                        cartTotal={payable}
+                        onOpenCart={() => setMobileView("cart")}
                     />
                 </div>
 
                 {/* Right Panel - Cart & Payment */}
                 <div
-                        className={`w-full min-w-0 lg:w-[420px] xl:w-[480px] flex flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 min-h-0 overflow-hidden ${
+                        className={`min-h-0 w-full min-w-0 flex flex-1 flex-col overflow-hidden border-l border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:w-[420px] lg:flex-none xl:w-[480px] ${
                         mobileView !== "cart" ? "hidden lg:flex" : "flex"
                     }`}
-                    style={{ height: "calc(100vh - 4rem)" }}
                 >
                     {/* Customer Select - Fixed */}
                     <div
@@ -1070,7 +1221,7 @@ export default function Index({
                         <div className="p-3 border-b border-slate-200 dark:border-slate-800">
                             <HeldTransactions
                                 heldCarts={heldCarts}
-                                hasActiveCart={carts.length > 0}
+                                hasActiveCart={cartItems.length > 0}
                             />
                         </div>
                     )}
@@ -1078,13 +1229,22 @@ export default function Index({
                     {/* Cart Items - Scrollable */}
                     <div data-tour="pos-cart" className="flex-1 overflow-y-auto min-h-0">
                         {/* Hold Button - at top of cart section */}
-                        {carts.length > 0 && (
-                            <div className="p-3 border-b border-slate-200 dark:border-slate-800">
+                        {cartItems.length > 0 && (
+                            <div className="grid grid-cols-2 gap-2 p-3 border-b border-slate-200 dark:border-slate-800">
                                 <HoldButton
-                                    hasItems={carts.length > 0}
+                                    hasItems={cartItems.length > 0}
                                     onHold={handleHoldCart}
                                     isHolding={isHolding}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={handleCancelOrder}
+                                    disabled={isCancellingCart || hasPendingProductAdds}
+                                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-rose-300 px-3 py-2 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                                >
+                                    <IconTrash size={14} />
+                                    Batalkan pesanan
+                                </button>
                             </div>
                         )}
 
@@ -1094,16 +1254,16 @@ export default function Index({
                                     <IconShoppingCart size={16} />
                                     Keranjang
                                 </h3>
-                                {carts.length > 0 && (
+                                {cartItems.length > 0 && (
                                     <span className="px-2.5 py-0.5 text-xs font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300 rounded-full whitespace-nowrap">
                                         {cartCount} item
                                     </span>
                                 )}
                             </div>
 
-                            {carts.length > 0 ? (
+                            {cartItems.length > 0 ? (
                                 <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
-                                    {carts.map((item) => (
+                                    {cartItems.map((item) => (
                                         (() => {
                                             const pricingItem =
                                                 pricingItemsByCartId[item.id];
@@ -1827,7 +1987,7 @@ export default function Index({
                                                 Loyalty Member
                                             </p>
                                             <p className="text-xs text-primary-600/80 dark:text-primary-400/80">
-                                                Tier {selectedCustomer.loyalty_tier} | saldo{" "}
+                                                Tingkat {selectedCustomer.loyalty_tier} | saldo{" "}
                                                 {pricingPreview?.summary
                                                     ?.available_loyalty_points ??
                                                     0}{" "}
@@ -1841,7 +2001,7 @@ export default function Index({
                             {selectedCustomer?.is_loyalty_member && (
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
-                                        Redeem Poin
+                                        Tukar Poin
                                     </label>
                                     <input
                                         type="text"
@@ -1956,7 +2116,7 @@ export default function Index({
                         {loyaltyDiscount > 0 && (
                             <div className="flex justify-between items-center mb-2 text-sm">
                                 <span className="text-slate-500">
-                                    Redeem Poin
+                                    Tukar Poin
                                 </span>
                                 <span className="text-primary-600">
                                     -{formatPrice(loyaltyDiscount)}
@@ -2014,15 +2174,16 @@ export default function Index({
                         <button
                             onClick={handleSubmitTransaction}
                             disabled={
-                                !carts.length ||
+                                !cartItems.length ||
                                 (!payLater &&
                                     paymentMethod === "cash" &&
                                     cash < payable) ||
                                 isLoadingPricing ||
-                                isSubmitting
+                                isSubmitting ||
+                                hasPendingProductAdds
                             }
                             className={`w-full h-12 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
-                                carts.length &&
+                                cartItems.length &&
                                 (paymentMethod !== "cash" || cash >= payable)
                                     && !isLoadingPricing
                                     ? "bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white shadow-lg shadow-primary-500/30"
@@ -2035,13 +2196,15 @@ export default function Index({
                                 <>
                                     <IconReceipt size={18} />
                                     <span>
-                                        {!carts.length
+                                        {!cartItems.length
                                             ? "Keranjang Kosong"
                                             : paymentMethod === "cash" &&
                                               cash < payable
                                             ? `Kurang ${formatPrice(
                                                   payable - cash
                                               )}`
+                                            : hasPendingProductAdds
+                                            ? "Menu sedang ditambahkan…"
                                             : isLoadingPricing
                                             ? "Menghitung Promo..."
                                             : "Selesaikan Transaksi"}

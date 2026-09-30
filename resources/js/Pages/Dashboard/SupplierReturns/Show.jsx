@@ -118,12 +118,12 @@ export default function Show({ return: ret }) {
             <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
                 <div className="space-y-6">
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Item Retur</h2>
+                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Barang Retur</h2>
                         <Table>
                             <Table.Thead>
                                 <tr>
                                     <Table.Th>Produk</Table.Th>
-                                    <Table.Th>Qty Retur</Table.Th>
+                                    <Table.Th>Jumlah Retur</Table.Th>
                                     <Table.Th>Harga</Table.Th>
                                     <Table.Th>Subtotal</Table.Th>
                                     <Table.Th>Alasan</Table.Th>

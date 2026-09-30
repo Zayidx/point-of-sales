@@ -40,7 +40,7 @@ export default function Create({ suppliers, products, ingredients = [], warehous
 
     const addItem = (entry) => {
         if (data.items.some((item) => item.item_type === entry.item_type && item.item_id === entry.id)) {
-            toast.error("Item sudah ada di daftar.");
+            toast.error("Barang sudah ada di daftar.");
             return;
         }
         setData("items", [
@@ -157,7 +157,7 @@ export default function Create({ suppliers, products, ingredients = [], warehous
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Item Pembelian</h2>
+                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Barang yang Dibeli</h2>
                         <div className="mb-4 flex gap-3">
                             <input
                                 type="text"
@@ -193,7 +193,7 @@ export default function Create({ suppliers, products, ingredients = [], warehous
                                     <thead>
                                         <tr className="border-b border-slate-200 dark:border-slate-700">
                                             <th className="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-200">Produk</th>
-                                            <th className="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">Qty</th>
+                                            <th className="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">Jumlah</th>
                                             <th className="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">Harga</th>
                                             <th className="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">Subtotal</th>
                                             <th className="w-16 px-3 py-2"></th>

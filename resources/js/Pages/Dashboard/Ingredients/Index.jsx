@@ -42,12 +42,12 @@ export default function Index({ ingredients, categories = [], units = [], wareho
 
     return (
         <>
-            <Head title="Bahan Baku" />
+            <Head title="Persediaan Gudang" />
             <ImportErrorsNotice errors={flash.importErrors} />
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Bahan Baku</h1>
-                    <p className="mt-1 text-sm text-slate-500">Simpan bahan dalam satuan dasar untuk stok, resep, dan perhitungan HPP.</p>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Persediaan Gudang</h1>
+                    <p className="mt-1 text-sm text-slate-500">Kelola stok frozen, saus siap pakai, kemasan, dan perlengkapan operasional dalam satuan masing-masing.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {can("ingredients-export") && <a href={route("export.ingredients")} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium dark:border-slate-700">Ekspor Excel</a>}
@@ -65,17 +65,17 @@ export default function Index({ ingredients, categories = [], units = [], wareho
             </div>
             {can("inventory-opening-stock-import") && <p className="mb-4 text-xs text-slate-500">Saldo awal hanya dapat dimasukkan untuk barang dan gudang yang belum memiliki stok maupun riwayat pergerakan.</p>}
             <form onSubmit={submit} className="mb-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 md:grid-cols-3">
-                <label className="text-sm font-medium">Kode<input required maxLength="40" value={form.data.code} onChange={(event) => form.setData("code", event.target.value)} className="mt-1 h-11 w-full rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-800" /></label>
-                <label className="text-sm font-medium">Nama bahan<input required maxLength="150" value={form.data.name} onChange={(event) => form.setData("name", event.target.value)} className="mt-1 h-11 w-full rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-800" /></label>
+                <label className="text-sm font-medium">Kode barang<input required maxLength="40" value={form.data.code} onChange={(event) => form.setData("code", event.target.value)} className="mt-1 h-11 w-full rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-800" /></label>
+                <label className="text-sm font-medium">Nama barang<input required maxLength="150" value={form.data.name} onChange={(event) => form.setData("name", event.target.value)} className="mt-1 h-11 w-full rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-800" /></label>
                 <label className="text-sm font-medium">Kategori<select value={form.data.ingredient_category_id} onChange={(event) => form.setData("ingredient_category_id", event.target.value)} className="mt-1 h-11 w-full rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-800"><option value="">Tanpa kategori</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
                 <label className="text-sm font-medium">Satuan dasar<select required value={form.data.base_unit_id} onChange={(event) => form.setData("base_unit_id", event.target.value)} className="mt-1 h-11 w-full rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-800">{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name} ({unit.symbol})</option>)}</select></label>
                 <label className="text-sm font-medium">Estimasi harga per satuan<input required type="number" min="0" step="0.01" value={form.data.default_unit_cost} onChange={(event) => form.setData("default_unit_cost", event.target.value)} className="mt-1 h-11 w-full rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-800" /></label>
-                <div className="flex items-end"><Button type="submit" label={form.processing ? "Menyimpan..." : "Tambah bahan"} disabled={form.processing || !units.length} className="bg-primary-600 text-white" /></div>
+                <div className="flex items-end"><Button type="submit" label={form.processing ? "Menyimpan..." : "Tambah barang"} disabled={form.processing || !units.length} className="bg-primary-600 text-white" /></div>
                 {Object.values(form.errors).length > 0 && <p className="text-sm text-rose-600 md:col-span-3">{Object.values(form.errors).join(" ")}</p>}
             </form>
             {canAdjustStock && warehouses.length > 0 && ingredients.data.length > 0 && (
                 <form onSubmit={submitAdjustment} className="mb-6 grid gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900 dark:bg-amber-950/20 md:grid-cols-5">
-                    <h2 className="text-base font-semibold md:col-span-5">Penyesuaian stok bahan baku</h2>
+                    <h2 className="text-base font-semibold md:col-span-5">Penyesuaian jumlah persediaan</h2>
                     <select required value={adjustment.data.ingredient_id} onChange={(event) => adjustment.setData("ingredient_id", event.target.value)} className="h-11 rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-800">{ingredients.data.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
                     <select required value={adjustment.data.warehouse_id} onChange={(event) => adjustment.setData("warehouse_id", event.target.value)} className="h-11 rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-800">{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}</select>
                     <input required type="number" step="0.0001" value={adjustment.data.quantity} onChange={(event) => adjustment.setData("quantity", event.target.value)} placeholder="Jumlah (+/-)" className="h-11 rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-800" />

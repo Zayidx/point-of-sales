@@ -260,7 +260,7 @@ const History = ({ transactions, filters, warehouses = [] }) => {
                                             Pelanggan
                                         </th>
                                         <th className="px-4 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                            Item
+                                            Barang
                                         </th>
                                         <th className="px-4 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                             Total
@@ -501,7 +501,7 @@ const History = ({ transactions, filters, warehouses = [] }) => {
                                         </div>
                                         <div>
                                             <p className="text-xs text-slate-500 dark:text-slate-400">
-                                                Item
+                                                Barang
                                             </p>
                                             <p className="font-medium">
                                                 {transaction.total_items ?? 0}

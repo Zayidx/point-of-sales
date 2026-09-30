@@ -29,14 +29,37 @@ class DimsumWeiguSeeder extends Seeder
         }
 
         foreach ([
+            ['code' => 'PCS', 'name' => 'Buah', 'symbol' => 'pcs'],
+            ['code' => 'BOX', 'name' => 'Kotak', 'symbol' => 'kotak'],
+            ['code' => 'KARTON', 'name' => 'Karton', 'symbol' => 'karton'],
+            ['code' => 'KG', 'name' => 'Kilogram', 'symbol' => 'kg'],
+            ['code' => 'LITER', 'name' => 'Liter', 'symbol' => 'L'],
+            ['code' => 'METER', 'name' => 'Meter', 'symbol' => 'm'],
+            ['code' => 'PAK', 'name' => 'Paket', 'symbol' => 'paket'],
+            ['code' => 'DUS', 'name' => 'Dus', 'symbol' => 'dus'],
             ['code' => 'GRAM', 'name' => 'Gram', 'symbol' => 'g'],
             ['code' => 'ML', 'name' => 'Mililiter', 'symbol' => 'ml'],
         ] as $unit) {
             Unit::updateOrCreate(['code' => $unit['code']], $unit);
         }
 
-        foreach (['Protein', 'Kulit & Tepung', 'Saus', 'Dairy', 'Bumbu', 'Kemasan'] as $name) {
+        foreach (['Protein', 'Kulit dan Tepung', 'Saus', 'Produk Susu', 'Bumbu', 'Kemasan', 'Sayuran'] as $name) {
             IngredientCategory::firstOrCreate(['name' => $name]);
+        }
+
+        $categoryAliases = [
+            'Kulit & Tepung' => 'Kulit dan Tepung',
+            'Dairy' => 'Produk Susu',
+        ];
+        foreach ($categoryAliases as $oldName => $newName) {
+            $old = IngredientCategory::where('name', $oldName)->first();
+            $new = IngredientCategory::where('name', $newName)->first();
+            if ($old && $new) {
+                $old->ingredients()->update(['ingredient_category_id' => $new->id]);
+                $old->delete();
+            } elseif ($old) {
+                $old->update(['name' => $newName]);
+            }
         }
 
         foreach ([
@@ -53,13 +76,12 @@ class DimsumWeiguSeeder extends Seeder
 
         foreach ([
             ['code' => 'CASH', 'name' => 'Tunai', 'type' => 'cash'],
-            ['code' => 'QRIS-1', 'name' => 'QRIS 1', 'type' => 'digital'],
-            ['code' => 'QRIS-2', 'name' => 'QRIS 2', 'type' => 'digital'],
-            ['code' => 'QRIS-3', 'name' => 'QRIS 3', 'type' => 'digital'],
+            ['code' => 'QRIS-1', 'name' => 'QRIS', 'type' => 'digital'],
             ['code' => 'GOFOOD', 'name' => 'GoFood / Online', 'type' => 'online'],
         ] as $index => $method) {
             PaymentMethod::updateOrCreate(['code' => $method['code']], $method + ['sort_order' => $index + 1, 'is_active' => true]);
         }
+        PaymentMethod::whereIn('code', ['QRIS-2', 'QRIS-3'])->update(['is_active' => false]);
 
         foreach (['Sewa', 'Lapak', 'Energi/Gas', 'Gaji Karyawan', 'Pembelanjaan Bahan', 'Pembelanjaan Operasional Outlet'] as $name) {
             ExpenseCategory::firstOrCreate(['name' => $name]);

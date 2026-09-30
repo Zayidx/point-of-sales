@@ -31,7 +31,7 @@ class SalesReportController extends Controller
         ]);
         $warehouseIds = $outletAccessService->warehousesFor($request->user())->pluck('id');
         $activeOutlet = $outletAccessService->activeOutlet($request);
-        if ($activeOutlet) {
+        if ($activeOutlet && ! $request->user()->hasRole('finance')) {
             $warehouseIds = $outletAccessService->warehousesFor($request->user())
                 ->where('outlet_id', $activeOutlet->id)
                 ->pluck('id');
@@ -91,7 +91,11 @@ class SalesReportController extends Controller
             'transactions' => $transactions,
             'summary' => $summary,
             'filters' => $filters,
-            'cashiers' => User::select('id', 'name')->orderBy('name')->get(),
+            'cashiers' => User::query()
+                ->whereHas('roles', fn ($query) => $query->where('name', 'cashier'))
+                ->select('id', 'name')
+                ->orderBy('name')
+                ->get(),
             'customers' => Customer::select('id', 'name')->orderBy('name')->get(),
             'warehouses' => $outletAccessService->warehousesFor($request->user()),
         ]);

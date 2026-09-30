@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class RecipeService
 {
-    public function createVersion(Product $menu, array $items, string|int $yieldQuantity = 1, ?string $notes = null, ?int $userId = null): RecipeVersion
+    public function createVersion(Product $menu, array $items, string|int $yieldQuantity = 1, ?string $notes = null, ?int $userId = null, ?int $unitId = null): RecipeVersion
     {
         validator(['yield_quantity' => $yieldQuantity, 'items' => $items], [
             'yield_quantity' => ['required', 'numeric', 'gt:0'],
@@ -21,11 +21,18 @@ class RecipeService
             'items.*.unit_id' => ['required', 'integer', 'exists:units,id'],
         ])->validate();
 
-        return DB::transaction(function () use ($menu, $items, $yieldQuantity, $notes, $userId) {
+        return DB::transaction(function () use ($menu, $items, $yieldQuantity, $notes, $userId, $unitId) {
             $lockedMenu = Product::whereKey($menu->id)->lockForUpdate()->firstOrFail();
+            if ($unitId !== null && ! $lockedMenu->units()->where('units.id', $unitId)->exists()) {
+                throw ValidationException::withMessages(['unit_id' => 'Satuan porsi harus terdaftar pada menu yang dipilih.']);
+            }
+            if ($unitId !== null && ! RecipeVersion::where('product_id', $lockedMenu->id)->whereNull('unit_id')->exists()) {
+                throw ValidationException::withMessages(['unit_id' => 'Simpan resep per PCS sebelum mengatur komposisi porsi.']);
+            }
             $versionNumber = ((int) RecipeVersion::where('product_id', $lockedMenu->id)->max('version_number')) + 1;
             $recipe = RecipeVersion::create([
                 'product_id' => $lockedMenu->id,
+                'unit_id' => $unitId,
                 'version_number' => $versionNumber,
                 'yield_quantity' => $yieldQuantity,
                 'notes' => $notes,

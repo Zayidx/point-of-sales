@@ -177,19 +177,19 @@ export default function Form({
                         {isEdit ? "Ubah Promo Harga" : "Buat Promo Harga"}
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Kelola promo standar, grosir, bundle, dan buy x get y dalam satu engine.
+                        Kelola promo standar, grosir, paket, dan beli x gratis y dalam satu sistem.
                     </p>
                 </div>
 
                 <form onSubmit={submit} className="space-y-6">
                     <CardSection
-                        title="Informasi Rule"
-                        description="Identitas dasar rule, jenis promo, dan prioritas penerapan."
+                        title="Informasi Aturan"
+                        description="Identitas dasar aturan, jenis promo, dan urutan penerapan."
                     >
                         <div className="grid gap-4 md:grid-cols-2">
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Nama Rule
+                                    Nama Aturan
                                 </label>
                                 <input
                                     type="text"
@@ -203,7 +203,7 @@ export default function Form({
                             </div>
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Jenis Rule
+                                    Jenis Aturan
                                 </label>
                                 <select
                                     value={data.kind}
@@ -222,7 +222,7 @@ export default function Form({
                             </div>
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Priority
+                                    Prioritas
                                 </label>
                                 <input
                                     type="number"
@@ -236,7 +236,7 @@ export default function Form({
                             </div>
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Qty Preview POS
+                                    Jumlah Pratinjau POS
                                 </label>
                                 <input
                                     type="number"
@@ -255,13 +255,13 @@ export default function Form({
                     </CardSection>
 
                     <CardSection
-                        title="Target & Scope"
+                        title="Sasaran dan Cakupan"
                         description="Tentukan produk/kategori yang terkena promo dan siapa yang berhak."
                     >
                         <div className="grid gap-4 md:grid-cols-2">
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Target Rule
+                                    Sasaran Aturan
                                 </label>
                                 <select
                                     value={data.target_type}
@@ -279,7 +279,7 @@ export default function Form({
                             </div>
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Scope Pelanggan
+                                    Cakupan Pelanggan
                                 </label>
                                 <select
                                     value={data.customer_scope}
@@ -342,7 +342,7 @@ export default function Form({
                             {data.customer_scope === "member" && (
                                 <div className="md:col-span-2">
                                     <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                        Tier Member yang Berhak
+                                        Tingkat Keanggotaan yang Berhak
                                     </label>
                                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                                         {tierOptions.map((tier) => {
@@ -388,7 +388,7 @@ export default function Form({
                     {(data.kind === "standard_discount" ||
                         data.kind === "qty_break") && (
                         <CardSection
-                            title="Diskon Rule"
+                            title="Diskon Aturan"
                             description="Tentukan tipe diskon yang dipakai rule ini."
                         >
                             <div className="grid gap-4 md:grid-cols-2">
@@ -432,8 +432,8 @@ export default function Form({
 
                     {data.kind === "qty_break" && (
                         <CardSection
-                            title="Qty Break / Grosir"
-                            description="Satu rule bisa memiliki beberapa breakpoint quantity."
+                            title="Batas Jumlah / Grosir"
+                            description="Satu aturan dapat memiliki beberapa tingkat jumlah."
                         >
                             <div className="space-y-3">
                                 {data.qty_breaks.map((row, index) => (
@@ -526,7 +526,7 @@ export default function Form({
                         >
                             <div className="mb-4">
                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Harga Bundle
+                                    Harga Paket
                                 </label>
                                 <input
                                     type="number"
@@ -576,7 +576,7 @@ export default function Form({
                                                 )
                                             }
                                             className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                                            placeholder="Qty"
+                                            placeholder="Jumlah"
                                         />
                                         <button
                                             type="button"
@@ -599,7 +599,7 @@ export default function Form({
                                     className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200"
                                 >
                                     <IconPlus size={16} />
-                                    Tambah Item Bundle
+                                    Tambah Barang Paket
                                 </button>
                             </div>
                         </CardSection>
@@ -686,7 +686,7 @@ export default function Form({
                                     className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200"
                                 >
                                     <IconPlus size={16} />
-                                    Tambah Item Buy/Get
+                                    Tambah Barang Beli/Gratis
                                 </button>
                             </div>
                         </CardSection>
@@ -761,8 +761,8 @@ export default function Form({
                             >
                                 <IconChartInfographic size={16} />
                                 {previewState.loading
-                                    ? "Memuat preview..."
-                                    : "Jalankan Preview"}
+                                    ? "Memuat pratinjau..."
+                                    : "Jalankan Pratinjau"}
                             </button>
                         </div>
 
@@ -771,7 +771,7 @@ export default function Form({
                                 <div className="grid gap-3 md:grid-cols-3">
                                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
                                         <p className="text-xs uppercase tracking-wide text-slate-500">
-                                            Base subtotal
+                                            Subtotal awal
                                         </p>
                                         <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">
                                             Rp {Number(previewState.data.summary.base_subtotal || 0).toLocaleString("id-ID")}
@@ -779,7 +779,7 @@ export default function Form({
                                     </div>
                                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
                                         <p className="text-xs uppercase tracking-wide text-slate-500">
-                                            Promo discount
+                                            Potongan promo
                                         </p>
                                         <p className="mt-1 text-lg font-semibold text-rose-600 dark:text-rose-300">
                                             Rp {Number(previewState.data.summary.promo_discount_total || 0).toLocaleString("id-ID")}
@@ -787,7 +787,7 @@ export default function Form({
                                     </div>
                                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
                                         <p className="text-xs uppercase tracking-wide text-slate-500">
-                                            After promo
+                                            Setelah promo
                                         </p>
                                         <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">
                                             Rp {Number(previewState.data.summary.subtotal_after_promo || 0).toLocaleString("id-ID")}
@@ -798,7 +798,7 @@ export default function Form({
                                 {previewGroups.length > 0 && (
                                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
                                         <h3 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">
-                                            Applied Groups
+                                            Kelompok Promo yang Diterapkan
                                         </h3>
                                         <div className="space-y-2">
                                             {previewGroups.map((group) => (
@@ -834,7 +834,7 @@ export default function Form({
                             className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-500 px-5 py-2.5 font-medium text-white hover:bg-primary-600 disabled:opacity-50"
                         >
                             <IconDeviceFloppy size={18} />
-                            {processing ? "Menyimpan..." : "Simpan Rule"}
+                            {processing ? "Menyimpan..." : "Simpan Aturan"}
                         </button>
                     </div>
                 </form>

@@ -6,7 +6,7 @@ import Button from "@/Components/Dashboard/Button";
 const money = (amount) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount || 0);
 const quantity = (amount) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(amount || 0);
 const dateText = (value) => value ? new Date(value).toLocaleDateString("id-ID") : "—";
-const paymentLabels = { cash: "Tunai", qris: "QRIS", qris_1: "QRIS 1", qris_2: "QRIS 2", qris_3: "QRIS 3", bank_transfer: "Transfer bank", gofood: "GoFood / Online", online: "GoFood / Online", split: "Pembayaran gabungan" };
+const paymentLabels = { cash: "Tunai", qris: "QRIS", qris_1: "QRIS", qris_2: "QRIS", qris_3: "QRIS", bank_transfer: "Transfer bank", gofood: "GoFood / Online", online: "GoFood / Online", split: "Pembayaran gabungan" };
 const movementLabels = { opening_stock: "Saldo awal", purchase_receipt: "Penerimaan pembelian", production_consumption: "Pemakaian produksi", production_output: "Hasil produksi", warehouse_to_outlet: "Gudang ke cabang", outlet_to_warehouse: "Cabang ke gudang", sale: "Penjualan", waste: "Barang rusak", stock_adjustment: "Penyesuaian stok", qc_reject: "Ditolak saat pemeriksaan" };
 
 function Section({ title, children }) {

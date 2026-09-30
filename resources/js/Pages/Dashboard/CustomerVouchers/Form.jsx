@@ -108,7 +108,7 @@ export default function Form({ mode = "create", voucher = null, customers = [] }
                                             {customer.name} | {customer.no_telp || "-"} |{" "}
                                             {customer.is_loyalty_member
                                                 ? `${customer.loyalty_tier} / ${customer.loyalty_points} poin`
-                                                : "non-member"}
+                                                : "bukan anggota"}
                                         </option>
                                     ))}
                                 </select>

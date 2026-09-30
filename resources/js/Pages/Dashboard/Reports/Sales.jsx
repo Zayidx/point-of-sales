@@ -370,7 +370,7 @@ const Sales = ({ transactions, summary, filters, cashiers, customers, warehouses
                                             Kasir
                                         </th>
                                         <th className="px-4 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
-                                            Item
+                                            Barang
                                         </th>
                                         <th className="px-4 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
                                             Total

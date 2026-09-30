@@ -216,7 +216,7 @@ export default function BarcodePrintModal({
                     className="p-4 overflow-auto"
                     style={{ maxHeight: "400px" }}
                 >
-                    <p className="text-xs text-slate-500 mb-3">Preview:</p>
+                    <p className="text-xs text-slate-500 mb-3">Pratinjau:</p>
                     <div
                         ref={printRef}
                         className="bg-white p-4 border border-dashed border-slate-300 rounded-lg"

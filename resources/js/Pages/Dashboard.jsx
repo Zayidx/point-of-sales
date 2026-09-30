@@ -10,7 +10,7 @@ export default function Dashboard() {
 
     return (
         <>
-            <Head title='Dashboard' />
+            <Head title='Dasbor' />
             <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4'>
                 <Widget
                     title={'Kategori'}

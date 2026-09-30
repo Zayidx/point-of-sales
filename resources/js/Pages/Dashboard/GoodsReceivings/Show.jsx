@@ -57,7 +57,7 @@ export default function Show({ receiving }) {
             <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                     <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-                        Item Diterima
+                        Barang Diterima
                     </h2>
                     <Table>
                         <Table.Thead>
@@ -78,7 +78,7 @@ export default function Show({ receiving }) {
                                         <tr key={item.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                             <Table.Td>
                                                 <p className="font-medium text-slate-800 dark:text-slate-200">
-                                                    {item.product?.title || item.ingredient?.name || "Item"}
+                                                    {item.product?.title || item.ingredient?.name || "Barang"}
                                                 </p>
                                                 <p className="text-xs text-slate-500">{item.product?.sku || item.ingredient?.code || "-"}</p>
                                             </Table.Td>

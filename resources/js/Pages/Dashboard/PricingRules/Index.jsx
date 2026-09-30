@@ -22,11 +22,11 @@ const formatCurrency = (value = 0) =>
 
 const discountLabel = (rule) => {
     if (rule.kind === "bundle_price") {
-        return `Bundle ${formatCurrency(rule.discount_value)}`;
+        return `Paket ${formatCurrency(rule.discount_value)}`;
     }
 
     if (rule.kind === "buy_x_get_y") {
-        return `${rule.buy_get_items_count || 0} item rule`;
+        return `${rule.buy_get_items_count || 0} aturan barang`;
     }
 
     if (rule.discount_type === "percentage") {
@@ -58,7 +58,7 @@ const customerScopeLabel = (scope) => {
 
 const kindLabel = (kind) => {
     if (kind === "qty_break") return "Grosir";
-    if (kind === "bundle_price") return "Bundle";
+    if (kind === "bundle_price") return "Paket";
     if (kind === "buy_x_get_y") return "BXGY";
     return "Standar";
 };
@@ -95,7 +95,7 @@ export default function Index({ rules, filters, summary = {}, recentAudits = [] 
                             href={route("pricing-rules.create")}
                             icon={<IconCirclePlus size={18} />}
                             className="bg-primary-500 text-white shadow-lg shadow-primary-500/30 hover:bg-primary-600"
-                            label="Buat Rule"
+                            label="Buat Aturan"
                         />
                     )}
                 </div>
@@ -130,7 +130,7 @@ export default function Index({ rules, filters, summary = {}, recentAudits = [] 
                                 onChange={(event) =>
                                     handleFilterChange("search", event.target.value)
                                 }
-                                placeholder="Cari nama rule..."
+                                placeholder="Cari nama aturan..."
                                 className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 pr-11 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                             />
                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
@@ -170,22 +170,22 @@ export default function Index({ rules, filters, summary = {}, recentAudits = [] 
                             <option value="">Semua Jenis</option>
                             <option value="standard_discount">Standar</option>
                             <option value="qty_break">Grosir</option>
-                            <option value="bundle_price">Bundle</option>
+                            <option value="bundle_price">Paket</option>
                             <option value="buy_x_get_y">BXGY</option>
                         </select>
                     </div>
                 </div>
 
-                <Table.Card title="Daftar Rule Pricing">
+                <Table.Card title="Daftar Aturan Harga">
                     <Table>
                         <Table.Thead>
                             <tr>
-                                <Table.Th>Rule</Table.Th>
+                                <Table.Th>Aturan</Table.Th>
                                 <Table.Th>Target</Table.Th>
-                                <Table.Th>Scope</Table.Th>
+                                <Table.Th>Cakupan</Table.Th>
                                 <Table.Th>Jenis</Table.Th>
                                 <Table.Th>Diskon</Table.Th>
-                                <Table.Th>Priority</Table.Th>
+                                <Table.Th>Prioritas</Table.Th>
                                 <Table.Th>Status</Table.Th>
                                 <Table.Th className="w-28 text-center">Aksi</Table.Th>
                             </tr>

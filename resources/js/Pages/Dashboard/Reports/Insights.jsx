@@ -98,7 +98,7 @@ const promoStatusConfig = {
 const promoKindLabel = {
     standard_discount: "Discount",
     qty_break: "Grosir",
-    bundle_price: "Bundle",
+    bundle_price: "Paket",
     buy_x_get_y: "BXGY",
 };
 
@@ -556,7 +556,7 @@ export default function Insights({
                             <tr>
                                 <Table.Th>Produk</Table.Th>
                                 <Table.Th>Kategori</Table.Th>
-                                <Table.Th className="text-right">Qty</Table.Th>
+                                    <Table.Th className="text-right">Jumlah</Table.Th>
                                 <Table.Th className="text-right">Omzet</Table.Th>
                                 <Table.Th className="text-right">Laba</Table.Th>
                             </tr>
@@ -657,7 +657,7 @@ export default function Insights({
                         <Table.Thead>
                             <tr>
                                 <Table.Th>{marginView === "product" ? "Produk" : "Kategori"}</Table.Th>
-                                <Table.Th className="text-right">Qty</Table.Th>
+                                    <Table.Th className="text-right">Jumlah</Table.Th>
                                 <Table.Th className="text-right">Omzet</Table.Th>
                                 <Table.Th className="text-right">Laba</Table.Th>
                                 <Table.Th className="text-right">Margin %</Table.Th>
@@ -962,7 +962,7 @@ export default function Insights({
                         <Table>
                             <Table.Thead>
                                 <tr>
-                                    <Table.Th>Rule</Table.Th>
+                                    <Table.Th>Aturan</Table.Th>
                                     <Table.Th>Tipe</Table.Th>
                                     <Table.Th>Status</Table.Th>
                                     <Table.Th>Periode</Table.Th>
@@ -1146,7 +1146,7 @@ export default function Insights({
                             <Table.Thead>
                                 <tr>
                                     <Table.Th>Anggota</Table.Th>
-                                    <Table.Th>Tier</Table.Th>
+                                    <Table.Th>Tingkat Keanggotaan</Table.Th>
                                     <Table.Th className="text-right">Poin</Table.Th>
                                     <Table.Th className="text-right">Total Belanja</Table.Th>
                                 </tr>

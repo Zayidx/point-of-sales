@@ -12,6 +12,7 @@ class RecipeCostService
     public function estimate(Product $menu, Warehouse $warehouse): array
     {
         $recipe = RecipeVersion::where('product_id', $menu->id)
+            ->whereNull('unit_id')
             ->orderByDesc('version_number')
             ->with('items.ingredient')
             ->first();

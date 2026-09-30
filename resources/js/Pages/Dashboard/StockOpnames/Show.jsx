@@ -218,7 +218,7 @@ export default function Show({
             },
             {
                 preserveScroll: true,
-                onSuccess: () => toast.success("Item opname diperbarui"),
+                onSuccess: () => toast.success("Barang opname diperbarui"),
                 onError: () => toast.error("Gagal memperbarui item opname"),
                 onFinish: () => setSavingItemId(null),
             }
@@ -295,14 +295,14 @@ export default function Show({
             </div>
 
             <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <SummaryCard label="Total Item" value={summary.totalItems} />
+                <SummaryCard label="Total Barang" value={summary.totalItems} />
                 <SummaryCard
-                    label="Item Sesuai"
+                    label="Barang Sesuai"
                     value={summary.matchedItems}
                     tone="success"
                 />
                 <SummaryCard
-                    label="Item Selisih"
+                    label="Barang Berselisih"
                     value={summary.differentItems}
                     tone="warning"
                 />
@@ -322,7 +322,7 @@ export default function Show({
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                                Item Opname Stok
+                                Barang Opname Stok
                             </h2>
                             {canManageDraft && (
                                 <Button

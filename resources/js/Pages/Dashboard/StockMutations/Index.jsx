@@ -65,9 +65,9 @@ export default function Index({ stockMutations, products, warehouses = [], filte
                     className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
                     <option value="">Semua Tipe</option>
-                    <option value="in">In</option>
-                    <option value="out">Out</option>
-                    <option value="adjustment">Adjustment</option>
+                    <option value="in">Masuk</option>
+                    <option value="out">Keluar</option>
+                    <option value="adjustment">Penyesuaian</option>
                 </select>
 
                 <select
@@ -106,8 +106,8 @@ export default function Index({ stockMutations, products, warehouses = [], filte
                         <tr>
                             <Table.Th>Produk</Table.Th>
                             <Table.Th>Tipe</Table.Th>
-                            <Table.Th>Qty</Table.Th>
-                            <Table.Th>Before / After</Table.Th>
+                            <Table.Th>Jumlah</Table.Th>
+                            <Table.Th>Sebelum / Sesudah</Table.Th>
                             <Table.Th>Gudang</Table.Th>
                             <Table.Th>Referensi</Table.Th>
                             <Table.Th>Dibuat Oleh</Table.Th>

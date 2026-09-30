@@ -1,144 +1,68 @@
-import React, { useState, useRef, useEffect } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { usePage, router } from "@inertiajs/react";
-import { IconLogout, IconRotate } from "@tabler/icons-react";
-import { useForm } from "@inertiajs/react";
+import { router, useForm } from "@inertiajs/react";
 import axios from "axios";
-import MenuLink from "@/Utils/Menu";
-import LinkItem from "./LinkItem";
-import LinkItemDropdown from "./LinkItemDropdown";
+import { IconLogout, IconRotate } from "@tabler/icons-react";
 import i18n from "@/i18n";
-export default function AuthDropdown({ auth, isMobile }) {
-    // define usefrom
+
+export default function AuthDropdown({ auth }) {
     const { post } = useForm();
-    // define url from usepage
-    const { url } = usePage();
+    const avatarUrl = auth.user.avatar;
+    const userInitial = auth.user.name?.charAt(0)?.toUpperCase() ?? auth.user.email?.charAt(0)?.toUpperCase() ?? "?";
 
-    // define state isToggle
-    const [isToggle, setIsToggle] = useState(false);
-    // define state isOpen
-    const [isOpen, setIsOpen] = useState(false);
-    // define ref dropdown
-    const dropdownRef = useRef(null);
-
-    // define method handleClickOutside
-    const handleClickOutside = (event) => {
-        if (
-            dropdownRef.current &&
-            !dropdownRef.current.contains(event.target)
-        ) {
-            setIsToggle(false);
-        }
-    };
-
-    // get menu from utils
-    const menuNavigation = MenuLink();
-
-    // define useEffect
-    useEffect(() => {
-        // add event listener
-        window.addEventListener("mousedown", handleClickOutside);
-
-        // remove event listener
-        return () => {
-            window.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, []);
-
-    // define function logout
-    const logout = async (e) => {
-        e.preventDefault();
-
+    const logout = (event) => {
+        event.preventDefault();
         post(route("logout"));
     };
 
-    const resetTours = (e) => {
-        e.preventDefault();
-
-        // ponytail: plain axios — Inertia router rejects the JSON-only response
+    const resetTours = (event) => {
+        event.preventDefault();
         axios
             .post(route("tours.reset"), {}, { headers: { Accept: "application/json" } })
             .then(() => router.reload({ only: ["auth"] }));
     };
 
-    const avatarUrl = auth.user.avatar;
-    const userInitial =
-        auth.user.name?.charAt(0)?.toUpperCase() ??
-        auth.user.email?.charAt(0)?.toUpperCase() ??
-        "?";
-
     return (
-        <>
-            {isMobile === false ? (
-                <Menu className="relative z-10" as="div">
-                    <Menu.Button className="flex items-center rounded-full">
-                        {avatarUrl ? (
-                            <img
-                                src={avatarUrl}
-                                alt={auth.user.name}
-                                className="w-10 h-10 rounded-full object-cover"
-                            />
-                        ) : (
-                            <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-semibold">
-                                {userInitial}
-                            </div>
+        <Menu className="relative z-40" as="div">
+            <Menu.Button
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                aria-label={`Menu akun ${auth.user.name}`}
+            >
+                {avatarUrl ? (
+                    <img src={avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+                ) : (
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-700">
+                        {userInitial}
+                    </span>
+                )}
+            </Menu.Button>
+            <Transition
+                enter="transition duration-100 ease-out"
+                enterFrom="scale-95 opacity-0"
+                enterTo="scale-100 opacity-100"
+                leave="transition duration-75 ease-in"
+                leaveFrom="scale-100 opacity-100"
+                leaveTo="scale-95 opacity-0"
+            >
+                <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl focus:outline-none dark:border-slate-700 dark:bg-slate-900">
+                    <p className="truncate px-3 py-2 text-xs text-slate-500 dark:text-slate-400">{auth.user.name}</p>
+                    <Menu.Item>
+                        {({ active }) => (
+                            <button onClick={resetTours} className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm ${active ? "bg-slate-100 dark:bg-slate-800" : ""}`}>
+                                <IconRotate size={18} />
+                                {i18n.t("tour.reset")}
+                            </button>
                         )}
-                    </Menu.Button>
-                    <Transition
-                        enter="transition duration-100 ease-out"
-                        enterFrom="transform scale-95 opacity-0"
-                        enterTo="transform scale-100 opacity-100"
-                        leave="transition duration-75 ease-out"
-                        leaveFrom="transform scale-100 opacity-100"
-                        leaveTo="transform scale-95 opacity-0"
-                    >
-                        <Menu.Items className="absolute rounded-lg w-48 border mt-2 py-2 right-0 z-[100] bg-white dark:bg-gray-950 dark:border-gray-900">
-                            <div className="flex flex-col gap-1.5 divide-y divide-gray-100 dark:divide-gray-900">
-                                <Menu.Item>
-                                    <button
-                                        onClick={resetTours}
-                                        className="px-3 py-1.5 text-sm flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-                                    >
-                                        <IconRotate
-                                            strokeWidth={"1.5"}
-                                            size={"20"}
-                                        />
-                                        {i18n.t("tour.reset")}
-                                    </button>
-                                </Menu.Item>
-                                <Menu.Item>
-                                    <button
-                                        onClick={logout}
-                                        className="px-3 py-1.5 text-sm flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-                                    >
-                                        <IconLogout
-                                            strokeWidth={"1.5"}
-                                            size={"20"}
-                                        />
-                                        Logout
-                                    </button>
-                                </Menu.Item>
-                            </div>
-                        </Menu.Items>
-                    </Transition>
-                </Menu>
-            ) : (
-                <div ref={dropdownRef}>
-                    <div className="flex items-center">
-                        {avatarUrl ? (
-                            <img
-                                src={avatarUrl}
-                                alt={auth.user.name}
-                                className="w-10 h-10 rounded-full object-cover"
-                            />
-                        ) : (
-                            <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-semibold">
-                                {userInitial}
-                            </div>
+                    </Menu.Item>
+                    <Menu.Item>
+                        {({ active }) => (
+                            <button onClick={logout} className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-rose-600 ${active ? "bg-rose-50 dark:bg-rose-950/30" : ""}`}>
+                                <IconLogout size={18} />
+                                Keluar
+                            </button>
                         )}
-                    </div>
-                </div>
-            )}
-        </>
+                    </Menu.Item>
+                </Menu.Items>
+            </Transition>
+        </Menu>
     );
 }

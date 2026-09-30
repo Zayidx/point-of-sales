@@ -40,7 +40,7 @@ const releases = [
         items: [
             "Upgrade Laravel 12 → 13",
             "Inertia v3 + React 19",
-            "Multi-language (Indonesia & English)",
+            "Dukungan beberapa bahasa, termasuk Indonesia dan Inggris",
         ],
     },
     {
@@ -109,7 +109,7 @@ const releases = [
     },
     {
         version: "v2.10.0",
-        tag: "Printing",
+        tag: "Pencetakan",
         date: "Sep 2026",
         items: ["Auto-print dan ESC/POS WebUSB"],
     },

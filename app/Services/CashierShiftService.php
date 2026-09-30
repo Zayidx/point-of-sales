@@ -191,6 +191,7 @@ class CashierShiftService
         ?string $closeNotes = null,
         bool $forceClose = false,
         ?array $closingStock = null,
+        ?array $closingIngredients = null,
     ): CashierShift {
         if (! $shift->isOpen()) {
             throw ValidationException::withMessages([
@@ -198,7 +199,7 @@ class CashierShiftService
             ]);
         }
 
-        return DB::transaction(function () use ($shift, $actor, $actualCash, $closeNotes, $forceClose, $closingStock) {
+        return DB::transaction(function () use ($shift, $actor, $actualCash, $closeNotes, $forceClose, $closingStock, $closingIngredients) {
             $lockedShift = CashierShift::query()->lockForUpdate()->findOrFail($shift->id);
 
             if (! $lockedShift->isOpen()) {
@@ -249,6 +250,10 @@ class CashierShiftService
                 $this->returnClosingStockToCentral($lockedShift, $provided, $expectedRows, $actor);
             }
 
+            if ($closingIngredients !== null) {
+                $this->returnClosingIngredientsToCentral($lockedShift, $closingIngredients, $actor);
+            }
+
             $lockedShift->update([
                 'actual_cash' => $actualCash,
                 'expected_cash' => $summary['expected_cash'],
@@ -293,6 +298,79 @@ class CashierShiftService
 
             return $lockedShift->fresh(['user:id,name', 'openedBy:id,name', 'closedBy:id,name']);
         });
+    }
+
+    private function returnClosingIngredientsToCentral(CashierShift $shift, array $closingIngredients, User $actor): void
+    {
+        $openingItems = $shift->openingItems()
+            ->where('item_type', 'ingredient')
+            ->lockForUpdate()
+            ->get();
+        $provided = collect($closingIngredients)->keyBy(fn (array $item) => (int) $item['opening_item_id']);
+        $expectedIds = $openingItems->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+        $providedIds = $provided->keys()->map(fn ($id) => (int) $id)->sort()->values()->all();
+
+        if ($providedIds !== $expectedIds) {
+            throw ValidationException::withMessages([
+                'closing_ingredients' => 'Hitung sisa seluruh bahan yang dibawa sebelum menutup shift.',
+            ]);
+        }
+
+        $central = Warehouse::query()->where('code', 'PUSAT')->where('is_active', true)->lockForUpdate()->first();
+        if (! $central) {
+            throw ValidationException::withMessages(['closing_ingredients' => 'Gudang Pusat tidak ditemukan.']);
+        }
+
+        $ledger = app(InventoryLedgerService::class);
+        foreach ($openingItems as $openingItem) {
+            $actual = (float) $provided->get($openingItem->id)['actual_quantity'];
+            $issued = (float) $openingItem->quantity;
+            if ($actual > $issued) {
+                throw ValidationException::withMessages([
+                    'closing_ingredients' => 'Sisa '.$openingItem->ingredient?->name.' tidak boleh melebihi jumlah yang dibawa saat shift dibuka.',
+                ]);
+            }
+
+            $outletBalanceKey = "warehouse:{$shift->warehouse_id}:ingredient:{$openingItem->ingredient_id}";
+            $outletBalance = InventoryBalance::where('balance_key', $outletBalanceKey)->lockForUpdate()->first();
+            $systemQuantity = (float) ($outletBalance?->quantity ?? 0);
+            if ($actual > $systemQuantity) {
+                throw ValidationException::withMessages([
+                    'closing_ingredients' => 'Sisa fisik '.$openingItem->ingredient?->name.' melebihi stok tercatat di outlet.',
+                ]);
+            }
+
+            $ingredient = $openingItem->ingredient;
+            $unitCost = (string) ($outletBalance?->average_unit_cost ?? $openingItem->unit_cost);
+            $adjustment = $actual - $systemQuantity;
+            if (abs($adjustment) >= 0.00005) {
+                $ledger->record([
+                    'idempotency_key' => "shift-closing:{$shift->id}:ingredient:{$ingredient->id}:count-adjustment",
+                    'item_type' => 'ingredient', 'item_id' => $ingredient->id, 'location_type' => 'warehouse',
+                    'location_id' => $shift->warehouse_id, 'movement_type' => 'stock_adjustment',
+                    'quantity' => (string) $adjustment, 'unit_id' => $openingItem->unit_id, 'unit_cost' => $unitCost,
+                    'reference_type' => CashierShift::class, 'reference_id' => $shift->id,
+                    'reference_number' => 'SHIFT-'.$shift->id, 'notes' => 'Penyesuaian hasil timbang saat penutupan shift.',
+                    'created_by' => $actor->id,
+                ]);
+            }
+
+            if ($actual > 0) {
+                foreach ([[$shift->warehouse_id, -$actual], [$central->id, $actual]] as [$warehouseId, $quantity]) {
+                    $ledger->record([
+                        'idempotency_key' => "shift-closing:{$shift->id}:ingredient:{$ingredient->id}:warehouse:{$warehouseId}",
+                        'item_type' => 'ingredient', 'item_id' => $ingredient->id, 'location_type' => 'warehouse',
+                        'location_id' => $warehouseId, 'movement_type' => 'outlet_to_warehouse',
+                        'quantity' => (string) $quantity, 'unit_id' => $openingItem->unit_id, 'unit_cost' => $unitCost,
+                        'reference_type' => CashierShift::class, 'reference_id' => $shift->id,
+                        'reference_number' => 'SHIFT-'.$shift->id, 'notes' => 'Pengembalian sisa bahan ke Gudang Pusat.',
+                        'created_by' => $actor->id,
+                    ]);
+                }
+            }
+
+            $openingItem->update(['closing_quantity' => $actual]);
+        }
     }
 
     private function returnClosingStockToCentral(CashierShift $shift, $provided, $expectedRows, User $actor): void

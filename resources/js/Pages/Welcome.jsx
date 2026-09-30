@@ -45,9 +45,9 @@ const menuCategories = [
     {
         id: "paket-besar", title: "Paket Besar",
         items: [
-            { name: "Big Package Dimsum Mix", variants: [{ label: "Paket", price: 90000 }] },
-            { name: "Big Package Dimsum Mentai", variants: [{ label: "Paket", price: 85000 }] },
-            { name: "Big Package Dimsum Cheesemelt", variants: [{ label: "Paket", price: 100000 }] },
+            { name: "Paket Besar Dimsum Mix", variants: [{ label: "Paket", price: 90000 }] },
+            { name: "Paket Besar Dimsum Mentai", variants: [{ label: "Paket", price: 85000 }] },
+            { name: "Paket Besar Dimsum Cheesemelt", variants: [{ label: "Paket", price: 100000 }] },
         ],
     },
 ];

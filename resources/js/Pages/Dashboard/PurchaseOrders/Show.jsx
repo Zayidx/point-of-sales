@@ -140,8 +140,8 @@ export default function Show({ order }) {
                             <Table.Thead>
                                 <tr>
                                     <Table.Th>Produk</Table.Th>
-                                    <Table.Th>Qty Dipesan</Table.Th>
-                                    <Table.Th>Qty Diterima</Table.Th>
+                                    <Table.Th>Jumlah Dipesan</Table.Th>
+                                    <Table.Th>Jumlah Diterima</Table.Th>
                                     <Table.Th>Sisa</Table.Th>
                                     <Table.Th>Harga Satuan</Table.Th>
                                     <Table.Th>Subtotal</Table.Th>
@@ -155,7 +155,7 @@ export default function Show({ order }) {
                                             <tr key={item.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                                 <Table.Td>
                                                     <p className="font-medium text-slate-800 dark:text-slate-200">
-                                                        {item.product?.title || item.ingredient?.name || "Item"}
+                                                        {item.product?.title || item.ingredient?.name || "Barang"}
                                                     </p>
                                                     <p className="text-xs text-slate-500">{item.product?.sku || item.ingredient?.code || "-"}</p>
                                                 </Table.Td>
@@ -194,7 +194,7 @@ export default function Show({ order }) {
                                     <tr>
                                         <Table.Th>Dokumen</Table.Th>
                                         <Table.Th>Tanggal Terima</Table.Th>
-                                        <Table.Th>Item</Table.Th>
+                                        <Table.Th>Barang</Table.Th>
                                         <Table.Th>Aksi</Table.Th>
                                     </tr>
                                 </Table.Thead>

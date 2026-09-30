@@ -53,7 +53,7 @@ function CustomerCard({ customer, canUpdate, canDelete }) {
                             <span className="inline-flex rounded-full bg-primary-100 px-2 py-0.5 text-[11px] font-semibold text-primary-700 dark:bg-primary-950/40 dark:text-primary-300">
                                 {customer.is_loyalty_member
                                     ? customer.loyalty_tier
-                                    : "non-member"}
+                                    : "bukan anggota"}
                             </span>
                             <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                                 {customer.loyalty_points || 0} poin
@@ -284,7 +284,7 @@ export default function Index({ customers }) {
                                                 <span className="text-xs font-semibold text-primary-600 dark:text-primary-300">
                                                     {customer.is_loyalty_member
                                                         ? customer.loyalty_tier
-                                                        : "non-member"}
+                                                        : "bukan anggota"}
                                                 </span>
                                                 <span className="text-xs text-slate-500 dark:text-slate-400">
                                                     {customer.loyalty_points ||

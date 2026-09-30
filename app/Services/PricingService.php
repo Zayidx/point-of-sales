@@ -148,12 +148,14 @@ class PricingService
             ])
             ->first();
 
+        $baseUnitPrice = $this->basePriceFor($product, $customer, $outlet);
+
         return [
-            'base_unit_price' => $this->basePriceFor($product, $customer, $outlet),
-            'effective_unit_price' => $this->basePriceFor($product, $customer, $outlet),
+            'base_unit_price' => $baseUnitPrice,
+            'effective_unit_price' => $baseUnitPrice,
             'quantity' => $quantity,
-            'line_base_total' => $this->basePriceFor($product, $customer, $outlet) * $quantity,
-            'line_total' => $this->basePriceFor($product, $customer, $outlet) * $quantity,
+            'line_base_total' => $baseUnitPrice * $quantity,
+            'line_total' => $baseUnitPrice * $quantity,
             'line_discount_total' => 0,
             'pricing_rule' => $complexRule ? $this->serializeRule($complexRule, false) : null,
         ];

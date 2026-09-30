@@ -14,9 +14,9 @@ use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionTender;
-use App\Models\Warehouse;
 use App\Services\AuditLogService;
 use App\Services\BatchService;
+use App\Services\CashierShiftOpeningStockService;
 use App\Services\CashierShiftService;
 use App\Services\CheckoutService;
 use App\Services\LoyaltyService;
@@ -68,115 +68,115 @@ class TransactionController extends Controller
             ->latest()
             ->get();
 
-        $initialPricingPreview = $this->loyaltyService->previewCheckout(
-            $this->pricingService->previewCart($carts, null, null, $outlet)
-        );
-
-        // Get held carts grouped by hold_id
-        $heldCarts = Cart::with('product:id,title,sell_price,image')
-            ->where('cashier_id', $userId)
-            ->held()
-            ->get()
-            ->groupBy('hold_id')
-            ->map(function ($items, $holdId) {
-                $first = $items->first();
-
-                return [
-                    'hold_id' => $holdId,
-                    'label' => $first->hold_label,
-                    'held_at' => $first->held_at?->toISOString(),
-                    'items_count' => $items->sum('qty'),
-                    'total' => $items->sum('price'),
-                ];
-            })
-            ->values();
-
-        // get all customers
-        $customers = Customer::latest()->get();
-
-        // get products with stock > 0 in active warehouse
-        $products = Product::with(['category:id,name', 'units'])
-            ->select('id', 'barcode', 'title', 'description', 'image', 'buy_price', 'sell_price', 'stock', 'category_id')
-            ->when($warehouseId, function ($q) use ($warehouseId) {
-                $q->whereHas('warehouses', fn ($w) => $w->where('product_warehouse.warehouse_id', $warehouseId)
-                    ->where('product_warehouse.stock', '>', 0));
-            }, function ($q) {
-                $q->where('stock', '>', 0);
-            })
-            ->orderBy('title')
-            ->get();
-        $pricingBadges = $this->pricingService->previewProducts($products, null, null, $outlet);
-        $products = $products->map(function (Product $product) use ($pricingBadges) {
-            $pricing = $pricingBadges->get($product->id);
-
-            return [
-                ...$product->toArray(),
-                'units' => $product->units->map(fn ($u) => [
-                    'unit_id' => $u->id,
-                    'code' => $u->code,
-                    'is_base' => (bool) $u->pivot->is_base,
-                    'conversion_factor' => (float) $u->pivot->conversion_factor,
-                    'sell_price' => (int) $u->pivot->sell_price,
-                    'barcode' => $u->pivot->barcode,
-                ]),
-                'pricing_badge' => $pricing && ! empty($pricing['pricing_rule']) ? [
-                    'label' => $pricing['pricing_rule']['label'],
-                    'promo_price' => $pricing['pricing_rule']['price_context']
-                        ? $pricing['effective_unit_price']
-                        : null,
-                    'base_price' => $pricing['base_unit_price'],
-                    'kind' => $pricing['pricing_rule']['kind'],
-                ] : null,
-            ];
-        });
-
-        // get all categories
-        $categories = Category::select('id', 'name', 'image')
-            ->orderBy('name')
-            ->get();
-
         $carts_total = 0;
         foreach ($carts as $cart) {
             $carts_total += $cart->price;
         }
 
-        $paymentMethods = PaymentMethod::query()
-            ->where('is_active', true)
-            ->whereNotIn('code', ['CASH', 'GOFOOD'])
-            ->orderBy('sort_order')
-            ->get(['code', 'name'])
-            ->map(fn (PaymentMethod $method) => [
-                'value' => strtolower(str_replace('-', '_', $method->code)),
-                'label' => $method->name,
-                'description' => 'Pembayaran dicatat langsung oleh kasir.',
-            ])
-            ->values();
-
-        // Rekening aktif hanya dipakai untuk transfer manual.
-        $bankAccounts = BankAccount::active()->forOutlet($outlet)->ordered()->get();
-
-        if ($bankAccounts->isNotEmpty()) {
-            $paymentMethods->push([
-                'value' => 'bank_transfer',
-                'label' => 'Transfer Bank',
-                'description' => 'Pembayaran manual melalui rekening cabang.',
-            ]);
-        }
+        $bankAccounts = null;
+        $loadBankAccounts = function () use (&$bankAccounts, $outlet) {
+            return $bankAccounts ??= BankAccount::active()->forOutlet($outlet)->ordered()->get();
+        };
 
         return Inertia::render('Dashboard/Transactions/Index', [
             'carts' => $carts,
             'carts_total' => $carts_total,
-            'heldCarts' => $heldCarts,
-            'customers' => $customers,
-            'products' => $products,
-            'categories' => $categories,
-            'initialPricingPreview' => $initialPricingPreview,
-            'paymentMethods' => $paymentMethods,
+            'heldCarts' => fn () => Cart::with('product:id,title,sell_price,image')
+                ->where('cashier_id', $userId)
+                ->held()
+                ->get()
+                ->groupBy('hold_id')
+                ->map(function ($items, $holdId) {
+                    $first = $items->first();
+
+                    return [
+                        'hold_id' => $holdId,
+                        'label' => $first->hold_label,
+                        'held_at' => $first->held_at?->toISOString(),
+                        'items_count' => $items->sum('qty'),
+                        'total' => $items->sum('price'),
+                    ];
+                })
+                ->values(),
+            'customers' => fn () => Customer::latest()->get(),
+            'products' => function () use ($warehouseId, $outlet) {
+                $products = Product::with(['category:id,name', 'units'])
+                    ->select('id', 'barcode', 'title', 'description', 'image', 'buy_price', 'sell_price', 'stock', 'category_id')
+                    ->withCount('recipeVersions')
+                    ->when($warehouseId, function ($q) use ($warehouseId) {
+                        $q->where(function ($products) use ($warehouseId) {
+                            $products->whereHas('warehouses', fn ($w) => $w->where('product_warehouse.warehouse_id', $warehouseId)
+                                ->where('product_warehouse.stock', '>', 0))
+                                ->orWhereHas('recipeVersions');
+                        });
+                    }, function ($q) {
+                        $q->where(fn ($products) => $products->where('stock', '>', 0)->orWhereHas('recipeVersions'));
+                    })
+                    ->orderBy('title')
+                    ->get();
+                $pricingBadges = $this->pricingService->previewProducts($products, null, null, $outlet);
+
+                return $products->map(function (Product $product) use ($pricingBadges) {
+                    $pricing = $pricingBadges->get($product->id);
+
+                    return [
+                        ...$product->toArray(),
+                        'is_recipe_menu' => $product->recipe_versions_count > 0,
+                        'units' => $product->units->map(fn ($u) => [
+                            'unit_id' => $u->id,
+                            'code' => $u->code,
+                            'is_base' => (bool) $u->pivot->is_base,
+                            'conversion_factor' => (float) $u->pivot->conversion_factor,
+                            'sell_price' => (int) $u->pivot->sell_price,
+                            'barcode' => $u->pivot->barcode,
+                        ]),
+                        'pricing_badge' => $pricing && ! empty($pricing['pricing_rule']) ? [
+                            'label' => $pricing['pricing_rule']['label'],
+                            'promo_price' => $pricing['pricing_rule']['price_context']
+                                ? $pricing['effective_unit_price']
+                                : null,
+                            'base_price' => $pricing['base_unit_price'],
+                            'kind' => $pricing['pricing_rule']['kind'],
+                        ] : null,
+                    ];
+                });
+            },
+            'categories' => fn () => Category::select('id', 'name', 'image')
+                ->orderBy('name')
+                ->get(),
+            'initialPricingPreview' => fn () => $this->loyaltyService->previewCheckout(
+                $this->pricingService->previewCart($carts, null, null, $outlet)
+            ),
+            'paymentMethods' => function () use ($loadBankAccounts) {
+                $methods = PaymentMethod::query()
+                    ->where('is_active', true)
+                    ->whereNotIn('code', ['CASH', 'GOFOOD'])
+                    ->whereNotIn('code', ['QRIS-2', 'QRIS-3'])
+                    ->orderBy('sort_order')
+                    ->get(['code', 'name'])
+                    ->map(fn (PaymentMethod $method) => [
+                        'value' => strtolower(str_replace('-', '_', $method->code)),
+                        'label' => $method->code === 'QRIS-1' ? 'QRIS' : $method->name,
+                        'description' => 'Pembayaran dicatat langsung oleh kasir.',
+                    ])
+                    ->values();
+
+                if ($loadBankAccounts()->isNotEmpty()) {
+                    $methods->push([
+                        'value' => 'bank_transfer',
+                        'label' => 'Transfer Bank',
+                        'description' => 'Pembayaran manual melalui rekening cabang.',
+                    ]);
+                }
+
+                return $methods;
+            },
             'defaultPaymentGateway' => 'cash',
-            'bankAccounts' => $bankAccounts,
-            'warehouses' => $this->outletAccessService->salesWarehousesFor(auth()->user())->values(),
-            'shiftSummary' => $this->cashierShiftService->summarizeForDisplay($activeShift),
-            'loyaltyTierOptions' => $this->loyaltyService->tierOptions(),
+            'bankAccounts' => $loadBankAccounts,
+            'warehouses' => fn () => $this->outletAccessService->salesWarehousesFor(auth()->user())->values(),
+            'openingInventory' => fn () => $activeShift ? null : app(CashierShiftOpeningStockService::class)->catalog(),
+            'shiftSummary' => fn () => $this->cashierShiftService->summarizeForDisplay($activeShift),
+            'loyaltyTierOptions' => fn () => $this->loyaltyService->tierOptions(),
         ]);
     }
 
@@ -272,6 +272,10 @@ class TransactionController extends Controller
         $product = Product::whereId($validated['product_id'])->first();
 
         if (! $product) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Produk tidak ditemukan.'], 404);
+            }
+
             return redirect()->back()->with('error', 'Product not found.');
         }
 
@@ -286,6 +290,10 @@ class TransactionController extends Controller
                 $whProduct = $component->warehouses()->where('warehouse_id', $warehouseId)->first();
                 $avail = $whProduct?->pivot->stock ?? 0;
                 if ($avail < $needed) {
+                    if ($request->expectsJson()) {
+                        return response()->json(['message' => "Stok {$component->title} tidak mencukupi."], 422);
+                    }
+
                     return redirect()->back()->with('error', "Stok {$component->title} tidak mencukupi.");
                 }
             }
@@ -306,7 +314,11 @@ class TransactionController extends Controller
                 ? (int) ($product->warehouses()->where('warehouse_id', $warehouseId)->first()?->pivot->stock ?? 0)
                 : (int) $product->stock;
 
-            if ($availableStock < $baseQty) {
+            if ($availableStock < $baseQty && ! $product->recipeVersions()->exists()) {
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => 'Stok tidak mencukupi.'], 422);
+                }
+
                 return redirect()->back()->with('error', 'Stok tidak mencukupi.');
             }
 
@@ -340,6 +352,20 @@ class TransactionController extends Controller
             ]);
         }
 
+        if ($request->expectsJson()) {
+            $activeCarts = Cart::with('product:id,title,sell_price,image')
+                ->where('cashier_id', $request->user()->id)
+                ->active()
+                ->latest()
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'carts' => $activeCarts,
+                'carts_total' => (int) $activeCarts->sum('price'),
+            ]);
+        }
+
         return redirect()->route('transactions.index')->with('success', 'Product Added Successfully!.');
     }
 
@@ -366,6 +392,16 @@ class TransactionController extends Controller
             return back()->withErrors(['message' => 'Cart not found']);
         }
 
+    }
+
+    public function clearCart(Request $request)
+    {
+        Cart::query()
+            ->where('cashier_id', $request->user()->id)
+            ->active()
+            ->delete();
+
+        return back();
     }
 
     /**
@@ -418,7 +454,7 @@ class TransactionController extends Controller
             ? (int) ($product->warehouses()->where('warehouse_id', $warehouseId)->first()?->pivot->stock ?? 0)
             : (int) $product->stock;
 
-        if ($availableStock < $baseQty) {
+        if ($availableStock < $baseQty && ! $product->recipeVersions()->exists()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Stok tidak mencukupi. Tersedia: '.$availableStock,

@@ -263,7 +263,7 @@ export default function SalesReturnForm({
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                                Item Retur
+                                Barang Retur
                             </h2>
                             {canEdit && (
                                 <Button
@@ -280,12 +280,12 @@ export default function SalesReturnForm({
                             <Table.Thead>
                                 <tr>
                                     <Table.Th>Produk</Table.Th>
-                                    <Table.Th>Qty Beli</Table.Th>
+                                    <Table.Th>Jumlah Beli</Table.Th>
                                     <Table.Th>Sudah Retur</Table.Th>
                                     <Table.Th>Sisa</Table.Th>
-                                    <Table.Th>Qty Retur</Table.Th>
+                                    <Table.Th>Jumlah Retur</Table.Th>
                                     <Table.Th>Alasan</Table.Th>
-                                    <Table.Th>Restock</Table.Th>
+                                    <Table.Th>Masukkan Kembali ke Stok</Table.Th>
                                     <Table.Th>Subtotal</Table.Th>
                                 </tr>
                             </Table.Thead>
@@ -440,16 +440,16 @@ export default function SalesReturnForm({
 
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                             <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-                                Preview Dampak
+                                Pratinjau Dampak
                             </h2>
 
                             <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
                                 <PreviewRow
-                                    label="Item dipilih"
+                                    label="Barang dipilih"
                                     value={`${summary.selectedItemsCount} produk`}
                                 />
                                 <PreviewRow
-                                    label="Total qty retur"
+                                    label="Total jumlah retur"
                                     value={`${summary.totalItems} item`}
                                 />
                                 <PreviewRow

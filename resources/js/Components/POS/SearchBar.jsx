@@ -201,8 +201,7 @@ export default function SearchBar({
                                             {product.title}
                                         </p>
                                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                                            {product.barcode} • Stok:{" "}
-                                            {product.stock}
+                                            {product.barcode} • {product.is_recipe_menu ? "Dibuat saat dipesan" : `Stok: ${product.stock}`}
                                         </p>
                                     </div>
 
@@ -211,7 +210,7 @@ export default function SearchBar({
                                         <p className="text-sm font-semibold text-primary-600 dark:text-primary-400">
                                             {formatPrice(product.sell_price)}
                                         </p>
-                                        {product.stock <= 0 && (
+                                        {product.stock <= 0 && !product.is_recipe_menu && (
                                             <span className="text-xs text-danger-500 font-medium">
                                                 Habis
                                             </span>

@@ -105,7 +105,7 @@ export default function Create({ warehouses, products }) {
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Item Transfer</h2>
+                        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Barang yang Dipindahkan</h2>
                         <div className="mb-4">
                             <input type="text" value={searchProduct} onChange={(e) => setSearchProduct(e.target.value)} placeholder="Cari produk untuk ditambahkan..." className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" />
                         </div>
@@ -127,7 +127,7 @@ export default function Create({ warehouses, products }) {
                                     <thead>
                                         <tr className="border-b border-slate-200 dark:border-slate-700">
                                             <th className="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-200">Produk</th>
-                                            <th className="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">Qty</th>
+                                            <th className="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">Jumlah</th>
                                             <th className="w-16 px-3 py-2"></th>
                                         </tr>
                                     </thead>

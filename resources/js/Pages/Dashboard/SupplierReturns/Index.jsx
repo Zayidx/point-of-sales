@@ -111,7 +111,7 @@ export default function Index({ returns, filters, suppliers }) {
                             <Table.Th>Dokumen</Table.Th>
                             <Table.Th>Pemasok</Table.Th>
                             <Table.Th>Status</Table.Th>
-                            <Table.Th>Item</Table.Th>
+                            <Table.Th>Barang</Table.Th>
                             <Table.Th>Tanggal</Table.Th>
                             <Table.Th>Dibuat Oleh</Table.Th>
                             <Table.Th className="w-24 text-center">Aksi</Table.Th>
