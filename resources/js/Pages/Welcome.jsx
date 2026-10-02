@@ -6,7 +6,6 @@ import {
     IconClock,
     IconMapPin,
     IconPhone,
-    IconSoup,
 } from "@tabler/icons-react";
 
 const formatPrice = (price) =>
@@ -18,10 +17,10 @@ const formatPrice = (price) =>
 
 const menuCategories = [
     {
-        id: "dimsum-kukus", title: "Dimsum Kukus",
+        id: "dimsum-kukus", title: "Dimsum",
         items: [
-            { name: "Dimsum Ori", variants: [{ label: "4 pcs", price: 16000 }, { label: "6 pcs", price: 24000 }, { label: "8 pcs", price: 30000 }] },
-            { name: "Dimsum Mentai", variants: [{ label: "4 pcs", price: 21000 }, { label: "6 pcs", price: 28000 }, { label: "8 pcs", price: 38000 }] },
+            { name: "Dimsum Ori", variants: [{ label: "4 pcs", price: 16000 }, { label: "6 pcs", price: 24000, recommended: true }, { label: "8 pcs", price: 30000 }] },
+            { name: "Dimsum Mentai", variants: [{ label: "4 pcs", price: 21000 }, { label: "6 pcs", price: 28000, recommended: true }, { label: "8 pcs", price: 38000 }] },
             { name: "Dimsum Cheesemelt", variants: [{ label: "4 pcs", price: 25000 }, { label: "6 pcs", price: 35000 }, { label: "8 pcs", price: 48000 }] },
             { name: "Dimsum Mix", variants: [{ label: "6 pcs", price: 30000 }, { label: "8 pcs", price: 45000 }] },
         ],
@@ -38,7 +37,7 @@ const menuCategories = [
         items: [
             { name: "Chiquro Garlic", variants: [{ label: "Per porsi", price: 26000 }] },
             { name: "Chiquro Lava", variants: [{ label: "Per porsi", price: 26000 }] },
-            { name: "Chiquro Mentai", variants: [{ label: "Per porsi", price: 26000 }] },
+            { name: "Chiquro Mentai", variants: [{ label: "Per porsi", price: 26000, recommended: true }] },
             { name: "Chiquro Cheese", variants: [{ label: "Per porsi", price: 28000 }] },
         ],
     },
@@ -53,10 +52,11 @@ const menuCategories = [
 ];
 
 const contact = {
-    phone: "083129701342",
-    email: "faridindrawan@gmail.com",
+    phone: "0895343256336",
+    email: "Weiguowner@gmail.com",
 };
 const GOFOOD_URL = "https://gofood.co.id/";
+const CS_WHATSAPP = "62895343256336";
 
 const branches = [
     {
@@ -110,15 +110,22 @@ function MenuPriceList() {
                     </button>
                 ))}
             </div>
-            <div id={`panel-${activeCategory.id}`} role="tabpanel" aria-labelledby={`tab-${activeCategory.id}`} className="divide-y divide-[#eee3d9] border-y border-[#e8d9cb] bg-white/70 px-4 sm:px-6">
+            <div id={`panel-${activeCategory.id}`} role="tabpanel" aria-labelledby={`tab-${activeCategory.id}`} className="grid gap-4 sm:grid-cols-2">
                 {activeCategory.items.map((item) => (
-                    <article key={item.name} className="grid gap-3 py-5 sm:grid-cols-[minmax(155px,0.8fr)_1.6fr] sm:items-center sm:gap-6">
-                        <h3 className="font-semibold text-[#3d2c25]">{item.name}</h3>
-                        <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3 sm:gap-x-5">
+                    <article key={item.name} className="group rounded-2xl border border-[#ead9c8] bg-white p-5 shadow-[0_8px_24px_rgba(80,47,31,0.04)] transition duration-300 hover:-translate-y-1 hover:border-[#d7b8a2] hover:shadow-[0_16px_32px_rgba(80,47,31,0.09)]">
+                        <div className="mb-4 flex items-center justify-between gap-3 border-b border-[#f1e7df] pb-3">
+                            <h3 className="font-serif text-xl font-semibold text-[#3d2c25]">{item.name}</h3>
+                            <span className="text-xs font-medium text-[#9a8275]">{item.variants.length > 1 ? "Pilih porsi" : "Harga"}</span>
+
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                             {item.variants.map((variant) => (
-                                <div key={variant.label} className="flex min-h-14 flex-col items-start justify-center gap-1 rounded-lg bg-[#fffaf5] px-3 py-2 sm:bg-transparent sm:px-2">
-                                    <span className="whitespace-nowrap text-xs leading-tight tracking-normal text-[#806a5f]">{variant.label}</span>
-                                    <span className="whitespace-nowrap text-sm font-semibold leading-tight tracking-normal tabular-nums text-[#34251f]">{formatPrice(variant.price)}</span>
+                                <div key={variant.label} className={`min-h-[72px] rounded-xl border px-3 py-2.5 ${variant.recommended ? "border-[#d9a58d] bg-[#fff2e9]" : "border-transparent bg-[#faf6f1]"}`}>
+                                    <div className="flex min-h-4 items-center justify-between gap-1">
+                                        <span className="text-xs font-medium text-[#806a5f]">{variant.label}</span>
+                                        {variant.recommended && <span className="whitespace-nowrap rounded-full bg-[#a84127] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Rekomendasi</span>}
+                                    </div>
+                                    <span className="mt-2 block whitespace-nowrap text-sm font-bold tabular-nums text-[#34251f]">{formatPrice(variant.price)}</span>
                                 </div>
                             ))}
                         </div>
@@ -152,9 +159,22 @@ export default function Welcome({ business = {}, outlets = [] }) {
         return () => observer.disconnect();
     }, []);
 
-    const phone = business.phone || contact.phone;
-    const email = business.email || contact.email;
+    const [report, setReport] = useState({ product: "", branch: "", purchasedAt: "", details: "", agreed: false });
+    const phone = contact.phone;
+    const email = contact.email;
     const displayBranches = outlets.length ? outlets : branches;
+
+    const sendProductReport = (event) => {
+        event.preventDefault();
+        const message = [
+            "Halo CS Weigu, saya ingin menyampaikan aduan/laporan produk.",
+            `Produk: ${report.product}`,
+            `Cabang: ${report.branch || "Tidak disebutkan"}`,
+            `Waktu pembelian: ${report.purchasedAt || "Tidak disebutkan"}`,
+            `Kronologi aduan: ${report.details}`,
+        ].join("\n");
+        window.open(`https://wa.me/${CS_WHATSAPP}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    };
 
     return (
         <>
@@ -169,16 +189,7 @@ export default function Welcome({ business = {}, outlets = [] }) {
                 <header className="absolute inset-x-0 top-0 z-20">
                     <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
                         <a href="#beranda" className="flex items-center gap-3" aria-label={`${business.name} — beranda`}>
-                            {business.logo ? (
-                                <img src={business.logo} alt="" className="h-11 w-11 rounded-full object-cover" />
-                            ) : (
-                                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#a84127] text-white">
-                                    <IconSoup size={24} />
-                                </span>
-                            )}
-                            <span className="font-serif text-lg font-bold tracking-tight sm:text-xl">
-                                {business.name || "Dimsum"}
-                            </span>
+                            <img src="/assets/logo/logo-no-background.png" alt="Weigu Dimsum & Gyoza" className="h-12 w-auto max-w-[170px] object-contain sm:h-14" />
                         </a>
                         <div className="hidden items-center gap-8 text-sm font-medium text-[#695850] md:flex">
                             <a href="#cerita" className="transition hover:text-[#a84127]">Cerita Kami</a>
@@ -251,30 +262,32 @@ export default function Welcome({ business = {}, outlets = [] }) {
 
                     <section id="outlet" className="border-t border-[#ead9c8] bg-white px-5 py-24 sm:px-8 md:py-28">
                         <div className="mx-auto max-w-7xl">
-                            <div className="scroll-reveal mb-12 max-w-xl"><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#a84127]">Kami menanti Anda</p><h2 className="mt-3 font-serif text-4xl font-semibold sm:text-5xl">Mampir atau sapa kami.</h2><p className="mt-4 text-base leading-7 text-[#75645c]">Pilih cabang terdekat, cek jam buka, lalu mampir untuk menikmati dimsum hangat.</p></div>
-                            <div className="grid gap-5 sm:grid-cols-2">
-                                {displayBranches.map((branch, index) => (
-                                    <article key={branch.id || branch.name} className="scroll-reveal rounded-3xl border border-[#f0e4d8] bg-[#fffaf4] p-7 shadow-[0_8px_30px_rgba(80,47,31,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(80,47,31,0.1)] sm:p-8" style={{ "--reveal-delay": `${index * 90}ms` }}>
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div>
-                                                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f4e4d5] text-[#a84127]"><IconMapPin size={22} /></span>
-                                                <h3 className="mt-5 font-serif text-xl font-semibold">{branch.name}</h3>
-                                                <p className="mt-2 text-sm leading-6 text-[#75645c]">{branch.address}</p>
-                                            </div>
-                                            <a href={branch.map} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d9c5b7] px-3.5 py-2.5 text-xs font-semibold text-[#8f3825] transition hover:border-[#a84127] hover:bg-white" aria-label={`Buka peta ${branch.name}`}>
-                                                Peta <IconArrowUpRight size={15} />
+                            <div className="scroll-reveal mb-8 max-w-xl"><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#a84127]">Kami menanti Anda</p><h2 className="mt-3 font-serif text-4xl font-semibold sm:text-5xl">Mampir atau sapa kami.</h2><p className="mt-3 text-sm leading-6 text-[#75645c]">Pilih cabang terdekat dan cek jam buka kami.</p></div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                {displayBranches.map((branch) => (
+                                    <details key={branch.id || branch.name} className="group rounded-2xl border border-[#f0e4d8] bg-[#fffaf4] shadow-[0_6px_20px_rgba(80,47,31,0.04)] transition hover:border-[#dfc5b2] hover:shadow-[0_12px_28px_rgba(80,47,31,0.08)]">
+                                        <summary className="flex cursor-pointer list-none items-center gap-3 p-4 marker:hidden [&::-webkit-details-marker]:hidden">
+                                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f4e4d5] text-[#a84127]"><IconMapPin size={19} /></span>
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block font-serif text-base font-semibold leading-5">{branch.name}</span>
+                                                <span className="mt-1 block truncate text-xs text-[#75645c]">{branch.address}</span>
+                                            </span>
+                                            <IconArrowDown size={18} className="shrink-0 text-[#a84127] transition-transform group-open:rotate-180" aria-hidden="true" />
+                                        </summary>
+                                        <div className="space-y-3 border-t border-[#ead9c8] px-4 pb-4 pt-3">
+                                            <a href={branch.map} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full border border-[#d9c5b7] px-3 py-1.5 text-xs font-semibold text-[#8f3825] transition hover:border-[#a84127] hover:bg-white" aria-label={`Buka peta ${branch.name}`}>
+                                                Lihat peta <IconArrowUpRight size={14} />
                                             </a>
+                                            <div className="space-y-2">
+                                                {branch.hours.map((schedule) => (
+                                                    <div key={schedule.days} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 text-sm">
+                                                        <span className="flex items-center gap-2 text-[#75645c]"><IconClock size={15} className="shrink-0" />{schedule.days}</span>
+                                                        <span className="font-semibold tabular-nums text-[#49372f]">{schedule.time} WIB</span>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="mt-6 border-t border-[#ead9c8] pt-5">
-                                            <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#9b482d]"><IconClock size={16} /> Jam operasional</p>
-                                            {branch.hours.map((schedule) => (
-                                                <div key={schedule.days} className="flex justify-between gap-4 py-1.5 text-sm">
-                                                    <span className="text-[#75645c]">{schedule.days}</span>
-                                                    <span className="font-semibold tabular-nums text-[#49372f]">{schedule.time} WIB</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </article>
+                                    </details>
                                 ))}
                             </div>
                             <div className="scroll-reveal mt-6 flex flex-col justify-between gap-6 rounded-3xl bg-[#34251f] p-7 text-white sm:flex-row sm:items-center sm:p-9">
@@ -282,15 +295,57 @@ export default function Welcome({ business = {}, outlets = [] }) {
                                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-[#f0c3a7]"><IconPhone size={23} /></span>
                                     <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#e9b99f]">Kontak</p><h3 className="mt-1 font-serif text-2xl font-semibold">Kami siap menyapa.</h3><div className="mt-3 flex flex-col gap-1 text-sm text-white/75 sm:flex-row sm:gap-5"><a href={`tel:${phone}`} className="transition hover:text-white">{phone}</a><a href={`mailto:${email}`} className="transition hover:text-white">{email}</a></div></div>
                                 </div>
+                                <div className="w-full space-y-3 sm:max-w-xl">
+                                    <a href={`https://wa.me/${CS_WHATSAPP}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-full bg-[#a84127] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#87351f]">Hubungi CS via WhatsApp</a>
+                                    <details className="rounded-2xl border border-white/15 bg-white/5 p-4">
+                                        <summary className="cursor-pointer list-none font-semibold text-white marker:hidden [&::-webkit-details-marker]:hidden">Laporkan produk ke CS</summary>
+                                        <div className="mt-4 rounded-xl bg-[#fffaf4] p-4 text-[#34251f] sm:p-5">
+                                            <p className="text-sm leading-6 text-[#695850]">Isi detail laporan. WhatsApp akan terbuka dengan pesan yang bisa Anda tinjau sebelum dikirim.</p>
+                                            <form onSubmit={sendProductReport} className="mt-4 space-y-3">
+                                                <label className="block text-sm font-semibold">Produk yang dilaporkan
+                                                    <select required value={report.product} onChange={(event) => setReport((current) => ({ ...current, product: event.target.value }))} className="mt-1.5 h-11 w-full rounded-xl border border-[#e2d3c6] bg-white px-3 font-normal text-[#34251f] focus:border-[#a84127] focus:outline-none focus:ring-2 focus:ring-[#a84127]/15">
+                                                        <option value="">Pilih produk</option>
+                                                        {menuCategories.flatMap((category) => category.items.map((item) => <option key={item.name} value={item.name}>{item.name}</option>))}
+                                                    </select>
+                                                </label>
+                                                <div className="grid gap-3 sm:grid-cols-2">
+                                                    <label className="block text-sm font-semibold">Cabang <span className="font-normal text-[#9a8275]">(opsional)</span>
+                                                        <select value={report.branch} onChange={(event) => setReport((current) => ({ ...current, branch: event.target.value }))} className="mt-1.5 h-11 w-full rounded-xl border border-[#e2d3c6] bg-white px-3 font-normal text-[#34251f] focus:border-[#a84127] focus:outline-none focus:ring-2 focus:ring-[#a84127]/15">
+                                                            <option value="">Pilih cabang</option>
+                                                            {displayBranches.map((branch) => <option key={branch.id || branch.name} value={branch.name}>{branch.name}</option>)}
+                                                        </select>
+                                                    </label>
+                                                    <label className="block text-sm font-semibold">Waktu pembelian <span className="font-normal text-[#9a8275]">(opsional)</span>
+                                                        <input type="date" value={report.purchasedAt} onChange={(event) => setReport((current) => ({ ...current, purchasedAt: event.target.value }))} className="mt-1.5 h-11 w-full rounded-xl border border-[#e2d3c6] bg-white px-3 font-normal text-[#34251f] focus:border-[#a84127] focus:outline-none focus:ring-2 focus:ring-[#a84127]/15" />
+                                                    </label>
+                                                </div>
+                                                <label className="block text-sm font-semibold">Ceritakan kendala atau aduan
+                                                    <textarea required minLength={10} maxLength={1000} rows={4} value={report.details} onChange={(event) => setReport((current) => ({ ...current, details: event.target.value }))} placeholder="Tuliskan kondisi produk dan kronologi singkat…" className="mt-1.5 w-full resize-y rounded-xl border border-[#e2d3c6] bg-white px-3 py-2.5 font-normal text-[#34251f] placeholder:text-[#a89589] focus:border-[#a84127] focus:outline-none focus:ring-2 focus:ring-[#a84127]/15" />
+                                                </label>
+                                                <label className="flex items-start gap-2.5 text-xs leading-5 text-[#695850]">
+                                                    <input required type="checkbox" checked={report.agreed} onChange={(event) => setReport((current) => ({ ...current, agreed: event.target.checked }))} className="mt-1 h-4 w-4 shrink-0 accent-[#a84127]" />
+                                                    <span>Saya memastikan laporan ini benar dan terkait produk Weigu. Saya paham pesan baru terkirim setelah saya meninjaunya lalu menekan tombol kirim di WhatsApp. Saya tidak mencantumkan kata sandi, data pembayaran, atau informasi sensitif.</span>
+                                                </label>
+                                                <button type="submit" className="inline-flex w-full items-center justify-center rounded-full bg-[#a84127] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#87351f] sm:w-auto">Buka WhatsApp &amp; Tinjau Pesan</button>
+                                            </form>
+                                        </div>
+                                    </details>
+                                </div>
                             </div>
                         </div>
                     </section>
 
                 </main>
 
-                <footer className="bg-[#34251f] px-5 py-8 text-white sm:px-8">
-                    <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
-                        <div><p className="font-serif text-lg font-semibold">{business.name || "Dimsum"}</p><p className="mt-1 text-xs text-white/60">Dibuat hangat, dinikmati bersama.</p></div>
+                <footer className="border-t border-white/10 bg-[#2e211c] px-5 py-10 text-white sm:px-8">
+                    <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 text-center sm:flex-row sm:text-left">
+                        <div className="flex items-center gap-4"><img src="/assets/logo/logo-square.png" alt="Logo Weigu Dimsum & Gyoza" className="h-14 w-14 rounded-2xl object-cover shadow-lg shadow-black/20" /><div><p className="font-serif text-xl font-semibold">{business.name || "Weigu Dimsum & Gyoza"}</p><p className="mt-1 text-sm text-white/60">Dimsum hangat, dinikmati bersama.</p></div></div>
+                        <nav aria-label="Navigasi footer" className="flex flex-wrap justify-center gap-x-5 gap-y-3 text-sm text-white/70">
+                            <a href="#menu" className="transition hover:text-white">Lihat menu</a>
+                            <a href="#outlet" className="transition hover:text-white">Lokasi cabang</a>
+                            <a href={`https://wa.me/${CS_WHATSAPP}`} target="_blank" rel="noreferrer" className="transition hover:text-white">WhatsApp CS</a>
+                            <a href={`mailto:${email}`} className="transition hover:text-white">Email</a>
+                        </nav>
                         <p className="text-xs text-white/50">© {new Date().getFullYear()} {business.name || "Dimsum"}</p>
                     </div>
                 </footer>
